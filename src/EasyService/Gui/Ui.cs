@@ -2,6 +2,19 @@ using System.ComponentModel;
 
 namespace EasyService.Gui;
 
+/// <summary>
+/// A ListView that does not flicker. The stock one repaints the whole control on every
+/// update, which is very visible with a three-second auto refresh.
+/// </summary>
+internal sealed class BufferedListView : ListView
+{
+    public BufferedListView()
+    {
+        DoubleBuffered = true;
+        SetStyle(ControlStyles.OptimizedDoubleBuffer | ControlStyles.AllPaintingInWmPaint, true);
+    }
+}
+
 /// <summary>Small helpers so the forms stay about layout instead of boilerplate.</summary>
 internal static class Ui
 {
@@ -28,6 +41,31 @@ internal static class Ui
             }
             return _appIcon;
         }
+    }
+
+    /// <summary>True when the control sits on a dark background, so text colours can adapt.</summary>
+    public static bool IsDark(Control control)
+    {
+        var c = control.BackColor;
+        var luminance = (0.299 * c.R + 0.587 * c.G + 0.114 * c.B) / 255.0;
+        return luminance < 0.5;
+    }
+
+    /// <summary>
+    /// Status colour that stays readable in both themes. The saturated greens and reds that
+    /// work on white turn into mud on a dark background.
+    /// </summary>
+    public static Color HealthColor(Core.CheckStatus? status, Control control, Color fallback)
+    {
+        var dark = IsDark(control);
+        return status switch
+        {
+            Core.CheckStatus.Critical => dark ? Color.FromArgb(255, 120, 110) : Color.FromArgb(190, 30, 30),
+            Core.CheckStatus.Warning => dark ? Color.FromArgb(240, 175, 70) : Color.FromArgb(170, 90, 0),
+            Core.CheckStatus.Ok => dark ? Color.FromArgb(105, 210, 130) : Color.FromArgb(0, 110, 40),
+            Core.CheckStatus.Unknown => SystemColors.GrayText,
+            _ => fallback,
+        };
     }
 
     private static Font MakeMono()
@@ -78,7 +116,15 @@ internal static class Ui
         },
     };
 
-    public static T AddRow<T>(TableLayoutPanel panel, string label, T control) where T : Control
+    public static T AddRow<T>(TableLayoutPanel panel, string label, T control) where T : Control =>
+        AddLabelledRow(panel, label, control).Control;
+
+    /// <summary>
+    /// Same as AddRow but hands back the label too. Hiding both collapses the whole row,
+    /// which is how optional fields disappear instead of sitting there greyed out.
+    /// </summary>
+    public static (Label Label, T Control) AddLabelledRow<T>(TableLayoutPanel panel, string label, T control)
+        where T : Control
     {
         var lbl = new Label
         {
@@ -87,17 +133,19 @@ internal static class Ui
             Anchor = AnchorStyles.Left,
             Margin = new Padding(3, 8, 3, 3),
         };
-        control.Anchor = AnchorStyles.Left | AnchorStyles.Right;
+        // Ohne Top zentriert der Layout-Panel den Inhalt in einer hoeheren Zeile - das reisst
+        // sichtbare Loecher, sobald eine Zeile mehr Platz bekommt als ihr Inhalt braucht.
+        control.Anchor = AnchorStyles.Top | AnchorStyles.Left | AnchorStyles.Right;
         control.Margin = new Padding(3, 4, 3, 4);
         panel.Controls.Add(lbl, 0, panel.RowCount);
         panel.Controls.Add(control, 1, panel.RowCount);
         panel.RowCount++;
-        return control;
+        return (lbl, control);
     }
 
     public static T AddFullRow<T>(TableLayoutPanel panel, T control) where T : Control
     {
-        control.Anchor = AnchorStyles.Left | AnchorStyles.Right;
+        control.Anchor = AnchorStyles.Top | AnchorStyles.Left | AnchorStyles.Right;
         control.Margin = new Padding(3, 4, 3, 4);
         panel.Controls.Add(control, 0, panel.RowCount);
         panel.SetColumnSpan(control, 2);

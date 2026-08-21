@@ -20,7 +20,7 @@ jobs:
 
       - uses: actions/setup-dotnet@v4
         with:
-          dotnet-version: "8.0.x"
+          dotnet-version: "9.0.x"
 
       - name: Restore
         run: dotnet restore EasyService.sln
@@ -40,7 +40,7 @@ jobs:
           -p:IncludeNativeLibrariesForSelfExtract=true
           -o publish/standalone
 
-      - name: Publish (framework-dependent, needs .NET 8 Desktop Runtime)
+      - name: Publish (framework-dependent, needs .NET 9 Desktop Runtime)
         run: >
           dotnet publish src/EasyService/EasyService.csproj
           -c Release -r win-x64 --self-contained false

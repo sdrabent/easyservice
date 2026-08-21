@@ -37,17 +37,17 @@ public sealed class QuickAddForm : Form
         Checked = true,
     };
 
-    private readonly Label _summaryLogs = Detail();
-    private readonly Label _summaryRestart = Detail();
-    private readonly Label _summaryMonitoring = Detail();
-
-    private static Label Detail() => new()
+    private readonly Label _summary = new()
     {
         AutoSize = true,
         ForeColor = SystemColors.GrayText,
-        Margin = new Padding(3, 2, 3, 2),
-        MaximumSize = new Size(560, 0),
+        Margin = new Padding(3, 2, 3, 6),
+        MaximumSize = new Size(580, 0),
     };
+
+    private Label _accountLabel = null!;
+    private Label _passwordHint = null!;
+    private Label _passwordLabel = null!;
 
     private bool _serviceNameEditedByHand;
 
@@ -75,18 +75,16 @@ public sealed class QuickAddForm : Form
 
         Ui.AddSpacer(p, "Anmeldung und Start");
         Ui.AddRow(p, "Anmelden als:", _logon);
-        Ui.AddRow(p, "Konto:", _account);
-        Ui.AddRow(p, "Kennwort:", _password);
+        (_accountLabel, _) = Ui.AddLabelledRow(p, "Konto:", _account);
+        (_passwordLabel, _) = Ui.AddLabelledRow(p, "Kennwort:", _password);
         Ui.AddFullRow(p, _rememberPassword);
-        Ui.AddFullRow(p, Ui.Hint(
+        _passwordHint = Ui.AddFullRow(p, Ui.Hint(
             "Gemerkt wird nur für Ihr Windows-Konto auf diesem Rechner (verschlüsselt per DPAPI). " +
             "Ohne Häkchen bleibt das Kennwort nur bis zum Schließen von EasyService im Speicher."));
         Ui.AddRow(p, "Starttyp:", _startup);
 
         Ui.AddSpacer(p, "Wird automatisch eingerichtet");
-        Ui.AddFullRow(p, _summaryLogs);
-        Ui.AddFullRow(p, _summaryRestart);
-        Ui.AddFullRow(p, _summaryMonitoring);
+        Ui.AddFullRow(p, _summary);
 
         var advanced = new Button { Text = "Erweiterte Einstellungen...", AutoSize = true, Height = 30 };
         var create = new Button { Text = "Dienst anlegen", Width = 140, Height = 30 };
@@ -174,12 +172,16 @@ public sealed class QuickAddForm : Form
         return candidate;
     }
 
+    /// <summary>
+    /// The credential rows only exist for "Dieses Konto". Collapsing them keeps the fast lane
+    /// to four fields in the case that covers nearly every service.
+    /// </summary>
     private void SyncAccountFields()
     {
         var isAccount = _logon.SelectedIndex == (int)LogonType.Account;
-        _account.Enabled = isAccount;
-        _password.Enabled = isAccount;
-        _rememberPassword.Enabled = isAccount;
+        foreach (var c in new Control[] { _accountLabel, _account, _passwordLabel, _password,
+                                          _rememberPassword, _passwordHint })
+            c.Visible = isAccount;
     }
 
     private void ApplyDefaults()
@@ -203,20 +205,23 @@ public sealed class QuickAddForm : Form
     {
         var name = _serviceName.Text.Trim();
         var directory = UserDefaults.LogDirectory;
+        var nl = System.Environment.NewLine;
 
-        _summaryLogs.Text = name.Length == 0
-            ? $"Protokolle:  {directory}"
-            : $"Protokolle:  {Path.Combine(directory, name + "-stdout.log")}\n"
-              + $"             {Path.Combine(directory, name + "-stderr.log")}\n"
-              + "             Rotation ab 10 MB, die letzten 10 Dateien bleiben erhalten.";
+        var logs = name.Length == 0
+            ? directory
+            : Path.Combine(directory, name + "-stdout.log") + nl
+              + "                 " + Path.Combine(directory, name + "-stderr.log");
 
-        _summaryRestart.Text =
-            "Neustart:    Anwendung wird nach einem Absturz neu gestartet (1 s Verzögerung, " +
-            "Drosselung bei Dauerabstürzen).";
-
-        _summaryMonitoring.Text =
-            "Überwachung: aktiv - Warnung ab 3, kritisch ab 10 Neustarts pro Stunde. " +
-            "Abrufbar über checkmk, prometheus, check und json.";
+        _summary.Text = string.Join(nl, new[]
+        {
+            "Protokolle:      " + logs,
+            "                 Rotation ab 10 MB, die letzten 10 Dateien bleiben erhalten.",
+            "",
+            "Neustart:        nach einem Absturz, 1 s Verzögerung, Drosselung bei Dauerabstürzen.",
+            "",
+            "Überwachung:     aktiv - Warnung ab 3, kritisch ab 10 Neustarts pro Stunde;",
+            "                 abrufbar über checkmk, prometheus, check und json.",
+        });
     }
 
     // ------------------------------------------------------------- ergebnis ---

@@ -21,8 +21,6 @@ public sealed class LogViewerForm : Form
         ScrollBars = ScrollBars.Both,
         WordWrap = false,
         Dock = DockStyle.Fill,
-        BackColor = Color.FromArgb(24, 24, 24),
-        ForeColor = Color.FromArgb(224, 224, 224),
         BorderStyle = BorderStyle.None,
     };
     private readonly ToolStripTextBox _filter = new() { Width = 200 };

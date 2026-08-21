@@ -20,6 +20,11 @@ internal static class Program
 
         // Mode 3: the GUI.
         ApplicationConfiguration.Initialize();
+
+        // Folgt der Windows-Einstellung "App-Modus": hell oder dunkel.
+        try { Application.SetColorMode(SystemColorMode.System); }
+        catch (Exception) { /* aeltere Runtime: dann eben klassisch hell */ }
+
         Application.SetUnhandledExceptionMode(UnhandledExceptionMode.CatchException);
         Application.ThreadException += (_, e) => Ui.ShowError(null, "Unerwarteter Fehler", e.Exception);
         AppDomain.CurrentDomain.UnhandledException += (_, e) =>
@@ -27,8 +32,11 @@ internal static class Program
 
         EventLogSink.EnsureSource();
 
-        var startArg = args.Length >= 2 ? args[1] : null;
-        Application.Run(new MainForm(startArg));
+        // "gui --new" springt direkt in die Schnelleinrichtung - praktisch für eine
+        // Desktop- oder Startmenü-Verknüpfung "Dienst hinzufügen".
+        var openQuickAdd = args.Any(a => a.Equals("--new", StringComparison.OrdinalIgnoreCase));
+        var startArg = args.Length >= 2 && !args[1].StartsWith('-') ? args[1] : null;
+        Application.Run(new MainForm(startArg, openQuickAdd));
         return 0;
     }
 

@@ -13,6 +13,12 @@ GUI-gesteuert, auf Deutsch und mit einem eingebauten Live-Protokoll-Viewer.
 [![build](https://github.com/sdrabent/easyservice/actions/workflows/build.yml/badge.svg)](https://github.com/sdrabent/easyservice/actions/workflows/build.yml)
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
 
+![EasyService-Übersicht](assets/screenshot-uebersicht.png)
+
+*Drei überwachte Dienste: einer läuft sauber, einer startet im Dauerlauf neu und wird
+rot markiert, einer ist bewusst gestoppt. Windows selbst würde für die ersten beiden
+gleichermaßen „Wird ausgeführt" melden.*
+
 ---
 
 ## Warum EasyService?
@@ -21,6 +27,8 @@ GUI-gesteuert, auf Deutsch und mit einem eingebauten Live-Protokoll-Viewer.
 |---|---|---|---|
 | Beliebige Programme als Dienst | ✗ | ✓ | ✓ |
 | Grafische Oberfläche | ✗ | teilweise | **✓ vollständig** |
+| **Schnelleinrichtung mit Vorbelegung** | ✗ | ✗ | **✓** |
+| Dark Mode | ✗ | ✗ | ✓ |
 | stdout/stderr in Dateien | ✗ | ✓ | ✓ |
 | Automatische Log-Rotation | ✗ | ✓ | ✓ |
 | **Live-Protokollansicht integriert** | ✗ | ✗ | **✓** |
@@ -39,7 +47,7 @@ Fertige Binärdateien gibt es unter **[Releases](../../releases)**:
 | Datei | Beschreibung |
 |---|---|
 | `easyservice.exe` | Alles enthalten, läuft sofort. Keine Installation nötig. |
-| `easyservice-framework-dependent.exe` | Nur ~300 KB, benötigt das [.NET 8 Desktop Runtime](https://dotnet.microsoft.com/download/dotnet/8.0). |
+| `easyservice-framework-dependent.exe` | Nur ~300 KB, benötigt das [.NET 9 Desktop Runtime](https://dotnet.microsoft.com/download/dotnet/9.0). |
 
 Die Datei irgendwohin legen (z. B. `C:\Tools\easyservice.exe`) und per Doppelklick starten.
 
@@ -54,15 +62,25 @@ die Rechte beim Start per UAC an).
 ## Schnellstart
 
 1. `easyservice.exe` starten und die UAC-Abfrage bestätigen.
-2. **Neuer Dienst…** anklicken.
-3. Unter *Anwendung* das Programm auswählen. Dienstname, Startverzeichnis und die
-   Protokollpfade werden automatisch vorbelegt.
-4. **Dienst anlegen** – fertig. Der Dienst startet sofort und läuft ab jetzt bei jedem
-   Systemstart mit.
-5. Über **Protokolle…** die Ausgabe live mitlesen.
+2. **Dienst hinzufügen…** anklicken – oder die `.exe` einfach ins Fenster ziehen.
+3. Programm auswählen. Dienstname, Startverzeichnis, Protokollpfade, Rotation,
+   Neustart-Richtlinie und Überwachungsschwellen werden vorbelegt und angezeigt.
+4. **Dienst anlegen** – fertig.
 
-Alles Weitere – Konto, Abhängigkeiten, Neustart-Verhalten, Rotation – ist optional und
-mit brauchbaren Standardwerten vorbelegt.
+Das ist die *Fast Lane*: vier Felder statt neun Registerkarten. Sie deckt den Normalfall
+ab und zeigt darunter, was sie automatisch eingerichtet hat, statt es zu erfragen.
+Das Dienstkonto wird für den nächsten Dienst gemerkt; das Kennwort bleibt dabei
+standardmäßig nur im Speicher der laufenden Sitzung.
+
+Wer mehr braucht, kommt über **Erweiterte Einstellungen…** in den vollständigen Editor
+mit neun Registerkarten. Schlägt der erste Start fehl, bietet EasyService direkt das
+Protokoll an – die Ursache ist fast immer ein falscher Pfad oder ein falsches Argument.
+
+Für Skripte:
+
+```cmd
+easyservice install MeinDaemon "C:pps\daemon.exe" --config C:pps\daemon.yml
+```
 
 ## Funktionen im Detail
 
@@ -234,7 +252,7 @@ Standardmäßig liegen die Protokolle unter `%ProgramData%\EasyService\logs\`.
 
 ## Aus dem Quellcode bauen
 
-Benötigt wird das [.NET 8 SDK](https://dotnet.microsoft.com/download/dotnet/8.0) (oder neuer)
+Benötigt wird das [.NET 9 SDK](https://dotnet.microsoft.com/download/dotnet/9.0) (oder neuer)
 auf einem Windows-Rechner.
 
 ```cmd

@@ -94,6 +94,58 @@ public static class UserDefaults
         set => Set("RememberPassword", value ? 1 : 0, RegistryValueKind.DWord);
     }
 
+    // -------------------------------------------------------- window state ---
+
+    public static System.Drawing.Rectangle? MainWindowBounds
+    {
+        get
+        {
+            var parts = GetString("MainWindowBounds", "").Split(',');
+            if (parts.Length != 4) return null;
+            return int.TryParse(parts[0], out var x) && int.TryParse(parts[1], out var y)
+                && int.TryParse(parts[2], out var w) && int.TryParse(parts[3], out var h)
+                ? new System.Drawing.Rectangle(x, y, w, h)
+                : null;
+        }
+        set
+        {
+            if (value is { } r)
+                Set("MainWindowBounds", $"{r.X},{r.Y},{r.Width},{r.Height}", RegistryValueKind.String);
+        }
+    }
+
+    public static bool MainWindowMaximized
+    {
+        get => GetInt("MainWindowMaximized", 0) != 0;
+        set => Set("MainWindowMaximized", value ? 1 : 0, RegistryValueKind.DWord);
+    }
+
+    public static int[] ColumnWidths
+    {
+        get => GetString("ColumnWidths", "").Split(',', StringSplitOptions.RemoveEmptyEntries)
+                                            .Select(v => int.TryParse(v, out var i) ? i : 0)
+                                            .ToArray();
+        set => Set("ColumnWidths", string.Join(',', value), RegistryValueKind.String);
+    }
+
+    public static int SortColumn
+    {
+        get => GetInt("SortColumn", -1);
+        set => Set("SortColumn", value, RegistryValueKind.DWord);
+    }
+
+    public static bool SortAscending
+    {
+        get => GetInt("SortAscending", 1) != 0;
+        set => Set("SortAscending", value ? 1 : 0, RegistryValueKind.DWord);
+    }
+
+    public static bool OnlyManaged
+    {
+        get => GetInt("OnlyManaged", 1) != 0;
+        set => Set("OnlyManaged", value ? 1 : 0, RegistryValueKind.DWord);
+    }
+
     // ------------------------------------------------------------- password ---
 
     /// <summary>

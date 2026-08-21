@@ -4,7 +4,7 @@ namespace EasyService.Gui;
 
 public sealed class MainForm : Form
 {
-    private readonly ListView _list;
+    private readonly BufferedListView _list;
     private readonly ToolStrip _toolbar;
     private readonly ToolStripStatusLabel _status;
     private readonly ToolStripTextBox _filterBox;
@@ -20,9 +20,12 @@ public sealed class MainForm : Form
     private bool _sortAscending = true;
     private readonly string? _initialSelection;
 
-    public MainForm(string? selectService = null)
+    private readonly bool _openQuickAdd;
+
+    public MainForm(string? selectService = null, bool openQuickAdd = false)
     {
         _initialSelection = selectService;
+        _openQuickAdd = openQuickAdd;
 
         Text = "EasyService - Windows-Dienste verwalten";
         Icon = Ui.AppIcon;
@@ -31,7 +34,7 @@ public sealed class MainForm : Form
         StartPosition = FormStartPosition.CenterScreen;
         Font = SystemFonts.MessageBoxFont ?? Font;
 
-        _list = new ListView
+        _list = new BufferedListView
         {
             Dock = DockStyle.Fill,
             View = View.Details,
@@ -126,10 +129,49 @@ public sealed class MainForm : Form
 
         Load += (_, _) =>
         {
+            RestoreWindowState();
             Reload();
             _refreshTimer.Start();
+            if (_openQuickAdd) BeginInvoke(() => CreateNew());
         };
+        FormClosing += (_, _) => SaveWindowState();
         FormClosed += (_, _) => _refreshTimer.Stop();
+    }
+
+    // ------------------------------------------------------- Fensterzustand ---
+
+    private void RestoreWindowState()
+    {
+        if (UserDefaults.MainWindowBounds is { } bounds && IsOnAScreen(bounds))
+        {
+            StartPosition = FormStartPosition.Manual;
+            Bounds = bounds;
+        }
+        if (UserDefaults.MainWindowMaximized) WindowState = FormWindowState.Maximized;
+
+        var widths = UserDefaults.ColumnWidths;
+        for (var i = 0; i < Math.Min(widths.Length, _list.Columns.Count); i++)
+            if (widths[i] > 10) _list.Columns[i].Width = widths[i];
+
+        _sortColumn = UserDefaults.SortColumn;
+        _sortAscending = UserDefaults.SortAscending;
+        _onlyManaged.Checked = UserDefaults.OnlyManaged;
+    }
+
+    /// <summary>Guards against restoring onto a monitor that is no longer attached.</summary>
+    private static bool IsOnAScreen(Rectangle bounds) =>
+        bounds.Width > 200 && bounds.Height > 150 &&
+        Screen.AllScreens.Any(screen => screen.WorkingArea.IntersectsWith(bounds));
+
+    private void SaveWindowState()
+    {
+        UserDefaults.MainWindowMaximized = WindowState == FormWindowState.Maximized;
+        if (WindowState == FormWindowState.Normal) UserDefaults.MainWindowBounds = Bounds;
+
+        UserDefaults.ColumnWidths = _list.Columns.Cast<ColumnHeader>().Select(c => c.Width).ToArray();
+        UserDefaults.SortColumn = _sortColumn;
+        UserDefaults.SortAscending = _sortAscending;
+        UserDefaults.OnlyManaged = _onlyManaged.Checked;
     }
 
     private static ToolStripButton Button(string text, EventHandler onClick, string? tip)
@@ -267,16 +309,10 @@ public sealed class MainForm : Form
 
                 // Gesundheit schlaegt Laufzustand: ein Dienst, der laeuft und dabei staendig
                 // abstuerzt, darf nicht beruhigend gruen aussehen.
-                item.ForeColor = check?.Status switch
-                {
-                    CheckStatus.Critical => Color.FromArgb(190, 30, 30),
-                    CheckStatus.Warning => Color.FromArgb(180, 95, 0),
-                    CheckStatus.Unknown => SystemColors.GrayText,
-                    CheckStatus.Ok => Color.FromArgb(0, 110, 40),
-                    _ => s.IsRunning ? Color.FromArgb(0, 110, 40)
-                        : s.Startup == StartupType.Disabled ? SystemColors.GrayText
-                        : _list.ForeColor,
-                };
+                var fallback = s.IsRunning ? CheckStatus.Ok
+                    : s.Startup == StartupType.Disabled ? CheckStatus.Unknown
+                    : (CheckStatus?)null;
+                item.ForeColor = Ui.HealthColor(check?.Status ?? fallback, _list, _list.ForeColor);
                 item.Font = s.ManagedByEasyService ? new Font(_list.Font, FontStyle.Bold) : _list.Font;
                 item.ToolTipText = check?.Summary ?? "";
             }
