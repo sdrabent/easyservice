@@ -7,6 +7,29 @@ internal static class Ui
 {
     public static readonly Font MonoFont = MakeMono();
 
+    private static Icon? _appIcon;
+    private static bool _appIconLoaded;
+
+    /// <summary>Application icon, embedded so it also works from a single-file publish.</summary>
+    public static Icon? AppIcon
+    {
+        get
+        {
+            if (_appIconLoaded) return _appIcon;
+            _appIconLoaded = true;
+            try
+            {
+                using var stream = typeof(Ui).Assembly.GetManifestResourceStream("EasyService.AppIcon.ico");
+                if (stream is not null) _appIcon = new Icon(stream);
+            }
+            catch (Exception)
+            {
+                _appIcon = null;   // a missing icon must never stop the app from starting
+            }
+            return _appIcon;
+        }
+    }
+
     private static Font MakeMono()
     {
         foreach (var name in new[] { "Cascadia Mono", "Consolas", "Lucida Console" })

@@ -33,6 +33,9 @@ internal static class Program
             Run("Umgebungsvariablen erreichen die Anwendung", EnvironmentIsPassedThrough);
             Run("Dienstliste kann gelesen werden", ServiceListIsReadable);
             Run("GUI-Dialoge lassen sich aufbauen", GuiFormsConstruct);
+
+            foreach (var (name, test) in MonitoringTests.All(_root))
+                Run(name, test);
         }
         finally
         {

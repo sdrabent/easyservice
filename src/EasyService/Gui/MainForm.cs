@@ -14,6 +14,7 @@ public sealed class MainForm : Form
     private readonly ToolStripButton _btnEdit, _btnStart, _btnStop, _btnRestart, _btnLogs, _btnRemove;
 
     private List<ServiceInfo> _services = new();
+    private Dictionary<string, CheckResult> _checks = new(StringComparer.OrdinalIgnoreCase);
     private bool _loading;
     private int _sortColumn = -1;
     private bool _sortAscending = true;
@@ -24,8 +25,9 @@ public sealed class MainForm : Form
         _initialSelection = selectService;
 
         Text = "EasyService - Windows-Dienste verwalten";
+        Icon = Ui.AppIcon;
         MinimumSize = new Size(900, 480);
-        Size = new Size(1180, 680);
+        Size = new Size(1320, 700);
         StartPosition = FormStartPosition.CenterScreen;
         Font = SystemFonts.MessageBoxFont ?? Font;
 
@@ -39,12 +41,17 @@ public sealed class MainForm : Form
             MultiSelect = false,
             UseCompatibleStateImageBehavior = false,
         };
-        _list.Columns.Add("Name", 210);
-        _list.Columns.Add("Anzeigename", 230);
-        _list.Columns.Add("Status", 120);
-        _list.Columns.Add("Starttyp", 150);
+        _list.Columns.Add("Name", 190);
+        _list.Columns.Add("Status", 110);
+        _list.Columns.Add("Anwendung", 140);
+        _list.Columns.Add("CPU", 60, HorizontalAlignment.Right);
+        _list.Columns.Add("RAM", 75, HorizontalAlignment.Right);
+        _list.Columns.Add("Neust./h", 65, HorizontalAlignment.Right);
+        _list.Columns.Add("Laufzeit", 85, HorizontalAlignment.Right);
+        _list.Columns.Add("Starttyp", 145);
         _list.Columns.Add("PID", 60, HorizontalAlignment.Right);
-        _list.Columns.Add("Konto", 150);
+        _list.Columns.Add("Anzeigename", 200);
+        _list.Columns.Add("Konto", 140);
         _list.Columns.Add("Programm", 260);
         _list.SelectedIndexChanged += (_, _) => UpdateButtons();
         _list.DoubleClick += (_, _) => EditSelected();
@@ -88,6 +95,7 @@ public sealed class MainForm : Form
         var statusStrip = new StatusStrip();
         statusStrip.Items.Add(_status);
 
+        _list.ShowItemToolTips = true;
         _list.ContextMenuStrip = BuildContextMenu();
 
         Controls.Add(_list);
@@ -162,9 +170,12 @@ public sealed class MainForm : Form
             try
             {
                 var services = ServiceRegistry.EnumerateServices();
+                var checks = Monitoring.CheckAll(services)
+                                       .ToDictionary(r => r.ServiceName, StringComparer.OrdinalIgnoreCase);
                 BeginInvoke(() =>
                 {
                     _services = services;
+                    _checks = checks;
                     ApplyFilter();
                     _loading = false;
                 });
@@ -207,11 +218,23 @@ public sealed class MainForm : Form
             for (var i = 0; i < visible.Count; i++)
             {
                 var s = visible[i];
+                _checks.TryGetValue(s.Name, out var check);
+                var st = check?.State;
+
                 var cells = new[]
                 {
-                    s.Name, s.DisplayName, s.StateText, s.StartupText,
+                    s.Name,
+                    s.StateText,
+                    st is null ? "" : ServiceState.Describe(st.State),
+                    st is null || st.State != SupervisorState.Running ? "" : $"{st.CpuPercent:0.#} %",
+                    st is null || st.State != SupervisorState.Running ? "" : ServiceState.FormatBytes(st.WorkingSetBytes),
+                    st is null ? "" : st.RestartsLastHour.ToString(),
+                    st?.Uptime is { } up ? ServiceState.FormatDuration(up) : "",
+                    s.StartupText,
                     s.ProcessId == 0 ? "" : s.ProcessId.ToString(),
-                    s.Account, s.Target,
+                    s.DisplayName,
+                    s.Account,
+                    s.Target,
                 };
 
                 ListViewItem item;
@@ -228,10 +251,21 @@ public sealed class MainForm : Form
                 }
 
                 item.Tag = s;
-                item.ForeColor = s.IsRunning ? Color.FromArgb(0, 110, 40)
-                    : s.Startup == StartupType.Disabled ? SystemColors.GrayText
-                    : _list.ForeColor;
+
+                // Gesundheit schlaegt Laufzustand: ein Dienst, der laeuft und dabei staendig
+                // abstuerzt, darf nicht beruhigend gruen aussehen.
+                item.ForeColor = check?.Status switch
+                {
+                    CheckStatus.Critical => Color.FromArgb(190, 30, 30),
+                    CheckStatus.Warning => Color.FromArgb(180, 95, 0),
+                    CheckStatus.Unknown => SystemColors.GrayText,
+                    CheckStatus.Ok => Color.FromArgb(0, 110, 40),
+                    _ => s.IsRunning ? Color.FromArgb(0, 110, 40)
+                        : s.Startup == StartupType.Disabled ? SystemColors.GrayText
+                        : _list.ForeColor,
+                };
                 item.Font = s.ManagedByEasyService ? new Font(_list.Font, FontStyle.Bold) : _list.Font;
+                item.ToolTipText = check?.Summary ?? "";
             }
 
             if (previous is not null)
@@ -260,7 +294,13 @@ public sealed class MainForm : Form
         }
 
         var managed = _services.Count(s => s.ManagedByEasyService);
-        _status.Text = $"{visible.Count} von {_services.Count} Diensten angezeigt - {managed} davon von EasyService verwaltet";
+        var critical = _checks.Values.Count(c => c.Status == CheckStatus.Critical);
+        var warning = _checks.Values.Count(c => c.Status == CheckStatus.Warning);
+        var health = critical > 0 || warning > 0
+            ? $" - {critical} kritisch, {warning} Warnung"
+            : managed > 0 ? " - alle unauffällig" : "";
+        _status.Text = $"{visible.Count} von {_services.Count} Diensten angezeigt - " +
+                       $"{managed} von EasyService verwaltet{health}";
         UpdateButtons();
     }
 
@@ -272,16 +312,24 @@ public sealed class MainForm : Form
 
         Func<ServiceInfo, object> key = _sortColumn switch
         {
-            1 => s => s.DisplayName,
-            2 => s => s.StateText,
-            3 => s => s.StartupText,
-            4 => s => s.ProcessId,
-            5 => s => s.Account,
-            6 => s => s.BinaryPath,
+            1 => s => s.StateText,
+            2 => s => State(s)?.State.ToString() ?? "",
+            3 => s => State(s)?.CpuPercent ?? -1,
+            4 => s => State(s)?.WorkingSetBytes ?? -1,
+            5 => s => State(s)?.RestartsLastHour ?? -1,
+            6 => s => State(s)?.Uptime?.TotalSeconds ?? -1,
+            7 => s => s.StartupText,
+            8 => s => s.ProcessId,
+            9 => s => s.DisplayName,
+            10 => s => s.Account,
+            11 => s => s.Target,
             _ => s => s.Name,
         };
         return (_sortAscending ? items.OrderBy(key) : items.OrderByDescending(key)).ToList();
     }
+
+    private ServiceState? State(ServiceInfo info) =>
+        _checks.TryGetValue(info.Name, out var check) ? check.State : null;
 
     private void OnColumnClick(object? sender, ColumnClickEventArgs e)
     {

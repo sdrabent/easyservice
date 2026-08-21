@@ -3,8 +3,30 @@ using System.Diagnostics;
 namespace EasyService.Core;
 
 /// <summary>
+/// Stable event IDs for the Windows Application log.
+///
+/// These are part of the public contract: an administrator builds Checkmk/Zabbix/Icinga
+/// alerts on the ID, not on the German message text. Never renumber an existing entry -
+/// only append.
+/// </summary>
+public enum EasyServiceEvent
+{
+    SupervisorStarted = 1000,
+    ApplicationStarted = 1001,
+    ApplicationExited = 1002,
+    ApplicationRestarting = 1003,
+    RestartThrottled = 1004,
+    ApplicationStartFailed = 1005,
+    ServiceStopping = 1006,
+    StoppedByExitPolicy = 1007,
+    ApplicationTerminated = 1008,
+    ConfigurationProblem = 1009,
+    LoggingProblem = 1010,
+}
+
+/// <summary>
 /// Mirrors supervisor messages into the Windows Application event log so they show up in
-/// eventvwr.msc next to everything else the machine reports.
+/// eventvwr.msc and can be collected by any monitoring agent.
 /// </summary>
 public static class EventLogSink
 {
@@ -28,7 +50,7 @@ public static class EventLogSink
         }
     }
 
-    private static void Write(string serviceName, string message, EventLogEntryType type)
+    public static void Write(string serviceName, EasyServiceEvent id, string message, EventLogEntryType type)
     {
         EnsureSource();
         if (!_sourceUsable) return;
@@ -36,7 +58,7 @@ public static class EventLogSink
         {
             var text = string.IsNullOrEmpty(serviceName) ? message : $"[{serviceName}] {message}";
             if (text.Length > 31000) text = text[..31000];
-            EventLog.WriteEntry(SourceName, text, type);
+            EventLog.WriteEntry(SourceName, text, type, (int)id);
         }
         catch
         {
@@ -44,14 +66,21 @@ public static class EventLogSink
         }
     }
 
-    public static void Info(string serviceName, string message) => Write(serviceName, message, EventLogEntryType.Information);
-    public static void Warn(string serviceName, string message) => Write(serviceName, message, EventLogEntryType.Warning);
-    public static void Error(string serviceName, string message) => Write(serviceName, message, EventLogEntryType.Error);
+    public static void Info(string serviceName, EasyServiceEvent id, string message) =>
+        Write(serviceName, id, message, EventLogEntryType.Information);
+
+    public static void Warn(string serviceName, EasyServiceEvent id, string message) =>
+        Write(serviceName, id, message, EventLogEntryType.Warning);
+
+    public static void Error(string serviceName, EasyServiceEvent id, string message) =>
+        Write(serviceName, id, message, EventLogEntryType.Error);
+
+    public sealed record Entry(DateTime Time, string Type, int EventId, string Message);
 
     /// <summary>Reads recent Application-log entries written by EasyService.</summary>
-    public static List<(DateTime Time, string Type, string Message)> ReadRecent(string? serviceName, int max = 300)
+    public static List<Entry> ReadRecent(string? serviceName, int max = 300)
     {
-        var result = new List<(DateTime, string, string)>();
+        var result = new List<Entry>();
         try
         {
             using var log = new EventLog("Application");
@@ -60,9 +89,11 @@ public static class EventLogSink
                 EventLogEntry entry;
                 try { entry = log.Entries[i]; } catch { continue; }
                 if (!string.Equals(entry.Source, SourceName, StringComparison.OrdinalIgnoreCase)) continue;
-                if (!string.IsNullOrEmpty(serviceName) && !entry.Message.StartsWith($"[{serviceName}]", StringComparison.OrdinalIgnoreCase))
+                if (!string.IsNullOrEmpty(serviceName) &&
+                    !entry.Message.StartsWith($"[{serviceName}]", StringComparison.OrdinalIgnoreCase))
                     continue;
-                result.Add((entry.TimeGenerated, entry.EntryType.ToString(), entry.Message));
+                result.Add(new Entry(entry.TimeGenerated, entry.EntryType.ToString(),
+                    (int)(entry.InstanceId & 0xFFFF), entry.Message));
             }
         }
         catch
@@ -71,4 +102,20 @@ public static class EventLogSink
         }
         return result;
     }
+
+    public static string Describe(int eventId) => eventId switch
+    {
+        (int)EasyServiceEvent.SupervisorStarted => "Überwachung gestartet",
+        (int)EasyServiceEvent.ApplicationStarted => "Anwendung gestartet",
+        (int)EasyServiceEvent.ApplicationExited => "Anwendung beendet",
+        (int)EasyServiceEvent.ApplicationRestarting => "Anwendung wird neu gestartet",
+        (int)EasyServiceEvent.RestartThrottled => "Neustart gedrosselt",
+        (int)EasyServiceEvent.ApplicationStartFailed => "Start fehlgeschlagen",
+        (int)EasyServiceEvent.ServiceStopping => "Dienst wird beendet",
+        (int)EasyServiceEvent.StoppedByExitPolicy => "Durch Beenden-Aktion gestoppt",
+        (int)EasyServiceEvent.ApplicationTerminated => "Anwendung hart beendet",
+        (int)EasyServiceEvent.ConfigurationProblem => "Konfigurationsproblem",
+        (int)EasyServiceEvent.LoggingProblem => "Protokollierungsproblem",
+        _ => "",
+    };
 }

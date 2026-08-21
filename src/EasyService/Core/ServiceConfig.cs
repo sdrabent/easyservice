@@ -92,6 +92,16 @@ public sealed class ServiceConfig
     public int RestartDelayMs { get; set; } = 1000;
     public int ThrottleMs { get; set; } = 5000;
 
+    // --- monitoring ---------------------------------------------------------
+    // Thresholds an administrator can alert on. 0 means "do not check this".
+    public bool MonitoringEnabled { get; set; } = true;
+    public int WarnCpuPercent { get; set; }
+    public int CritCpuPercent { get; set; }
+    public int WarnMemoryMb { get; set; }
+    public int CritMemoryMb { get; set; }
+    public int WarnRestartsPerHour { get; set; } = 3;
+    public int CritRestartsPerHour { get; set; } = 10;
+
     // --- shutdown sequence --------------------------------------------------
     public bool StopUseConsole { get; set; } = true;
     public int StopConsoleMs { get; set; } = 1500;
@@ -207,6 +217,14 @@ public sealed class ServiceConfig
                 exit.SetValue(code.ToString(), (int)action, RegistryValueKind.DWord);
         }
 
+        key.SetValue("MonEnabled", MonitoringEnabled ? 1 : 0, RegistryValueKind.DWord);
+        key.SetValue("MonWarnCpu", WarnCpuPercent, RegistryValueKind.DWord);
+        key.SetValue("MonCritCpu", CritCpuPercent, RegistryValueKind.DWord);
+        key.SetValue("MonWarnMemoryMb", WarnMemoryMb, RegistryValueKind.DWord);
+        key.SetValue("MonCritMemoryMb", CritMemoryMb, RegistryValueKind.DWord);
+        key.SetValue("MonWarnRestartsPerHour", WarnRestartsPerHour, RegistryValueKind.DWord);
+        key.SetValue("MonCritRestartsPerHour", CritRestartsPerHour, RegistryValueKind.DWord);
+
         key.SetValue("AppStopUseConsole", StopUseConsole ? 1 : 0, RegistryValueKind.DWord);
         key.SetValue("AppStopConsoleDelay", StopConsoleMs, RegistryValueKind.DWord);
         key.SetValue("AppStopUseWindow", StopUseWindow ? 1 : 0, RegistryValueKind.DWord);
@@ -255,6 +273,14 @@ public sealed class ServiceConfig
                     if (uint.TryParse(name, out var code))
                         c.ExitActions[code] = (ExitAction)Convert.ToInt32(exit.GetValue(name, 0));
         }
+
+        c.MonitoringEnabled = Num(key, "MonEnabled", 1) != 0;
+        c.WarnCpuPercent = Num(key, "MonWarnCpu", 0);
+        c.CritCpuPercent = Num(key, "MonCritCpu", 0);
+        c.WarnMemoryMb = Num(key, "MonWarnMemoryMb", 0);
+        c.CritMemoryMb = Num(key, "MonCritMemoryMb", 0);
+        c.WarnRestartsPerHour = Num(key, "MonWarnRestartsPerHour", 3);
+        c.CritRestartsPerHour = Num(key, "MonCritRestartsPerHour", 10);
 
         c.StopUseConsole = Num(key, "AppStopUseConsole", 1) != 0;
         c.StopConsoleMs = Num(key, "AppStopConsoleDelay", 1500);

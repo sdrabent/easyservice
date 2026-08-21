@@ -57,6 +57,7 @@ public sealed class LogViewerForm : Form
         _config = config;
 
         Text = $"Protokolle - {config.ServiceName}";
+        Icon = Ui.AppIcon;
         Size = new Size(1060, 660);
         MinimumSize = new Size(720, 400);
         StartPosition = FormStartPosition.CenterParent;
@@ -80,8 +81,10 @@ public sealed class LogViewerForm : Form
         logPage.Controls.Add(_view);
 
         _events.Columns.Add("Zeitpunkt", 150);
-        _events.Columns.Add("Typ", 100);
-        _events.Columns.Add("Meldung", 700);
+        _events.Columns.Add("Typ", 90);
+        _events.Columns.Add("ID", 55, HorizontalAlignment.Right);
+        _events.Columns.Add("Ereignis", 200);
+        _events.Columns.Add("Meldung", 620);
         var eventsPage = new TabPage("Windows-Ereignisse");
         var eventsToolbar = new ToolStrip { GripStyle = ToolStripGripStyle.Hidden };
         eventsToolbar.Items.Add(Button("Aktualisieren", (_, _) => LoadEvents()));
@@ -367,18 +370,27 @@ public sealed class LogViewerForm : Form
     {
         _events.BeginUpdate();
         _events.Items.Clear();
-        foreach (var (time, type, message) in EventLogSink.ReadRecent(_config.ServiceName))
+        foreach (var entry in EventLogSink.ReadRecent(_config.ServiceName))
         {
-            var text = message;
+            var text = entry.Message;
             var prefix = $"[{_config.ServiceName}] ";
             if (text.StartsWith(prefix, StringComparison.OrdinalIgnoreCase)) text = text[prefix.Length..];
-            var item = new ListViewItem(new[] { time.ToString("yyyy-MM-dd HH:mm:ss"), type, text.ReplaceLineEndings(" ") });
-            if (type.Equals("Error", StringComparison.OrdinalIgnoreCase)) item.ForeColor = Color.Firebrick;
-            else if (type.Equals("Warning", StringComparison.OrdinalIgnoreCase)) item.ForeColor = Color.DarkOrange;
+
+            var item = new ListViewItem(new[]
+            {
+                entry.Time.ToString("yyyy-MM-dd HH:mm:ss"),
+                entry.Type,
+                entry.EventId.ToString(),
+                EventLogSink.Describe(entry.EventId),
+                text.ReplaceLineEndings(" "),
+            });
+            if (entry.Type.Equals("Error", StringComparison.OrdinalIgnoreCase)) item.ForeColor = Color.Firebrick;
+            else if (entry.Type.Equals("Warning", StringComparison.OrdinalIgnoreCase)) item.ForeColor = Color.DarkOrange;
             _events.Items.Add(item);
         }
         _events.EndUpdate();
         if (_events.Items.Count == 0)
-            _events.Items.Add(new ListViewItem(new[] { "", "", "Keine Einträge von EasyService im Anwendungsprotokoll gefunden." }));
+            _events.Items.Add(new ListViewItem(new[]
+                { "", "", "", "", "Keine Einträge von EasyService im Anwendungsprotokoll gefunden." }));
     }
 }

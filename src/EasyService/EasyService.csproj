@@ -10,6 +10,7 @@
     <AssemblyName>easyservice</AssemblyName>
     <RootNamespace>EasyService</RootNamespace>
     <ApplicationManifest>app.manifest</ApplicationManifest>
+    <ApplicationIcon>..\..\assets\easyservice.ico</ApplicationIcon>
     <ApplicationHighDpiMode>PerMonitorV2</ApplicationHighDpiMode>
     <PlatformTarget>x64</PlatformTarget>
     <SatelliteResourceLanguages>en</SatelliteResourceLanguages>
@@ -22,5 +23,9 @@
     <InvariantGlobalization>true</InvariantGlobalization>
     <DebugType>embedded</DebugType>
   </PropertyGroup>
+
+  <ItemGroup>
+    <EmbeddedResource Include="..\..\assets\easyservice.ico" LogicalName="EasyService.AppIcon.ico" />
+  </ItemGroup>
 
 </Project>

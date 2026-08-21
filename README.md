@@ -28,6 +28,8 @@ GUI-gesteuert, auf Deutsch und mit einem eingebauten Live-Protokoll-Viewer.
 | Gestufter, sauberer Shutdown | ✗ | ✓ | ✓ |
 | Prozessbaum sicher beenden | ✗ | ✓ | ✓ |
 | Einzelne .exe, keine Installation | ✓ | ✓ | ✓ |
+| **Monitoring-Anbindung** | ✗ | ✗ | **✓ Checkmk, Prometheus, Zabbix, Nagios** |
+| **Flapping-Erkennung** | ✗ | ✗ | **✓** |
 | Open Source | ✗ | ✓ (Public Domain) | ✓ (MIT) |
 
 ## Download
@@ -104,6 +106,29 @@ zeigt neue Zeilen automatisch an, folgt der Rotation, bietet die archivierten Da
 Auswahl an und kann nach Text filtern. Eine zweite Registerkarte zeigt die Ereignisse, die
 EasyService selbst ins Windows-Anwendungsprotokoll geschrieben hat – Start, Absturz,
 Neustart, Exit-Codes.
+
+### Monitoring
+
+Der Windows-Dienst-Manager kennt nur eine Frage: läuft der Dienstprozess? Bei einem
+Wrapper ist der Dienstprozess aber EasyService selbst — die eigentliche Anwendung kann
+dahinter im Minutentakt abstürzen, und `sc query` meldet weiter fröhlich `RUNNING`.
+
+EasyService misst deshalb selbst: Neustarts pro Stunde, Laufzeit, CPU und Speicher des
+gesamten Prozessbaums, letzter Exit-Code — und gibt das in den Formaten aus, die die
+gängigen Systeme direkt lesen:
+
+```cmd
+easyservice checkmk       :: Local Check, eine Zeile je Dienst, mit Perfdaten
+easyservice prometheus    :: Exposition-Format, auch als --output für node_exporter
+easyservice check <Name>  :: Nagios/Icinga-Plugin mit Exit-Code 0/1/2/3
+easyservice json          :: alles, für Zabbix und eigene Skripte
+```
+
+Zusätzlich landet jedes Ereignis mit einer **stabilen Ereignis-ID** im
+Windows-Anwendungsprotokoll (1004 = Neustart gedrosselt, 1005 = Start fehlgeschlagen,
+1008 = hart beendet), sodass sich ohne Textmustersuche alarmieren lässt.
+
+Alle Einzelheiten samt fertiger Konfigurationsschnipsel: **[docs/monitoring.md](docs/monitoring.md)**.
 
 ### Sicherheitsnetz beim Löschen
 
@@ -239,7 +264,8 @@ dotnet run --project tests/EasyService.Tests -c Release
 Die Tests steuern den Supervisor direkt an und brauchen weder Administratorrechte noch
 einen installierten Dienst. Geprüft werden Ausgabeumleitung, Neustart-Richtlinie,
 Exit-Code-Aktionen, Rotation samt Archivbegrenzung, das Beenden laufender Anwendungen,
-Zeitstempel, Umgebungsvariablen, das Lesen der Dienstliste und der Aufbau aller Dialoge.
+Zeitstempel, Umgebungsvariablen, das Lesen der Dienstliste, der Aufbau aller Dialoge
+sowie die komplette Monitoring-Kette bis hin zum Ausgabeformat für Checkmk und Prometheus.
 
 ```
   Ausgabe von stdout und stderr wird protokolliert          OK

@@ -1,3 +1,4 @@
+using System.Diagnostics;
 using System.Runtime.InteropServices;
 using System.Text;
 
@@ -5,16 +6,30 @@ namespace EasyService.Core;
 
 /// <summary>
 /// Launches the configured application, streams its stdout/stderr into rotating log
-/// files and applies the restart policy. This is the part that turns any ordinary
-/// executable into a well-behaved Windows service.
+/// files, applies the restart policy and keeps a machine-readable record of what it is
+/// doing. This is the part that turns any ordinary executable into a well-behaved
+/// Windows service - and the part that gives monitoring something to look at.
 /// </summary>
 public sealed class ProcessSupervisor : IDisposable
 {
+    /// <summary>How often CPU and memory of the process tree are measured.</summary>
+    private static readonly TimeSpan SampleInterval = TimeSpan.FromSeconds(5);
+
+    /// <summary>
+    /// First measurement comes early so a freshly started service reports memory right away;
+    /// CPU percentage needs two samples and therefore appears one interval later.
+    /// </summary>
+    private static readonly TimeSpan FirstSampleDelay = TimeSpan.FromSeconds(2);
+
     private readonly ServiceConfig _cfg;
     private readonly LogWriter? _events;
 
     private readonly object _childLock = new();
     private readonly ManualResetEventSlim _stopRequested = new(false);
+
+    private readonly ServiceState _state;
+    private readonly ResourceSampler _sampler = new();
+    private readonly System.Threading.Timer _sampleTimer;
 
     private IntPtr _process = IntPtr.Zero;
     private IntPtr _job = IntPtr.Zero;
@@ -30,9 +45,22 @@ public sealed class ProcessSupervisor : IDisposable
 
     public uint CurrentProcessId => _pid;
 
+    /// <summary>Live snapshot, also persisted to disk for the monitoring commands.</summary>
+    public ServiceState State => _state;
+
     public ProcessSupervisor(ServiceConfig cfg)
     {
         _cfg = cfg;
+
+        _state = new ServiceState
+        {
+            ServiceName = cfg.ServiceName,
+            State = SupervisorState.Starting,
+            SupervisorPid = System.Environment.ProcessId,
+            SupervisorStartedUtc = DateTime.UtcNow,
+        };
+        _state.Save();
+
         if (cfg.LogServiceEvents)
         {
             try
@@ -42,27 +70,67 @@ public sealed class ProcessSupervisor : IDisposable
             }
             catch (Exception e)
             {
-                EventLogSink.Warn(cfg.ServiceName, "Das EasyService-Ereignisprotokoll konnte nicht geöffnet werden: " + e.Message);
+                EventLogSink.Warn(cfg.ServiceName, EasyServiceEvent.LoggingProblem,
+                    "Das EasyService-Ereignisprotokoll konnte nicht geöffnet werden: " + e.Message);
             }
         }
+
+        _sampleTimer = new System.Threading.Timer(_ => SampleResources(), null, FirstSampleDelay, SampleInterval);
     }
 
-    public void Log(string message)
+    // ---------------------------------------------------------------- logging ---
+
+    private void Log(EasyServiceEvent id, string message, EventLogEntryType type = EventLogEntryType.Information)
     {
         _events?.WriteLine(message);
-        EventLogSink.Info(_cfg.ServiceName, message);
+        EventLogSink.Write(_cfg.ServiceName, id, message, type);
     }
 
+    /// <summary>File-only note: useful for diagnosis, too chatty for the Windows event log.</summary>
     private void LogQuiet(string message) => _events?.WriteLine(message);
 
     private static string Expand(string s) => System.Environment.ExpandEnvironmentVariables(s ?? "");
+
+    // ------------------------------------------------------------- monitoring ---
+
+    private void SampleResources()
+    {
+        IntPtr job, process;
+        lock (_childLock)
+        {
+            job = _job;
+            process = _process;
+        }
+        if (process == IntPtr.Zero) return;
+
+        try
+        {
+            var sample = _sampler.Sample(job, process);
+            _state.CpuPercent = sample.CpuPercent;
+            _state.WorkingSetBytes = sample.WorkingSetBytes;
+            _state.ProcessCount = sample.ProcessCount;
+            _state.CpuSecondsTotal = sample.CpuSecondsTotal;
+            _state.Save();
+        }
+        catch (Exception e)
+        {
+            LogQuiet("Ressourcen konnten nicht gemessen werden: " + e.Message);
+        }
+    }
+
+    private void SetState(SupervisorState state)
+    {
+        _state.State = state;
+        _state.Save();
+    }
 
     // ----------------------------------------------------------------- loop ---
 
     /// <summary>Blocks until the service is asked to stop or the exit policy ends it.</summary>
     public void Run()
     {
-        Log($"EasyService übernimmt die Überwachung von \"{Expand(_cfg.Application)}\".");
+        Log(EasyServiceEvent.SupervisorStarted,
+            $"EasyService übernimmt die Überwachung von \"{Expand(_cfg.Application)}\".");
 
         OpenOutputLogs();
 
@@ -78,11 +146,22 @@ public sealed class ProcessSupervisor : IDisposable
             {
                 Launch();
                 startedAt = DateTime.UtcNow;
-                Log($"Anwendung gestartet (PID {_pid}).");
+
+                _state.ApplicationPid = (int)_pid;
+                _state.ApplicationStartedUtc = startedAt;
+                _state.LastError = null;
+                _sampler.Reset();
+                SetState(SupervisorState.Running);
+
+                Log(EasyServiceEvent.ApplicationStarted, $"Anwendung gestartet (PID {_pid}).");
             }
             catch (Exception e)
             {
-                Log("Die Anwendung konnte nicht gestartet werden: " + e.Message);
+                _state.LastError = e.Message;
+                SetState(SupervisorState.Failed);
+                Log(EasyServiceEvent.ApplicationStartFailed,
+                    "Die Anwendung konnte nicht gestartet werden: " + e.Message, EventLogEntryType.Error);
+
                 if (_cfg.DefaultExitAction != ExitAction.Restart)
                 {
                     StopServiceRequested?.Invoke(1);
@@ -94,6 +173,10 @@ public sealed class ProcessSupervisor : IDisposable
 
             var exitCode = WaitForChildExit();
 
+            _state.LastExitCode = exitCode;
+            _state.LastExitUtc = DateTime.UtcNow;
+            _state.ApplicationPid = 0;
+
             if (_stopRequested.IsSet)
             {
                 LogQuiet($"Anwendung beendet (Code {exitCode}), Dienst wird gestoppt.");
@@ -102,24 +185,37 @@ public sealed class ProcessSupervisor : IDisposable
 
             var ranFor = DateTime.UtcNow - startedAt;
             var action = _cfg.ExitActions.TryGetValue(exitCode, out var specific) ? specific : _cfg.DefaultExitAction;
-            Log($"Anwendung beendet mit Code {exitCode} nach {ranFor.TotalSeconds:F1}s. Aktion: {Describe(action)}.");
+
+            Log(EasyServiceEvent.ApplicationExited,
+                $"Anwendung beendet mit Code {exitCode} nach {ranFor.TotalSeconds:F1}s. Aktion: {Describe(action)}.",
+                exitCode == 0 ? EventLogEntryType.Information : EventLogEntryType.Warning);
 
             CleanUpChild();
 
             switch (action)
             {
                 case ExitAction.Stop:
+                    SetState(SupervisorState.Stopped);
+                    Log(EasyServiceEvent.StoppedByExitPolicy,
+                        $"Der Dienst wird gemäß Beenden-Aktion gestoppt (Exit-Code {exitCode}).");
                     StopServiceRequested?.Invoke(exitCode);
                     return;
 
                 case ExitAction.Ignore:
-                    Log("Die Anwendung wird nicht neu gestartet; der Dienst bleibt aktiv.");
+                    SetState(SupervisorState.Ignored);
+                    Log(EasyServiceEvent.ApplicationExited,
+                        "Die Anwendung wird nicht neu gestartet; der Dienst bleibt aktiv.");
                     _stopRequested.Wait();
                     return;
 
                 default:
+                    _state.RestartCount++;
+                    _state.RecentRestartsUtc.Add(DateTime.UtcNow);
+
                     var ranBriefly = _cfg.ThrottleMs > 0 && ranFor.TotalMilliseconds < _cfg.ThrottleMs;
                     if (!ranBriefly) backoff = Math.Max(0, _cfg.RestartDelayMs);
+                    SetState(ranBriefly ? SupervisorState.Throttled : SupervisorState.Restarting);
+
                     if (!DelayBeforeRestart(ref backoff, ranBriefly)) return;
                     break;
             }
@@ -141,9 +237,15 @@ public sealed class ProcessSupervisor : IDisposable
         if (ranBriefly)
         {
             delay = Math.Max(delay, backoff);
-            LogQuiet($"Die Anwendung lief kürzer als das Throttle-Fenster ({_cfg.ThrottleMs} ms); " +
-                     $"nächster Versuch in {delay} ms.");
+            Log(EasyServiceEvent.RestartThrottled,
+                $"Die Anwendung lief kürzer als das Throttle-Fenster ({_cfg.ThrottleMs} ms); " +
+                $"nächster Versuch in {delay} ms. Neustarts in der letzten Stunde: {_state.RestartsLastHour}.",
+                EventLogEntryType.Warning);
             backoff = Math.Min(Math.Max(1000, backoff * 2), 60_000);
+        }
+        else
+        {
+            LogQuiet($"Nächster Startversuch in {delay} ms.");
         }
 
         return delay <= 0 || !_stopRequested.Wait(delay);
@@ -171,7 +273,9 @@ public sealed class ProcessSupervisor : IDisposable
         }
         catch (Exception e)
         {
-            Log($"Die {which}-Protokolldatei konnte nicht geöffnet werden ({path}): {e.Message}");
+            Log(EasyServiceEvent.LoggingProblem,
+                $"Die {which}-Protokolldatei konnte nicht geöffnet werden ({path}): {e.Message}",
+                EventLogEntryType.Warning);
             return null;
         }
     }
@@ -270,7 +374,8 @@ public sealed class ProcessSupervisor : IDisposable
     private static Exception LastError(string what)
     {
         var err = Marshal.GetLastWin32Error();
-        return new System.ComponentModel.Win32Exception(err, $"{what} fehlgeschlagen: {new System.ComponentModel.Win32Exception(err).Message}");
+        return new System.ComponentModel.Win32Exception(err,
+            $"{what} fehlgeschlagen: {new System.ComponentModel.Win32Exception(err).Message}");
     }
 
     private IntPtr CreateJob(IntPtr process)
@@ -294,7 +399,8 @@ public sealed class ProcessSupervisor : IDisposable
         if (!Native.AssignProcessToJobObject(job, process))
         {
             LogQuiet("Hinweis: Der Prozess konnte keinem Job-Objekt zugeordnet werden; " +
-                     "Kindprozesse werden beim Beenden eventuell nicht mit beendet.");
+                     "Kindprozesse werden beim Beenden eventuell nicht mit beendet und die " +
+                     "Ressourcenmessung erfasst nur den Hauptprozess.");
             Native.CloseHandle(job);
             return IntPtr.Zero;
         }
@@ -404,8 +510,24 @@ public sealed class ProcessSupervisor : IDisposable
 
     public void RequestStop()
     {
+        if (!_stopRequested.IsSet)
+            Log(EasyServiceEvent.ServiceStopping, "Der Dienst wird beendet.");
         _stopRequested.Set();
         StopChild();
+    }
+
+    private static bool _ctrlCIgnored;
+
+    /// <summary>
+    /// Ctrl-C is delivered asynchronously to every process attached to the console, this one
+    /// included. The "ignore" flag therefore has to be set once and left in place - restoring it
+    /// right after GenerateConsoleCtrlEvent races the delivery and kills the supervisor itself.
+    /// </summary>
+    private static void EnsureCtrlCIgnored()
+    {
+        if (_ctrlCIgnored) return;
+        Native.SetConsoleCtrlHandler(IntPtr.Zero, true);
+        _ctrlCIgnored = true;
     }
 
     /// <summary>Escalating shutdown: Ctrl-C, then WM_CLOSE, then WM_QUIT, then terminate.</summary>
@@ -445,19 +567,23 @@ public sealed class ProcessSupervisor : IDisposable
         {
             if (_cfg.KillProcessTree && job != IntPtr.Zero)
             {
-                Log("Der Prozessbaum wird beendet.");
+                Log(EasyServiceEvent.ApplicationTerminated,
+                    "Die Anwendung hat nicht reagiert; der Prozessbaum wird beendet.", EventLogEntryType.Warning);
                 Native.TerminateJobObject(job, 0);
             }
             else
             {
-                Log("Der Prozess wird beendet.");
+                Log(EasyServiceEvent.ApplicationTerminated,
+                    "Die Anwendung hat nicht reagiert; der Prozess wird beendet.", EventLogEntryType.Warning);
                 Native.TerminateProcess(process, 0);
             }
             WaitExit(process, 5000);
         }
         else
         {
-            Log("Die Anwendung reagiert nicht und darf laut Konfiguration nicht hart beendet werden.");
+            Log(EasyServiceEvent.ApplicationTerminated,
+                "Die Anwendung reagiert nicht und darf laut Konfiguration nicht hart beendet werden.",
+                EventLogEntryType.Error);
         }
     }
 
@@ -466,20 +592,6 @@ public sealed class ProcessSupervisor : IDisposable
 
     private static bool WaitExit(IntPtr process, int ms) =>
         ms > 0 && Native.WaitForSingleObject(process, (uint)ms) == Native.WAIT_OBJECT_0;
-
-    private static bool _ctrlCIgnored;
-
-    /// <summary>
-    /// Ctrl-C is delivered asynchronously to every process attached to the console, this one
-    /// included. The "ignore" flag therefore has to be set once and left in place - restoring it
-    /// right after GenerateConsoleCtrlEvent races the delivery and kills the supervisor itself.
-    /// </summary>
-    private static void EnsureCtrlCIgnored()
-    {
-        if (_ctrlCIgnored) return;
-        Native.SetConsoleCtrlHandler(IntPtr.Zero, true);
-        _ctrlCIgnored = true;
-    }
 
     private bool TrySendCtrlC(uint pid)
     {
@@ -554,12 +666,22 @@ public sealed class ProcessSupervisor : IDisposable
         }
         outPump?.Join(2000);
         errPump?.Join(2000);
+
+        _state.CpuPercent = 0;
+        _state.WorkingSetBytes = 0;
+        _state.ProcessCount = 0;
     }
 
     public void Dispose()
     {
         RequestStop();
+        _sampleTimer.Dispose();
         CleanUpChild();
+
+        _state.ApplicationPid = 0;
+        _state.ApplicationStartedUtc = null;
+        SetState(SupervisorState.Stopped);
+
         if (!ReferenceEquals(_stdout, _stderr)) _stderr?.Dispose();
         _stdout?.Dispose();
         _events?.Dispose();

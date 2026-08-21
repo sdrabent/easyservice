@@ -68,6 +68,23 @@ public sealed class ServiceEditorForm : Form
     private readonly CheckBox _stopTerminate = new() { Text = "Prozess notfalls hart beenden", AutoSize = true, Checked = true };
     private readonly CheckBox _killTree = new() { Text = "Auch alle Kindprozesse beenden (Prozessbaum)", AutoSize = true, Checked = true };
 
+    // Überwachung
+    private readonly CheckBox _monEnabled = new() { Text = "Diesen Dienst an das Monitoring melden", AutoSize = true, Checked = true };
+    private readonly NumericUpDown _warnRestarts = Ui.Spin(0, 10_000, 3);
+    private readonly NumericUpDown _critRestarts = Ui.Spin(0, 10_000, 10);
+    private readonly NumericUpDown _warnCpu = Ui.Spin(0, 100, 0);
+    private readonly NumericUpDown _critCpu = Ui.Spin(0, 100, 0);
+    private readonly NumericUpDown _warnMemory = Ui.Spin(0, 1_048_576, 0, 64);
+    private readonly NumericUpDown _critMemory = Ui.Spin(0, 1_048_576, 0, 64);
+    private readonly TextBox _integration = new()
+    {
+        Multiline = true,
+        ReadOnly = true,
+        ScrollBars = ScrollBars.Vertical,
+        Height = 190,
+        BackColor = SystemColors.Window,
+    };
+
     private readonly CheckBox _startAfterSave = new() { Text = "Dienst nach dem Anlegen starten", AutoSize = true, Checked = true };
 
     public ServiceEditorForm(ServiceConfig config, bool isNew)
@@ -76,6 +93,7 @@ public sealed class ServiceEditorForm : Form
         _isNew = isNew;
 
         Text = isNew ? "Neuen Dienst anlegen" : $"Dienst bearbeiten - {config.ServiceName}";
+        Icon = Ui.AppIcon;
         StartPosition = FormStartPosition.CenterParent;
         MinimumSize = new Size(720, 620);
         Size = new Size(780, 700);
@@ -98,6 +116,7 @@ public sealed class ServiceEditorForm : Form
         tabs.TabPages.Add(BuildEnvironmentTab());
         tabs.TabPages.Add(BuildLoggingTab(outPanel, errPanel));
         tabs.TabPages.Add(BuildExitTab());
+        tabs.TabPages.Add(BuildMonitoringTab());
         tabs.TabPages.Add(BuildShutdownTab());
 
         var ok = new Button { Text = isNew ? "Dienst anlegen" : "Speichern", Width = 130, Height = 30, DialogResult = DialogResult.None };
@@ -322,6 +341,74 @@ public sealed class ServiceEditorForm : Form
         return page;
     }
 
+    private TabPage BuildMonitoringTab()
+    {
+        var page = new TabPage("Überwachung");
+        var p = Ui.FormPanel();
+
+        Ui.AddFullRow(p, Ui.Hint(
+            "Windows meldet einen Dienst als \"wird ausgeführt\", solange EasyService selbst läuft - auch " +
+            "wenn die Anwendung dahinter im Minutentakt abstürzt. Deshalb bewertet EasyService zusätzlich " +
+            "Neustarthäufigkeit, CPU und Speicher und gibt das Ergebnis an das Monitoring weiter."));
+        Ui.AddFullRow(p, _monEnabled);
+
+        Ui.AddSpacer(p, "Schwellwerte");
+        Ui.AddFullRow(p, Ui.Hint("0 bedeutet: diesen Wert nicht prüfen."));
+        Ui.AddRow(p, "Neustarts/Stunde - Warnung:", _warnRestarts);
+        Ui.AddRow(p, "Neustarts/Stunde - Kritisch:", _critRestarts);
+        Ui.AddRow(p, "CPU in % - Warnung:", _warnCpu);
+        Ui.AddRow(p, "CPU in % - Kritisch:", _critCpu);
+        Ui.AddFullRow(p, Ui.Hint("100 % bedeutet: alle Kerne der Maschine voll ausgelastet."));
+        Ui.AddRow(p, "Arbeitsspeicher MB - Warnung:", _warnMemory);
+        Ui.AddRow(p, "Arbeitsspeicher MB - Kritisch:", _critMemory);
+        Ui.AddFullRow(p, Ui.Hint("Gemessen wird der gesamte Prozessbaum, nicht nur der Hauptprozess."));
+
+        Ui.AddSpacer(p, "Anbindung an das Monitoring");
+        Ui.AddFullRow(p, _integration);
+        _integration.Font = Ui.MonoFont;
+
+        var copy = new Button { Text = "In die Zwischenablage kopieren", AutoSize = true };
+        copy.Click += (_, _) =>
+        {
+            try { Clipboard.SetText(_integration.Text); }
+            catch (Exception e) { Ui.ShowError(this, "Zwischenablage", e); }
+        };
+        Ui.AddFullRow(p, copy);
+
+        _serviceName.TextChanged += (_, _) => RefreshIntegrationText();
+        RefreshIntegrationText();
+
+        page.Controls.Add(p);
+        return page;
+    }
+
+    private void RefreshIntegrationText()
+    {
+        var exe = Core.ServiceRegistry.ExecutablePath;
+        var name = _serviceName.Text.Trim().Length > 0 ? _serviceName.Text.Trim() : "<Dienstname>";
+        var nl = System.Environment.NewLine;
+
+        _integration.Text = string.Join(nl, new[]
+        {
+            "Checkmk - alle überwachten Dienste in einem Local Check:",
+            @"  Datei: C:\ProgramData\checkmk\agent\local\easyservice.bat",
+            $"  Inhalt: @\"{exe}\" checkmk",
+            "",
+            "Prometheus - Textfile-Collector des node_exporter, z. B. minütlich per Aufgabenplanung:",
+            $"  \"{exe}\" prometheus --output C:\\ProgramData\\node_exporter\\textfile\\easyservice.prom",
+            "",
+            "Nagios / Icinga - ein Dienst, Exit-Code 0/1/2/3:",
+            $"  \"{exe}\" check \"{name}\"",
+            "",
+            "Zabbix - in zabbix_agentd.conf:",
+            $"  UserParameter=easyservice.discovery,\"{exe}\" zabbix-discovery",
+            $"  UserParameter=easyservice.check[*],\"{exe}\" check \"$1\"",
+            "",
+            "Beliebiges Tool - vollständiger Zustand als JSON:",
+            $"  \"{exe}\" json",
+        });
+    }
+
     private TabPage BuildShutdownTab()
     {
         var page = new TabPage("Herunterfahren");
@@ -422,6 +509,14 @@ public sealed class ServiceEditorForm : Form
         _throttle.Value = Math.Clamp(c.ThrottleMs, 0, 3_600_000);
         RefreshExitCodes();
 
+        _monEnabled.Checked = c.MonitoringEnabled;
+        _warnRestarts.Value = Math.Clamp(c.WarnRestartsPerHour, 0, 10_000);
+        _critRestarts.Value = Math.Clamp(c.CritRestartsPerHour, 0, 10_000);
+        _warnCpu.Value = Math.Clamp(c.WarnCpuPercent, 0, 100);
+        _critCpu.Value = Math.Clamp(c.CritCpuPercent, 0, 100);
+        _warnMemory.Value = Math.Clamp(c.WarnMemoryMb, 0, 1_048_576);
+        _critMemory.Value = Math.Clamp(c.CritMemoryMb, 0, 1_048_576);
+
         _stopConsole.Checked = c.StopUseConsole;
         _stopConsoleMs.Value = Math.Clamp(c.StopConsoleMs, 0, 600_000);
         _stopWindow.Checked = c.StopUseWindow;
@@ -502,6 +597,14 @@ public sealed class ServiceEditorForm : Form
         c.RestartDelayMs = (int)_restartDelay.Value;
         c.ThrottleMs = (int)_throttle.Value;
 
+        c.MonitoringEnabled = _monEnabled.Checked;
+        c.WarnRestartsPerHour = (int)_warnRestarts.Value;
+        c.CritRestartsPerHour = (int)_critRestarts.Value;
+        c.WarnCpuPercent = (int)_warnCpu.Value;
+        c.CritCpuPercent = (int)_critCpu.Value;
+        c.WarnMemoryMb = (int)_warnMemory.Value;
+        c.CritMemoryMb = (int)_critMemory.Value;
+
         c.StopUseConsole = _stopConsole.Checked;
         c.StopConsoleMs = (int)_stopConsoleMs.Value;
         c.StopUseWindow = _stopWindow.Checked;
@@ -550,6 +653,7 @@ internal sealed class ServicePickerDialog : Form
                                         StringComparer.OrdinalIgnoreCase);
 
         Text = "Abhängigkeiten auswählen";
+        Icon = Ui.AppIcon;
         StartPosition = FormStartPosition.CenterParent;
         ClientSize = new Size(460, 520);
         MinimizeBox = MaximizeBox = false;

@@ -40,7 +40,7 @@ public static class ServiceHost
             if (!Native.StartServiceCtrlDispatcherW(table))
             {
                 var err = Marshal.GetLastWin32Error();
-                EventLogSink.Error(serviceName,
+                EventLogSink.Error(serviceName, EasyServiceEvent.ConfigurationProblem,
                     $"StartServiceCtrlDispatcher ist fehlgeschlagen ({err}). " +
                     "easyservice.exe run <Dienst> ist nur für den Start durch den Dienst-Manager gedacht.");
                 return err;
@@ -103,7 +103,8 @@ public static class ServiceHost
         }
         catch (Exception e)
         {
-            EventLogSink.Error(_serviceName, "Der Dienst wurde durch einen Fehler beendet: " + e);
+            EventLogSink.Error(_serviceName, EasyServiceEvent.ApplicationStartFailed,
+                "Der Dienst wurde durch einen Fehler beendet: " + e);
             Fail("Unerwarteter Fehler: " + e.Message, 1);
         }
         finally
@@ -133,7 +134,11 @@ public static class ServiceHost
                 var t = new Thread(() =>
                 {
                     try { _supervisor?.RequestStop(); }
-                    catch (Exception e) { EventLogSink.Error(_serviceName, "Fehler beim Beenden: " + e.Message); }
+                    catch (Exception e)
+                    {
+                        EventLogSink.Error(_serviceName, EasyServiceEvent.ServiceStopping,
+                            "Fehler beim Beenden: " + e.Message);
+                    }
                 })
                 { IsBackground = true, Name = "easyservice-stop" };
                 t.Start();
@@ -159,7 +164,7 @@ public static class ServiceHost
 
     private static void Fail(string message, uint exitCode)
     {
-        EventLogSink.Error(_serviceName, message);
+        EventLogSink.Error(_serviceName, EasyServiceEvent.ConfigurationProblem, message);
         _status.dwWin32ExitCode = 1066; // ERROR_SERVICE_SPECIFIC_ERROR
         _status.dwServiceSpecificExitCode = exitCode;
         SetState(Native.SERVICE_STOPPED, 0);
