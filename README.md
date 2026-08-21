@@ -10,7 +10,7 @@ Es ist eine Alternative zu [NSSM](https://nssm.cc/) mit demselben Grundprinzip
 (ein Wrapper-Prozess beaufsichtigt die eigentliche Anwendung), aber vollständig
 GUI-gesteuert, auf Deutsch und mit einem eingebauten Live-Protokoll-Viewer.
 
-[![build](https://github.com/OWNER/easyservice/actions/workflows/build.yml/badge.svg)](https://github.com/OWNER/easyservice/actions/workflows/build.yml)
+[![build](https://github.com/sdrabent/easyservice/actions/workflows/build.yml/badge.svg)](https://github.com/sdrabent/easyservice/actions/workflows/build.yml)
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
 
 ---
@@ -213,7 +213,7 @@ Benötigt wird das [.NET 8 SDK](https://dotnet.microsoft.com/download/dotnet/8.0
 auf einem Windows-Rechner.
 
 ```cmd
-git clone https://github.com/OWNER/easyservice.git
+git clone https://github.com/sdrabent/easyservice.git
 cd easyservice
 dotnet build EasyService.sln -c Release
 ```
