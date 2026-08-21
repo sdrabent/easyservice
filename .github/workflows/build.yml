@@ -1,0 +1,72 @@
+name: build
+
+on:
+  push:
+    branches: [main]
+    tags: ["v*"]
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    runs-on: windows-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: "8.0.x"
+
+      - name: Restore
+        run: dotnet restore EasyService.sln
+
+      - name: Build
+        run: dotnet build EasyService.sln -c Release --no-restore
+
+      - name: Test
+        run: dotnet run --project tests/EasyService.Tests/EasyService.Tests.csproj -c Release --no-build
+
+      - name: Publish (self-contained, no runtime needed)
+        run: >
+          dotnet publish src/EasyService/EasyService.csproj
+          -c Release -r win-x64 --self-contained true
+          -p:PublishSingleFile=true
+          -p:EnableCompressionInSingleFile=true
+          -p:IncludeNativeLibrariesForSelfExtract=true
+          -o publish/standalone
+
+      - name: Publish (framework-dependent, needs .NET 8 Desktop Runtime)
+        run: >
+          dotnet publish src/EasyService/EasyService.csproj
+          -c Release -r win-x64 --self-contained false
+          -p:PublishSingleFile=true
+          -o publish/framework-dependent
+
+      - name: Collect release files
+        shell: pwsh
+        run: |
+          New-Item -ItemType Directory -Force artifacts | Out-Null
+          Copy-Item publish/standalone/easyservice.exe artifacts/easyservice.exe
+          Copy-Item publish/framework-dependent/easyservice.exe artifacts/easyservice-framework-dependent.exe
+          Get-ChildItem artifacts | ForEach-Object {
+            $hash = (Get-FileHash $_.FullName -Algorithm SHA256).Hash
+            "$hash  $($_.Name)" | Out-File -Append -Encoding utf8 artifacts/SHA256SUMS.txt
+          }
+          Get-Content artifacts/SHA256SUMS.txt
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: easyservice
+          path: artifacts/*
+
+      - name: Create release
+        if: startsWith(github.ref, 'refs/tags/v')
+        uses: softprops/action-gh-release@v2
+        with:
+          files: artifacts/*
+          generate_release_notes: true
