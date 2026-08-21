@@ -67,6 +67,8 @@ die Rechte beim Start per UAC an).
    Neustart-Richtlinie und Überwachungsschwellen werden vorbelegt und angezeigt.
 4. **Dienst anlegen** – fertig.
 
+![Schnelleinrichtung](assets/screenshot-schnelleinrichtung.png)
+
 Das ist die *Fast Lane*: vier Felder statt neun Registerkarten. Sie deckt den Normalfall
 ab und zeigt darunter, was sie automatisch eingerichtet hat, statt es zu erfragen.
 Das Dienstkonto wird für den nächsten Dienst gemerkt; das Kennwort bleibt dabei
