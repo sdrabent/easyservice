@@ -329,7 +329,7 @@ internal static class S
     /// <summary>Example: set exit code 0 to "Stop the service" so a program that finished cleanly is not restarted forever.</summary>
     public static string Editor_Hint_ExitCodes => Get("Editor_Hint_ExitCodes");
 
-    /// <summary>0 = record no history. One row per minute, roughly 100 KB per service and month, stored as CSV under %ProgramData%\EasyService\history.</summary>
+    /// <summary>0 = record no history. One row per minute, about 80 KB per service and day, stored as CSV under %ProgramData%\EasyService\history.</summary>
     public static string Editor_Hint_HistoryDays => Get("Editor_Hint_HistoryDays");
 
     /// <summary>Only possible with the local system account. Modern Windows versions isolate services in session 0; windows of the application are not visible to logged-on u...</summary>

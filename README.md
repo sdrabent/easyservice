@@ -1,304 +1,361 @@
+<div align="center">
+
 # EasyService
 
-**Windows-Dienste per Mausklick anlegen, überwachen und protokollieren.**
+**Turn any program into a Windows service — and actually know how it is doing.**
 
-EasyService macht aus jeder beliebigen `.exe`, `.bat` oder `.cmd` einen vollwertigen
-Windows-Dienst – ohne `sc.exe`-Kommandozeilen, ohne Registry-Gefrickel und ohne dass die
-Anwendung selbst etwas von Windows-Diensten wissen muss.
+An open-source alternative to NSSM, built for administrators who have to answer for
+what runs on their servers.
 
-Es ist eine Alternative zu [NSSM](https://nssm.cc/) mit demselben Grundprinzip
-(ein Wrapper-Prozess beaufsichtigt die eigentliche Anwendung), aber vollständig
-GUI-gesteuert, auf Deutsch und mit einem eingebauten Live-Protokoll-Viewer.
+**Deutsch:** [README.de.md](README.de.md)
 
 [![build](https://github.com/sdrabent/easyservice/actions/workflows/build.yml/badge.svg)](https://github.com/sdrabent/easyservice/actions/workflows/build.yml)
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
+[![Downloads](https://img.shields.io/github/downloads/sdrabent/easyservice/total)](../../releases)
+[![Languages](https://img.shields.io/badge/UI-en%20%7C%20de%20%7C%20fr%20%7C%20es%20%7C%20it-informational)](#languages)
 
-![EasyService-Übersicht](assets/screenshot-uebersicht.png)
-
-*Drei überwachte Dienste: einer läuft sauber, einer startet im Dauerlauf neu und wird
-rot markiert, einer ist bewusst gestoppt. Windows selbst würde für die ersten beiden
-gleichermaßen „Wird ausgeführt" melden.*
+</div>
 
 ---
 
-## Warum EasyService?
+## The lie your monitoring is telling you
+
+```
+C:\> sc query MyImporter
+
+        SERVICE_NAME: MyImporter
+        STATE       : 4  RUNNING
+```
+
+Looks fine. It is not.
+
+That service is a wrapper — NSSM, srvany, a scheduled task hack, whatever. The thing
+Windows reports as `RUNNING` is the *wrapper*. Behind it, the actual importer has crashed
+and been restarted **37 times in the last hour**, and every check you have built on
+`sc query`, `services.msc` or a Windows-service check in your monitoring says **OK**.
+
+Nobody finds out until a customer calls.
+
+## What EasyService does about it
+
+EasyService is the wrapper *and* the witness. It counts the restarts, measures the
+process tree, and hands the verdict to the monitoring you already run.
+
+**One line in your Checkmk agent** — `C:\ProgramData\checkmk\agent\local\easyservice.bat`:
+
+```bat
+@"C:\Program Files\EasyService\easyservice.exe" checkmk
+```
+
+and every supervised service becomes a Checkmk service with graphs and thresholds:
+
+```
+0 EasyService_MyDaemon   uptime=86400s|restarts_1h=0;3;10;0|cpu=2.5%;80;95;0;100|mem=140509184B|procs=2   Running for 1d 0h, PID 1234, CPU 2.5 %, RAM 134 MB, 0 restarts/h
+2 EasyService_MyImporter uptime=3s|restarts_1h=37;3;10;0|cpu=0%;80;95;0;100|mem=8192000B|procs=1          37 restarts in the last hour (critical from 10) - Running for 3s, PID 9876
+```
+
+There it is. **Critical**, with the reason, with perfdata, without you writing a single
+check script.
+
+Not a Checkmk shop? Same data, your format:
+
+| Command | For |
+|---|---|
+| `easyservice checkmk` | Checkmk local check, one line per service, with perfdata |
+| `easyservice prometheus --output …` | Prometheus textfile collector (atomic replace) |
+| `easyservice check <name>` | Nagios/Icinga plugin, exit code 0/1/2/3 |
+| `easyservice zabbix-discovery` | Zabbix low-level discovery |
+| `easyservice json` | Everything, for whatever you have built yourself |
+
+And because message text is a terrible thing to alert on, every event also lands in the
+Windows application log with a **stable event ID**:
+
+| ID | Meaning |
+|---|---|
+| **1004** | Restart throttled — the application is dying faster than it starts |
+| **1005** | Start failed |
+| **1008** | Application terminated by force |
+
+```powershell
+Get-WinEvent -FilterHashtable @{ LogName='Application'; ProviderName='EasyService'; Id=1004,1005,1008 }
+```
+
+Those IDs never change and never translate. → **[docs/monitoring.md](docs/monitoring.md)**
+
+## Logging you do not have to build yourself
+
+Console programs write to stdout and stderr. Windows services do not have a console.
+That gap is where most homegrown wrapper scripts go to die.
+
+EasyService captures both streams from a real pipe and writes them to files, with:
+
+- **Rotation** by size and/or time, with a capped number of archives — no more 4 GB log
+  eating the system drive over Christmas
+- **Optional timestamps** per line, for applications that do not bother
+- **Merge or separate** stdout and stderr, your call
+- A **diagnostic log per service** recording what the supervisor itself did: started,
+  exited with code 3, throttled, terminated
+
+...and a **live viewer built in**, so you do not RDP in and open Notepad:
+
+- attaches to the file while the service keeps writing (`FileShare.ReadWrite`)
+- follows rotation on its own
+- offers the archived files from a dropdown
+- filters by text
+- second tab shows the Windows event log entries for that service
+
+Point `mk_logwatch` at `%ProgramData%\EasyService\logs\*-stderr.log` and your application's
+own error output becomes a monitored log — the [monitoring guide](docs/monitoring.md) has
+the config.
+
+## History: what did this thing do last night?
+
+![EasyService overview](assets/screenshot-uebersicht.png)
+
+*Three supervised services. One healthy, one restarting in a loop and flagged red, one
+deliberately stopped. Windows would report the first two identically.*
+
+Double-click a service and you get its past, not just its present:
+
+- **CPU and memory over time** — separate charts, because they are separate scales.
+  The line is the per-minute average, the band the peak, so a service that idles at 2 %
+  and spikes to 90 % every minute does not hide behind a flat average.
+- **Restart markers** on the timeline
+- **Key figures** for the window: restarts, CPU average and peak, memory average and peak
+- **Event list** with exit codes
+- 1 hour to 30 days, exportable as CSV
+
+Stored as plain **CSV** under `%ProgramData%\EasyService\history\` — about 80 KB per
+service and day, so roughly 2.3 MB for the 30 days kept by default (adjustable, 0 turns
+recording off). In five years you will still be able to open it in Excel without
+EasyService installed.
+
+## 60 seconds to your first service
+
+![Quick setup](assets/screenshot-schnelleinrichtung.png)
+
+1. Start `easyservice.exe`, confirm UAC.
+2. **Add service…** — or drop the `.exe` straight onto the window.
+3. Pick the program. Service name, startup directory, log paths, rotation, restart policy
+   and monitoring thresholds are filled in and *shown to you*.
+4. **Create service.** Done.
+
+Four fields instead of nine tabs. The service account is remembered for the next one;
+the password stays in memory for the session only, unless you explicitly ask for it to be
+stored (DPAPI, your Windows account, not machine-wide).
+
+If the first start fails, EasyService offers you the log immediately — it is almost
+always a wrong path or a wrong argument, and you will see which in about four seconds.
+
+Need the full control panel? **Advanced settings…** opens the nine-tab editor.
+
+Scripting a rollout instead?
+
+```cmd
+easyservice install MyDaemon "C:\apps\daemon.exe" --config C:\apps\daemon.yml
+easyservice status MyDaemon   :: exit code 0 = running, 3 = not
+```
+
+## How it compares
 
 | | `sc.exe` | NSSM | **EasyService** |
 |---|---|---|---|
-| Beliebige Programme als Dienst | ✗ | ✓ | ✓ |
-| Grafische Oberfläche | ✗ | teilweise | **✓ vollständig** |
-| Englisch **und** Deutsch | ✗ | nur Englisch | **✓ beides** |
-| **Schnelleinrichtung mit Vorbelegung** | ✗ | ✗ | **✓** |
-| Dark Mode | ✗ | ✗ | ✓ |
-| stdout/stderr in Dateien | ✗ | ✓ | ✓ |
-| Automatische Log-Rotation | ✗ | ✓ | ✓ |
-| **Live-Protokollansicht integriert** | ✗ | ✗ | **✓** |
-| Neustart-Richtlinie pro Exit-Code | ✗ | ✓ | ✓ |
-| Gestufter, sauberer Shutdown | ✗ | ✓ | ✓ |
-| Prozessbaum sicher beenden | ✗ | ✓ | ✓ |
-| Einzelne .exe, keine Installation | ✓ | ✓ | ✓ |
-| **Monitoring-Anbindung** | ✗ | ✗ | **✓ Checkmk, Prometheus, Zabbix, Nagios** |
-| **Flapping-Erkennung** | ✗ | ✗ | **✓** |
-| **Verlauf: CPU, Speicher, Neustarts** | ✗ | ✗ | **✓** |
-| Open Source | ✗ | ✓ (Public Domain) | ✓ (MIT) |
+| Run any program as a service | ✗ | ✓ | ✓ |
+| stdout/stderr to files | ✗ | ✓ | ✓ |
+| Automatic log rotation | ✗ | ✓ | ✓ |
+| Restart policy per exit code | ✗ | ✓ | ✓ |
+| Staged, graceful shutdown | ✗ | ✓ | ✓ |
+| Reliable process-tree cleanup | ✗ | ✓ | ✓ |
+| Single .exe, no installation | ✓ | ✓ | ✓ |
+| Graphical interface | ✗ | partly | **✓ complete** |
+| **Monitoring integration** | ✗ | ✗ | **✓ Checkmk, Prometheus, Zabbix, Nagios** |
+| **Flapping detection** | ✗ | ✗ | **✓** |
+| **Stable event IDs to alert on** | ✗ | ✗ | **✓** |
+| **Built-in live log viewer** | ✗ | ✗ | **✓** |
+| **History: CPU, memory, restarts** | ✗ | ✗ | **✓** |
+| **Quick setup with sensible defaults** | ✗ | ✗ | **✓** |
+| **Five UI languages** | ✗ | English only | **✓ en, de, fr, es, it** |
+| Dark mode | ✗ | ✗ | ✓ |
+| Open source | ✗ | ✓ (public domain) | ✓ (MIT) |
+
+NSSM is a good tool and EasyService owes it the idea. What it does not do is tell your
+monitoring anything.
 
 ## Download
 
-Fertige Binärdateien gibt es unter **[Releases](../../releases)**:
+**[→ Releases](../../releases)**
 
-| Datei | Beschreibung |
+| File | Description |
 |---|---|
-| `easyservice.exe` | Alles enthalten, läuft sofort. Keine Installation nötig. |
-| `easyservice-framework-dependent.exe` | Nur ~300 KB, benötigt das [.NET 9 Desktop Runtime](https://dotnet.microsoft.com/download/dotnet/9.0). |
+| `easyservice.exe` | Everything included, runs straight away. No installation. |
+| `easyservice-framework-dependent.exe` | Only ~300 KB, needs the [.NET 9 Desktop Runtime](https://dotnet.microsoft.com/download/dotnet/9.0). |
 
-Die Datei irgendwohin legen (z. B. `C:\Tools\easyservice.exe`) und per Doppelklick starten.
+> **Important:** the path to `easyservice.exe` is stored in every service you create.
+> Move the file later and those services stop working. Pick a permanent location right
+> away, for example `C:\Program Files\EasyService\` — a directory ordinary users cannot
+> write to, which also matters because the service runs as SYSTEM.
 
-> **Wichtig:** Der Pfad zur `easyservice.exe` wird im Dienst hinterlegt. Wird die Datei später
-> verschoben, starten die damit angelegten Dienste nicht mehr. Am besten gleich einen festen
-> Ort wählen, etwa `C:\Program Files\EasyService\`.
+Requirements: Windows 10 / Server 2016 or newer, x64, administrator rights (managing
+services on Windows always requires elevation — EasyService asks via UAC at start).
 
-Voraussetzungen: Windows 10 / Server 2016 oder neuer, x64, Administratorrechte
-(Dienste zu verwalten geht unter Windows grundsätzlich nur erhöht – EasyService fordert
-die Rechte beim Start per UAC an).
+The binaries are **not code-signed yet**, so SmartScreen will warn on first download.
+Checksums are published with every release.
 
-## Schnellstart
+---
 
-1. `easyservice.exe` starten und die UAC-Abfrage bestätigen.
-2. **Dienst hinzufügen…** anklicken – oder die `.exe` einfach ins Fenster ziehen.
-3. Programm auswählen. Dienstname, Startverzeichnis, Protokollpfade, Rotation,
-   Neustart-Richtlinie und Überwachungsschwellen werden vorbelegt und angezeigt.
-4. **Dienst anlegen** – fertig.
+## Everything else
 
-![Schnelleinrichtung](assets/screenshot-schnelleinrichtung.png)
+### The editor, tab by tab
 
-Das ist die *Fast Lane*: vier Felder statt neun Registerkarten. Sie deckt den Normalfall
-ab und zeigt darunter, was sie automatisch eingerichtet hat, statt es zu erfragen.
-Das Dienstkonto wird für den nächsten Dienst gemerkt; das Kennwort bleibt dabei
-standardmäßig nur im Speicher der laufenden Sitzung.
+**Application** — program, startup directory and arguments.
 
-Wer mehr braucht, kommt über **Erweiterte Einstellungen…** in den vollständigen Editor
-mit neun Registerkarten. Schlägt der erste Start fehl, bietet EasyService direkt das
-Protokoll an – die Ursache ist fast immer ein falscher Pfad oder ein falsches Argument.
+**Details** — display name, description, startup type (automatic / delayed / manual /
+disabled), process priority, processor affinity and an optional startup delay.
 
-Für Skripte:
+**Log on** — local system account, local service, network service or a user account. For
+a user account EasyService grants the *Log on as a service* right
+(`SeServiceLogonRight`) automatically, which otherwise has to be set by hand in
+`secpol.msc`.
 
-```cmd
-easyservice install MeinDaemon "C:\apps\daemon.exe" --config C:\apps\daemon.yml
-```
+**Dependencies** — other services that have to run first, from a picker.
 
-## Funktionen im Detail
+**Environment** — additional environment variables (`NAME=VALUE`), either extending or
+completely replacing the system environment.
 
-Der Dienst-Editor ist wie das Eigenschaftenfenster von NSSM in Registerkarten aufgeteilt:
+**Logging** — the file, rotation and timestamp settings described above.
 
-**Anwendung** — Programm, Startverzeichnis und Argumente.
+**Exit actions** — restart, ignore, or stop the service, optionally per exit code. A
+throttle window prevents restart loops: if the application exits faster than configured,
+EasyService doubles the wait, up to 60 seconds.
 
-**Details** — Anzeigename, Beschreibung, Starttyp (automatisch / verzögert / manuell /
-deaktiviert), Prozesspriorität, Prozessor-Affinität und eine optionale Startverzögerung.
+**Monitoring** — thresholds for restarts per hour, CPU and memory, plus ready-made
+copy-paste snippets for the Checkmk, Prometheus, Nagios and Zabbix agents.
 
-**Anmelden** — lokales Systemkonto, lokaler Dienst, Netzwerkdienst oder ein Benutzerkonto.
-Bei einem Benutzerkonto vergibt EasyService automatisch das Recht *Als Dienst anmelden*
-(`SeServiceLogonRight`), das sonst per `secpol.msc` von Hand gesetzt werden müsste.
+**Shutdown** — the staged shutdown. Every stage switchable, each with its own timeout:
 
-**Abhängigkeiten** — andere Dienste, die vorher laufen müssen, per Auswahlliste.
+1. `Ctrl+C` to the application's console (for console programs)
+2. `WM_CLOSE` to all of the application's windows
+3. `WM_QUIT` to all of the application's threads
+4. Hard terminate — optionally including all child processes
 
-**Umgebung** — zusätzliche Umgebungsvariablen (`NAME=WERT`), wahlweise ergänzend oder
-als vollständiger Ersatz der Systemumgebung.
+### Safety net when deleting
 
-**Protokollierung** — getrennte oder gemeinsame Dateien für stdout und stderr, anhängen
-oder überschreiben, optionale Zeitstempel pro Zeile, Rotation nach Größe und/oder Zeit
-und eine begrenzte Zahl aufbewahrter Archive.
+Services *not* created with EasyService cannot be edited, and can only be removed after
+an extra confirmation in which the service name has to be typed out. A misclick cannot
+destroy a system service.
 
-**Beenden-Aktionen** — was passieren soll, wenn sich die Anwendung selbst beendet:
-neu starten, ignorieren oder den Dienst beenden – wahlweise abhängig vom konkreten
-Exit-Code. Ein Throttle-Fenster verhindert Neustartschleifen: Beendet sich die Anwendung
-schneller als eingestellt, verdoppelt EasyService die Wartezeit bis maximal 60 Sekunden.
+### Languages
 
-**Herunterfahren** — der gestufte Shutdown. Jede Stufe ist einzeln abschaltbar und hat
-ein eigenes Zeitlimit:
-
-1. `Strg+C` an die Konsole der Anwendung (für Konsolenprogramme)
-2. `WM_CLOSE` an alle Fenster der Anwendung
-3. `WM_QUIT` an alle Threads der Anwendung
-4. Harter Abbruch – wahlweise samt aller Kindprozesse
-
-### Sprache
-
-Die Oberfläche gibt es auf **Englisch und Deutsch**. Ohne Zutun folgt EasyService der
-Sprache, in der Windows läuft; über das Menü **Sprache** lässt sie sich fest einstellen.
-
-Für Server, auf denen das Monitoring unter einem anderen Konto läuft als der einrichtende
-Administrator, gibt es eine maschinenweite Vorgabe:
+English, German, French, Spanish and Italian. Left alone, EasyService follows the
+language Windows runs in; the **Language** menu pins it. For servers where monitoring
+runs under a different account than the administrator who set it up:
 
 ```cmd
 reg add HKLM\SOFTWARE\EasyService /v Language /t REG_SZ /d en /f
 ```
 
-Statuscodes, Metriknamen, Perfdaten, JSON-Felder und Ereignis-IDs sind immer
-sprachunabhängig — nur die Meldungstexte übersetzen sich. Übersetzungen liegen als
-`.resx` unter `src/EasyService/Resources/` und lassen sich mit jedem gängigen
-Übersetzungswerkzeug bearbeiten; weitere Sprachen sind willkommen.
+Status codes, metric names, perfdata, JSON fields and event IDs never translate — only
+the human-readable messages do, so alerts keep working across languages. Translations are
+`.resx` files under `src/EasyService/Resources/`.
 
-### Live-Protokollansicht
+> The French, Spanish and Italian translations have not yet been reviewed by native
+> speakers. Corrections are very welcome.
 
-Der eingebaute Viewer hängt sich an die laufende Protokolldatei (`FileShare.ReadWrite`),
-zeigt neue Zeilen automatisch an, folgt der Rotation, bietet die archivierten Dateien zur
-Auswahl an und kann nach Text filtern. Eine zweite Registerkarte zeigt die Ereignisse, die
-EasyService selbst ins Windows-Anwendungsprotokoll geschrieben hat – Start, Absturz,
-Neustart, Exit-Codes.
-
-### Monitoring
-
-Der Windows-Dienst-Manager kennt nur eine Frage: läuft der Dienstprozess? Bei einem
-Wrapper ist der Dienstprozess aber EasyService selbst — die eigentliche Anwendung kann
-dahinter im Minutentakt abstürzen, und `sc query` meldet weiter fröhlich `RUNNING`.
-
-EasyService misst deshalb selbst: Neustarts pro Stunde, Laufzeit, CPU und Speicher des
-gesamten Prozessbaums, letzter Exit-Code — und gibt das in den Formaten aus, die die
-gängigen Systeme direkt lesen:
-
-```cmd
-easyservice checkmk       :: Local Check, eine Zeile je Dienst, mit Perfdaten
-easyservice prometheus    :: Exposition-Format, auch als --output für node_exporter
-easyservice check <Name>  :: Nagios/Icinga-Plugin mit Exit-Code 0/1/2/3
-easyservice json          :: alles, für Zabbix und eigene Skripte
-```
-
-Zusätzlich landet jedes Ereignis mit einer **stabilen Ereignis-ID** im
-Windows-Anwendungsprotokoll (1004 = Neustart gedrosselt, 1005 = Start fehlgeschlagen,
-1008 = hart beendet), sodass sich ohne Textmustersuche alarmieren lässt.
-
-Alle Einzelheiten samt fertiger Konfigurationsschnipsel: **[docs/monitoring.md](docs/monitoring.md)**.
-
-### Verlauf
-
-Doppelklick auf einen Dienst öffnet seinen **Verlauf**: was er in der Vergangenheit an
-CPU und Speicher gekostet hat, wie oft er neu gestartet wurde und was ihm zugestoßen ist.
-
-Der überwachende Prozess verdichtet seine 5-Sekunden-Messungen auf **eine Zeile pro
-Minute** und schreibt sie als CSV nach `%ProgramData%\EasyService\history\`. Das sind
-rund 100 KB je Dienst und Monat; voreingestellt sind 30 Tage, einstellbar auf der
-Registerkarte *Überwachung* (0 schaltet die Aufzeichnung ab).
-
-Im Fenster:
-
-- **Kennzahlen** für den gewählten Zeitraum: Neustarts, CPU im Mittel und in der Spitze,
-  Speicher im Mittel und in der Spitze
-- **Zwei Diagramme** – CPU und Speicher getrennt, bewusst nicht mit zwei y-Achsen in
-  einem Rahmen. Die Linie zeigt den Minutenmittelwert, die Fläche die Spitze: ein Dienst,
-  der bei 2 % dümpelt und jede Minute auf 90 % springt, sieht damit anders aus als einer,
-  der konstant bei 40 % liegt. Gepunktete senkrechte Linien markieren Starts der Anwendung.
-- **Ereignisliste** mit Zeitpunkt, Ereignis und Exit-Code
-- Zeitraum 1 Stunde bis 30 Tage, Export des gezeigten Ausschnitts als CSV
-
-Das Format ist bewusst CSV: eine Datei, die ein Administrator in fünf Jahren auch ohne
-EasyService noch öffnen, greppen oder in Excel auswerten kann.
-
-### Sicherheitsnetz beim Löschen
-
-Dienste, die *nicht* mit EasyService angelegt wurden, lassen sich nicht bearbeiten und nur
-nach einer zusätzlichen Bestätigung entfernen, bei der der Dienstname abgetippt werden muss.
-Damit kann ein Fehlklick keinen Systemdienst zerstören.
-
-## Kommandozeile
-
-Die GUI ist der Hauptweg, für Deployment-Skripte und CI gibt es dieselben Funktionen auch
-ohne Oberfläche:
+### Command line
 
 ```
-easyservice list
-easyservice install <Name> <Programm> [Argumente...]
-easyservice remove <Name>
-easyservice start|stop|restart|status <Name>
-easyservice gui [Name]
+easyservice list [--json]
+easyservice install <name> <program> [arguments...]
+easyservice remove <name>
+easyservice start|stop|restart|status <name>
+easyservice checkmk | prometheus [--output <file>] | check <name> | json | zabbix-discovery
+easyservice gui [name] | gui --new
 ```
 
-Beispiel:
+### How it works
 
-```cmd
-easyservice install MeinDaemon "C:\apps\daemon.exe" --config C:\apps\daemon.yml
-easyservice status MeinDaemon
-```
-
-`status` liefert Exit-Code 0, wenn der Dienst läuft, und 3, wenn nicht – praktisch für
-Monitoring-Skripte.
-
-## Wie es funktioniert
-
-`easyservice.exe` ist bewusst eine einzige Datei mit zwei Betriebsarten – genau wie
-`nssm.exe`:
+`easyservice.exe` is deliberately a single file with two modes — exactly like `nssm.exe`:
 
 ```
-Doppelklick                      Dienst-Manager (SCM)
+Double-click                     Service Control Manager
       │                                    │
       ▼                                    ▼
-easyservice.exe            easyservice.exe run "MeinDienst"
+easyservice.exe            easyservice.exe run "MyService"
       │                                    │
-   GUI-Modus                        Supervisor-Modus
+   GUI mode                        supervisor mode
    (MainForm)                              │
                               ┌────────────┴────────────┐
                               │                         │
-                      Konfiguration aus         CreateProcess mit
-                      der Registry lesen        umgeleiteten Pipes
+                      read configuration        CreateProcess with
+                      from the registry         redirected pipes
                                                          │
                                           ┌──────────────┼──────────────┐
                                           ▼              ▼              ▼
-                                       stdout         stderr      Job-Objekt
-                                          │              │      (Prozessbaum)
+                                       stdout         stderr       job object
+                                          │              │       (process tree)
                                           ▼              ▼
-                                    rotierende Protokolldateien
+                                      rotating log files
 ```
 
-Beim Anlegen eines Dienstes trägt EasyService sich selbst als Dienstprogramm ein
-(`"C:\Tools\easyservice.exe" run "MeinDienst"`) und legt die Konfiguration unter
-`HKLM\SYSTEM\CurrentControlSet\Services\<Name>\Parameters` ab. Startet Windows den Dienst,
-läuft dieselbe `.exe` im Supervisor-Modus, liest die Konfiguration, startet die eigentliche
-Anwendung und beaufsichtigt sie.
+When you create a service, EasyService registers itself as the service binary
+(`"C:\Program Files\EasyService\easyservice.exe" run "MyService"`) and stores the
+configuration under `HKLM\SYSTEM\CurrentControlSet\Services\<name>\Parameters`. When
+Windows starts the service, the same `.exe` runs in supervisor mode, reads the
+configuration, launches the real application and watches over it.
 
-Die Anwendung landet in einem Windows-Job-Objekt. Dadurch lassen sich beim Beenden
-zuverlässig auch alle Kindprozesse mitnehmen – der klassische Fall, in dem ein per
-`sc.exe` angelegter Dienst verwaiste Prozesse hinterlässt.
+The application ends up inside a Windows job object. That is what makes it possible to
+reliably take all child processes down with it — the classic case where a service created
+with `sc.exe` leaves orphans behind. It is also the accounting boundary for the CPU and
+memory measurements, so a batch file that spawns `java.exe` is counted properly instead
+of reporting zero.
 
-Zusätzlich werden die Windows-eigenen Wiederherstellungsaktionen des Dienstes gesetzt.
-Sie greifen als zweites Sicherheitsnetz, falls der Supervisor-Prozess selbst ausfällt.
+Windows' own service recovery actions are configured as well, as a second safety net in
+case the supervisor process itself fails.
 
-### Registry-Referenz
+### Registry reference
 
-Alle Werte liegen unter `HKLM\SYSTEM\CurrentControlSet\Services\<Name>\Parameters` und
-sind mit `regedit` einseh- und skriptbar:
+All values live under `HKLM\SYSTEM\CurrentControlSet\Services\<name>\Parameters`,
+inspectable with `regedit` and settable from a script:
 
-| Wert | Typ | Bedeutung |
+| Value | Type | Meaning |
 |---|---|---|
-| `Application` | EXPAND_SZ | Pfad zum Programm |
-| `AppDirectory` | EXPAND_SZ | Startverzeichnis |
-| `AppParameters` | EXPAND_SZ | Argumente |
-| `AppPriority` | DWORD | 0 = Echtzeit … 5 = Niedrig |
-| `AppAffinity` | QWORD | Prozessormaske, 0 = alle |
-| `AppStartupDelay` | DWORD | Verzögerung vor dem ersten Start (ms) |
-| `AppEnvironmentExtra` | MULTI_SZ | Zusätzliche Variablen `NAME=WERT` |
-| `AppEnvironmentReplace` | DWORD | 1 = Systemumgebung ersetzen |
-| `AppStdout` / `AppStderr` | EXPAND_SZ | Protokolldateien |
-| `AppAppendOutput` | DWORD | 1 = anhängen, 0 = beim Start leeren |
-| `AppTimestampLog` | DWORD | 1 = Zeitstempel je Zeile |
-| `AppRotateFiles` | DWORD | 1 = Rotation aktiv |
-| `AppRotateBytes` | QWORD | Rotationsgröße in Bytes |
-| `AppRotateSeconds` | DWORD | Rotationsintervall, 0 = nur nach Größe |
-| `AppRotateKeep` | DWORD | Anzahl Archive, 0 = unbegrenzt |
-| `AppExitDefault` | DWORD | 0 = Neustart, 1 = Ignorieren, 2 = Dienst beenden |
-| `AppExit\<Code>` | DWORD | Aktion für einen bestimmten Exit-Code |
-| `AppRestartDelay` | DWORD | Wartezeit vor dem Neustart (ms) |
-| `AppThrottle` | DWORD | Throttle-Fenster (ms) |
-| `AppStopUseConsole` / `…Window` / `…Threads` | DWORD | Shutdown-Stufen aktiv |
-| `AppStopConsoleDelay` / `…WindowDelay` / `…ThreadsDelay` | DWORD | Zeitlimit je Stufe (ms) |
-| `AppStopUseTerminate` | DWORD | 1 = notfalls hart beenden |
-| `AppKillProcessTree` | DWORD | 1 = Kindprozesse mitbeenden |
-| `AppLogServiceEvents` | DWORD | 1 = eigenes Diagnoseprotokoll schreiben |
+| `Application` | EXPAND_SZ | Path to the program |
+| `AppDirectory` | EXPAND_SZ | Startup directory |
+| `AppParameters` | EXPAND_SZ | Arguments |
+| `AppPriority` | DWORD | 0 = realtime … 5 = low |
+| `AppAffinity` | QWORD | Processor mask, 0 = all |
+| `AppStartupDelay` | DWORD | Delay before the first start (ms) |
+| `AppEnvironmentExtra` | MULTI_SZ | Additional variables `NAME=VALUE` |
+| `AppEnvironmentReplace` | DWORD | 1 = replace the system environment |
+| `AppStdout` / `AppStderr` | EXPAND_SZ | Log files |
+| `AppAppendOutput` | DWORD | 1 = append, 0 = truncate at start |
+| `AppTimestampLog` | DWORD | 1 = timestamp per line |
+| `AppRotateFiles` | DWORD | 1 = rotation active |
+| `AppRotateBytes` | QWORD | Rotation size in bytes |
+| `AppRotateSeconds` | DWORD | Rotation interval, 0 = by size only |
+| `AppRotateKeep` | DWORD | Number of archives, 0 = unlimited |
+| `AppExitDefault` | DWORD | 0 = restart, 1 = ignore, 2 = stop service |
+| `AppExit\<code>` | DWORD | Action for a specific exit code |
+| `AppRestartDelay` | DWORD | Wait before restarting (ms) |
+| `AppThrottle` | DWORD | Throttle window (ms) |
+| `AppStopUseConsole` / `…Window` / `…Threads` | DWORD | Shutdown stages enabled |
+| `AppStopConsoleDelay` / `…WindowDelay` / `…ThreadsDelay` | DWORD | Time limit per stage (ms) |
+| `AppStopUseTerminate` | DWORD | 1 = terminate if necessary |
+| `AppKillProcessTree` | DWORD | 1 = take child processes down too |
+| `AppLogServiceEvents` | DWORD | 1 = write the diagnostic log |
+| `MonEnabled` | DWORD | 1 = report to monitoring |
+| `MonWarnCpu` / `MonCritCpu` | DWORD | CPU thresholds in %, 0 = do not check |
+| `MonWarnMemoryMb` / `MonCritMemoryMb` | DWORD | Memory thresholds in MB |
+| `MonWarnRestartsPerHour` / `MonCritRestartsPerHour` | DWORD | Restart thresholds |
+| `HistoryDays` | DWORD | Days of history to keep, 0 = off |
 
-Standardmäßig liegen die Protokolle unter `%ProgramData%\EasyService\logs\`.
+Logs default to `%ProgramData%\EasyService\logs\`, history to
+`%ProgramData%\EasyService\history\`.
 
-## Aus dem Quellcode bauen
+### Building from source
 
-Benötigt wird das [.NET 9 SDK](https://dotnet.microsoft.com/download/dotnet/9.0) (oder neuer)
-auf einem Windows-Rechner.
+You need the [.NET 9 SDK](https://dotnet.microsoft.com/download/dotnet/9.0) (or newer) on
+a Windows machine.
 
 ```cmd
 git clone https://github.com/sdrabent/easyservice.git
@@ -306,7 +363,7 @@ cd easyservice
 dotnet build EasyService.sln -c Release
 ```
 
-Einzeldatei erzeugen:
+Single file:
 
 ```cmd
 dotnet publish src/EasyService/EasyService.csproj -c Release -r win-x64 ^
@@ -315,8 +372,9 @@ dotnet publish src/EasyService/EasyService.csproj -c Release -r win-x64 ^
   -o publish
 ```
 
-Das Projekt kommt ohne NuGet-Abhängigkeiten aus; alle Windows-Aufrufe laufen direkt über
-P/Invoke (`advapi32`, `kernel32`, `user32`).
+No NuGet dependencies; every Windows call goes straight through P/Invoke (`advapi32`,
+`kernel32`, `user32`, `crypt32`). After editing a `.resx`, regenerate the typed string
+accessors with `python tools/generate-strings.py` — CI checks that they have not drifted.
 
 ### Tests
 
@@ -324,86 +382,50 @@ P/Invoke (`advapi32`, `kernel32`, `user32`).
 dotnet run --project tests/EasyService.Tests -c Release
 ```
 
-Die Tests prüfen unter anderem, dass jeder Text in beiden Sprachen existiert und dabei
-seine Platzhalter behält — eine verlorene `{0}` wäre sonst erst zur Laufzeit als
-FormatException aufgefallen.
+The tests drive the supervisor directly and need neither administrator rights nor an
+installed service. They cover output redirection, the restart policy, exit-code actions,
+rotation including the archive cap, stopping running applications, timestamps,
+environment variables, reading the service list, constructing every dialog, the complete
+monitoring chain down to the Checkmk and Prometheus output formats, the history store and
+its retention, and that every text exists in all five languages with its placeholders
+intact — a lost `{0}` would otherwise surface as a `FormatException` at runtime.
 
-Die Tests steuern den Supervisor direkt an und brauchen weder Administratorrechte noch
-einen installierten Dienst. Geprüft werden Ausgabeumleitung, Neustart-Richtlinie,
-Exit-Code-Aktionen, Rotation samt Archivbegrenzung, das Beenden laufender Anwendungen,
-Zeitstempel, Umgebungsvariablen, das Lesen der Dienstliste, der Aufbau aller Dialoge
-sowie die komplette Monitoring-Kette bis hin zum Ausgabeformat für Checkmk und Prometheus.
+### Troubleshooting
 
-```
-  Ausgabe von stdout und stderr wird protokolliert          OK
-  Beendete Anwendung wird neu gestartet                     OK
-  Exit-Code-Aktion beendet den Dienst                       OK
-  Aktion "Nichts tun" startet nicht neu                     OK
-  Protokolle werden rotiert und Archive begrenzt            OK
-  Stoppen beendet die laufende Anwendung                    OK
-  Zeitstempel werden pro Zeile ergänzt                      OK
-  Umgebungsvariablen erreichen die Anwendung                OK
-  Dienstliste kann gelesen werden                           OK
-  GUI-Dialoge lassen sich aufbauen                          OK
-```
+**The service does not start and stops immediately.**
+Look at the service's EasyService log (`…-easyservice.log`, via **Logs…** → the file
+picker). It records whether the program was found, which code it exited with, and which
+action was taken. The same messages go to the Windows application log under the source
+`EasyService`.
 
-## Fehlersuche
+**The service runs but the application does nothing.**
+Usually the startup directory is wrong. Many programs look for configuration files
+relative to the current directory; without one specified, EasyService uses the program's
+own folder.
 
-**Der Dienst startet nicht und beendet sich sofort.**
-Die erste Anlaufstelle ist das EasyService-Protokoll des Dienstes
-(`…-easyservice.log`, erreichbar über **Protokolle…** → Auswahlliste). Dort steht, ob
-das Programm gefunden wurde, mit welchem Code es sich beendet hat und welche Aktion
-gegriffen hat. Parallel landen dieselben Meldungen im Windows-Anwendungsprotokoll
-unter der Quelle `EasyService`.
+**Processes are left behind after stopping.**
+Enable *Also terminate all child processes* on the *Shutdown* tab.
 
-**Der Dienst läuft, aber die Anwendung tut nichts.**
-Meist stimmt das Startverzeichnis nicht. Viele Programme suchen Konfigurationsdateien
-relativ zum aktuellen Verzeichnis; ohne Angabe verwendet EasyService den Ordner des
-Programms.
+**The application is restarted over and over.**
+If it exits with code 0 on purpose, add a rule `exit code 0 → stop the service` under
+*Exit actions*.
 
-**Nach dem Beenden bleiben Prozesse übrig.**
-*Auch alle Kindprozesse beenden* auf der Registerkarte *Herunterfahren* aktivieren.
+**A service cannot be created: "marked for deletion".**
+Windows keeps the service key as long as a handle is still open — typically an open
+`services.msc`. Close that window or reboot.
 
-**Die Anwendung wird dauernd neu gestartet.**
-Beendet sie sich absichtlich mit Code 0, dann unter *Beenden-Aktionen* eine Regel
-`Exit-Code 0 → Dienst beenden` anlegen.
+**The monitoring check says UNKNOWN.**
+Either the service still runs an older EasyService version (restart it once), or its
+status report is stale, which means the supervising process is not responding. A dead
+measurement is reported as unknown on purpose rather than as healthy.
 
-**Ein Dienst lässt sich nicht anlegen: „ist zum Löschen vorgemerkt".**
-Windows hält den Dienstschlüssel noch, solange irgendwo ein Handle offen ist – typisch
-bei geöffnetem `services.msc`. Das Fenster schließen oder neu starten.
+## Contributing
 
-## Mitmachen
+Bug reports and pull requests are welcome. For larger changes please open an issue first
+so the direction is agreed. `dotnet build` has to run warning-free and the tests have to
+pass. Translation fixes are especially welcome — the `.resx` files under
+`src/EasyService/Resources/` are the source of truth.
 
-Fehlerberichte und Pull Requests sind willkommen. Für größere Änderungen bitte vorher ein
-Issue anlegen, damit die Richtung geklärt ist. `dotnet build` muss warnungsfrei
-durchlaufen und die Tests müssen grün sein.
+## License
 
-## Lizenz
-
-MIT – siehe [LICENSE](LICENSE).
-
----
-
-## English summary
-
-**EasyService** turns any executable into a proper Windows service, entirely through a GUI.
-It is an open-source alternative to NSSM: one self-contained `easyservice.exe` that acts as
-the graphical service manager when you double-click it, and as a process supervisor when the
-Service Control Manager starts it.
-
-Features: install/edit/remove services, stdout and stderr redirected to rotating log files,
-a built-in live log viewer that follows rotation, per-exit-code restart policies with
-back-off throttling, a staged graceful shutdown (Ctrl-C → `WM_CLOSE` → `WM_QUIT` →
-terminate), job-object based process-tree cleanup, service accounts with automatic
-`SeServiceLogonRight` assignment, dependencies, environment variables, priority and CPU
-affinity — plus a command line for scripted deployments.
-
-The interface speaks **English and German** and follows the language Windows runs in;
-the **Language** menu pins it, and `HKLM\SOFTWARE\EasyService\Language` sets a
-machine-wide default for monitoring output. Status codes, metric names, perfdata, JSON
-fields and event IDs never translate — only the human-readable messages do, so alerts
-keep working across languages. Translations live as `.resx` files under
-`src/EasyService/Resources/`; further languages are welcome.
-
-No NuGet dependencies; everything talks to Windows directly through P/Invoke.
-Licensed under MIT.
+MIT — see [LICENSE](LICENSE).

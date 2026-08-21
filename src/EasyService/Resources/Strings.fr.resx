@@ -360,7 +360,7 @@ La gestion exige des droits d'administrateur ; les commandes de surveillance ne 
     <value>Exemple : associer le code de sortie 0 à « Arrêter le service » pour qu'un programme terminé proprement ne soit pas redémarré indéfiniment.</value>
   </data>
   <data name="Editor_Hint_HistoryDays" xml:space="preserve">
-    <value>0 = ne pas enregistrer d'historique. Une ligne par minute, environ 100 Ko par service et par mois, au format CSV dans %ProgramData%\EasyService\history.</value>
+    <value>0 = ne pas enregistrer d'historique. Une ligne par minute, environ 80 Ko par service et par jour, au format CSV dans %ProgramData%\EasyService\history.</value>
   </data>
   <data name="Editor_Hint_Interact" xml:space="preserve">
     <value>Possible uniquement avec le compte système local. Les versions récentes de Windows isolent les services dans la session 0 ; les fenêtres de l'application ne sont pas visibles pour les utilisateurs connectés.</value>

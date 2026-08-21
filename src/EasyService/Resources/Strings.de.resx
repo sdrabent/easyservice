@@ -360,7 +360,7 @@ Verwalten benötigt Administratorrechte; die Überwachungsbefehle lesen nur.</va
     <value>Beispiel: Exit-Code 0 auf "Dienst beenden" setzen, damit ein sauber beendetes Programm nicht endlos neu gestartet wird.</value>
   </data>
   <data name="Editor_Hint_HistoryDays" xml:space="preserve">
-    <value>0 = keinen Verlauf aufzeichnen. Eine Zeile pro Minute, rund 100 KB je Dienst und Monat, als CSV unter %ProgramData%\EasyService\history.</value>
+    <value>0 = keinen Verlauf aufzeichnen. Eine Zeile pro Minute, rund 80 KB je Dienst und Tag, als CSV unter %ProgramData%\EasyService\history.</value>
   </data>
   <data name="Editor_Hint_Interact" xml:space="preserve">
     <value>Nur mit dem lokalen Systemkonto möglich. Moderne Windows-Versionen isolieren Dienste in Sitzung 0; Fenster der Anwendung sind für angemeldete Benutzer nicht sichtbar.</value>

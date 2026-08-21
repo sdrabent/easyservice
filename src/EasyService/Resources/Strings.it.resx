@@ -360,7 +360,7 @@ La gestione richiede i diritti di amministratore; i comandi di monitoraggio si l
     <value>Esempio: assegnare al codice di uscita 0 l'azione «Arresta il servizio», così un programma terminato correttamente non viene riavviato all'infinito.</value>
   </data>
   <data name="Editor_Hint_HistoryDays" xml:space="preserve">
-    <value>0 = non registrare la cronologia. Una riga al minuto, circa 100 KB per servizio al mese, in formato CSV in %ProgramData%\EasyService\history.</value>
+    <value>0 = non registrare la cronologia. Una riga al minuto, circa 80 KB per servizio al giorno, in formato CSV in %ProgramData%\EasyService\history.</value>
   </data>
   <data name="Editor_Hint_Interact" xml:space="preserve">
     <value>Possibile solo con l'account di sistema locale. Le versioni recenti di Windows isolano i servizi nella sessione 0; le finestre dell'applicazione non sono visibili agli utenti connessi.</value>

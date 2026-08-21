@@ -57,8 +57,9 @@ pro Minute als CSV unter `%ProgramData%\EasyService\history\`.
 | `<Dienst>-events.csv` | `utc,event_id,exit_code,detail` |
 
 Zeitstempel sind UTC im Format `yyyy-MM-ddTHH:mm:ssZ`, Zahlen invariant formatiert —
-beides direkt maschinenlesbar. Die Aufbewahrung steht pro Dienst im Editor auf der
-Registerkarte *Überwachung* (Standard 30 Tage, 0 schaltet ab); ältere Zeilen werden
+beides direkt maschinenlesbar. Eine Zeile ist rund 56 Byte, macht etwa 80 KB je Dienst
+und Tag oder 2,3 MB für die voreingestellten 30 Tage. Die Aufbewahrung steht pro Dienst
+im Editor auf der Registerkarte *Überwachung* (0 schaltet ab); ältere Zeilen werden
 täglich entfernt.
 
 Wer die Werte lieber im eigenen Zeitreihensystem hätte, kann `metrics.csv` direkt

@@ -360,7 +360,7 @@ Administrar requiere permisos de administrador; los comandos de supervisión sol
     <value>Ejemplo: asigne al código de salida 0 la acción «Detener el servicio» para que un programa que terminó correctamente no se reinicie indefinidamente.</value>
   </data>
   <data name="Editor_Hint_HistoryDays" xml:space="preserve">
-    <value>0 = no registrar historial. Una fila por minuto, unos 100 KB por servicio y mes, en formato CSV en %ProgramData%\EasyService\history.</value>
+    <value>0 = no registrar historial. Una fila por minuto, unos 80 KB por servicio y día, en formato CSV en %ProgramData%\EasyService\history.</value>
   </data>
   <data name="Editor_Hint_Interact" xml:space="preserve">
     <value>Solo es posible con la cuenta del sistema local. Las versiones modernas de Windows aíslan los servicios en la sesión 0; las ventanas de la aplicación no son visibles para los usuarios conectados.</value>

@@ -360,7 +360,7 @@ Managing requires administrator rights; the monitoring commands only read.</valu
     <value>Example: set exit code 0 to "Stop the service" so a program that finished cleanly is not restarted forever.</value>
   </data>
   <data name="Editor_Hint_HistoryDays" xml:space="preserve">
-    <value>0 = record no history. One row per minute, roughly 100 KB per service and month, stored as CSV under %ProgramData%\EasyService\history.</value>
+    <value>0 = record no history. One row per minute, about 80 KB per service and day, stored as CSV under %ProgramData%\EasyService\history.</value>
   </data>
   <data name="Editor_Hint_Interact" xml:space="preserve">
     <value>Only possible with the local system account. Modern Windows versions isolate services in session 0; windows of the application are not visible to logged-on users.</value>
