@@ -79,7 +79,7 @@ Protokoll an – die Ursache ist fast immer ein falscher Pfad oder ein falsches 
 Für Skripte:
 
 ```cmd
-easyservice install MeinDaemon "C:pps\daemon.exe" --config C:pps\daemon.yml
+easyservice install MeinDaemon "C:\apps\daemon.exe" --config C:\apps\daemon.yml
 ```
 
 ## Funktionen im Detail
