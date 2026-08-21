@@ -1,323 +1,240 @@
-<div align="center">
-
 # EasyService
 
-**Turn any program into a Windows service — and actually know how it is doing.**
+Runs any program as a Windows service, captures its output to rotating log files, and
+reports what it is doing to Checkmk, Prometheus, Zabbix or Nagios.
 
-An open-source alternative to NSSM, built for administrators who have to answer for
-what runs on their servers.
-
-**Deutsch:** [README.de.md](README.de.md)
+It works the same way NSSM does: a supervisor process sits between the Service Control
+Manager and your application. The difference is that the supervisor keeps records —
+restart counts, CPU and memory of the process tree, exit codes — and hands them to
+whatever monitoring you already run.
 
 [![build](https://github.com/sdrabent/easyservice/actions/workflows/build.yml/badge.svg)](https://github.com/sdrabent/easyservice/actions/workflows/build.yml)
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
-[![Downloads](https://img.shields.io/github/downloads/sdrabent/easyservice/total)](../../releases)
-[![Languages](https://img.shields.io/badge/UI-en%20%7C%20de%20%7C%20fr%20%7C%20es%20%7C%20it-informational)](#languages)
 
-</div>
+**Deutsch:** [README.de.md](README.de.md)
 
----
+## Status
 
-## The lie your monitoring is telling you
+This is a young project. What that means concretely:
 
-```
-C:\> sc query MyImporter
+* The supervisor, the monitoring output and the configuration format have automated
+  tests, and the install/start/stop/remove path has been verified end to end against a
+  real Service Control Manager.
+* It has been run on Windows 11 and in CI on `windows-latest`. Nobody has run it on
+  Server 2016, 2019 or 2022 yet, as far as I know.
+* The binaries are not code-signed, so SmartScreen warns on first download. See
+  [Limitations](#limitations).
+* The French, Spanish and Italian translations have not been reviewed by native speakers.
 
-        SERVICE_NAME: MyImporter
-        STATE       : 4  RUNNING
-```
+If you try it somewhere and it breaks, an issue with the service's `…-easyservice.log`
+attached is genuinely useful.
 
-Looks fine. It is not.
+## What it does
 
-That service is a wrapper — NSSM, srvany, a scheduled task hack, whatever. The thing
-Windows reports as `RUNNING` is the *wrapper*. Behind it, the actual importer has crashed
-and been restarted **37 times in the last hour**, and every check you have built on
-`sc query`, `services.msc` or a Windows-service check in your monitoring says **OK**.
+| | |
+|---|---|
+| Service management | Create, edit, start, stop and remove services from a GUI or the command line |
+| Output capture | stdout and stderr to files, separate or merged, with size- and time-based rotation and a capped number of archives |
+| Log viewer | Attaches to the live file, follows rotation, filters by text, shows the matching Windows event log entries |
+| Restart policy | Per exit code, with an exponential back-off that stops restart loops |
+| Shutdown | Ctrl+C, then `WM_CLOSE`, then `WM_QUIT`, then terminate; each stage optional with its own timeout |
+| Process tree | Children run inside a job object, so they are terminated with the service and counted in its resource usage |
+| Monitoring | Checkmk, Prometheus, Nagios/Icinga and Zabbix output, plus stable event IDs |
+| History | Per-minute CPU, memory and restart records, kept as CSV |
+| Configuration as a file | JSON export and import, for rolling the same definition out to many machines |
+| Languages | English, German, French, Spanish, Italian |
 
-Nobody finds out until a customer calls.
+![EasyService overview](assets/screenshot-overview.png)
 
-## What EasyService does about it
+## Monitoring
 
-EasyService is the wrapper *and* the witness. It counts the restarts, measures the
-process tree, and hands the verdict to the monitoring you already run.
+A wrapper hides the thing you want to know. `sc query` reports the state of the
+supervisor process, not of the application behind it, so a service whose application
+crashes and restarts every minute still shows up as `RUNNING`.
 
-**One line in your Checkmk agent** — `C:\ProgramData\checkmk\agent\local\easyservice.bat`:
+EasyService counts those restarts and reports them. Put one line in the Checkmk agent's
+`local` directory:
 
 ```bat
 @"C:\Program Files\EasyService\easyservice.exe" checkmk
 ```
 
-and every supervised service becomes a Checkmk service with graphs and thresholds:
+and each supervised service becomes a Checkmk service. Actual output from a test machine,
+with one healthy service and one that could not reach its database:
 
 ```
-0 EasyService_MyDaemon   uptime=86400s|restarts_1h=0;3;10;0|cpu=2.5%;80;95;0;100|mem=140509184B|procs=2   Running for 1d 0h, PID 1234, CPU 2.5 %, RAM 134 MB, 0 restarts/h
-2 EasyService_MyImporter uptime=3s|restarts_1h=37;3;10;0|cpu=0%;80;95;0;100|mem=8192000B|procs=1          37 restarts in the last hour (critical from 10) - Running for 3s, PID 9876
+0 EasyService_DemoWebApi   uptime=1070s|restarts_1h=0;3;10;0|cpu=7.41%;;;0;100|mem=75345920B|procs=2   Running for 17m 50s, PID 5868, 2 processes, CPU 7.41 %, RAM 71.9 MB, 0 restarts/h
+2 EasyService_DemoImporter uptime=0s|restarts_1h=36;3;10;0|cpu=0%;;;0;100|mem=0B|procs=0               The application keeps restarting and is being throttled. 36 restarts in the last hour, last exit code 3.
 ```
 
-There it is. **Critical**, with the reason, with perfdata, without you writing a single
-check script.
+Other systems get the same data in their own format:
 
-Not a Checkmk shop? Same data, your format:
+```
+easyservice prometheus --output C:\...\easyservice.prom   textfile collector, replaced atomically
+easyservice check <name>                                  Nagios/Icinga plugin, exit code 0/1/2/3
+easyservice zabbix-discovery                              low-level discovery
+easyservice json                                          everything, for your own scripts
+```
 
-| Command | For |
-|---|---|
-| `easyservice checkmk` | Checkmk local check, one line per service, with perfdata |
-| `easyservice prometheus --output …` | Prometheus textfile collector (atomic replace) |
-| `easyservice check <name>` | Nagios/Icinga plugin, exit code 0/1/2/3 |
-| `easyservice zabbix-discovery` | Zabbix low-level discovery |
-| `easyservice json` | Everything, for whatever you have built yourself |
-
-And because message text is a terrible thing to alert on, every event also lands in the
-Windows application log with a **stable event ID**:
-
-| ID | Meaning |
-|---|---|
-| **1004** | Restart throttled — the application is dying faster than it starts |
-| **1005** | Start failed |
-| **1008** | Application terminated by force |
+Message text is a poor thing to alert on, so every event also carries a stable ID in the
+Windows application log: 1004 when restarts are being throttled, 1005 when a start failed,
+1008 when the application had to be terminated. Those IDs are part of the format and are
+not translated.
 
 ```powershell
 Get-WinEvent -FilterHashtable @{ LogName='Application'; ProviderName='EasyService'; Id=1004,1005,1008 }
 ```
 
-Those IDs never change and never translate. → **[docs/monitoring.md](docs/monitoring.md)**
+Configuration snippets for each system are in [docs/monitoring.md](docs/monitoring.md),
+including the `mk_logwatch` setup for feeding your application's stderr into Checkmk.
 
-## Logging you do not have to build yourself
+## History
 
-Console programs write to stdout and stderr. Windows services do not have a console.
-That gap is where most homegrown wrapper scripts go to die.
-
-EasyService captures both streams from a real pipe and writes them to files, with:
-
-- **Rotation** by size and/or time, with a capped number of archives — no more 4 GB log
-  eating the system drive over Christmas
-- **Optional timestamps** per line, for applications that do not bother
-- **Merge or separate** stdout and stderr, your call
-- A **diagnostic log per service** recording what the supervisor itself did: started,
-  exited with code 3, throttled, terminated
-
-...and a **live viewer built in**, so you do not RDP in and open Notepad:
-
-- attaches to the file while the service keeps writing (`FileShare.ReadWrite`)
-- follows rotation on its own
-- offers the archived files from a dropdown
-- filters by text
-- second tab shows the Windows event log entries for that service
-
-Point `mk_logwatch` at `%ProgramData%\EasyService\logs\*-stderr.log` and your application's
-own error output becomes a monitored log — the [monitoring guide](docs/monitoring.md) has
-the config.
-
-## History: what did this thing do last night?
-
-![EasyService overview](assets/screenshot-overview.png)
-
-*Three supervised services. One healthy, one restarting in a loop and flagged red, one
-deliberately stopped. Windows would report the first two identically.*
-
-Double-click a service and you get its past, not just its present:
-
-- **CPU and memory over time** — separate charts, because they are separate scales.
-  The line is the per-minute average, the band the peak, so a service that idles at 2 %
-  and spikes to 90 % every minute does not hide behind a flat average.
-- **Restart markers** on the timeline
-- **Key figures** for the window: restarts, CPU average and peak, memory average and peak
-- **Event list** with exit codes
-- 1 hour to 30 days, exportable as CSV
+Double-clicking a service shows what it has been doing rather than what it is doing right
+now. The supervisor condenses its 5-second samples into one row per minute and keeps them
+as CSV under `%ProgramData%\EasyService\history\` — about 80 KB per service and day, or
+2.3 MB for the 30 days kept by default.
 
 ![Service history](assets/screenshot-history.png)
 
-Stored as plain **CSV** under `%ProgramData%\EasyService\history\` — about 80 KB per
-service and day, so roughly 2.3 MB for the 30 days kept by default (adjustable, 0 turns
-recording off). In five years you will still be able to open it in Excel without
-EasyService installed.
+CPU and memory are drawn in separate charts because they are separate scales; two y-axes
+in one frame produce a picture that looks informative and reads wrong. The line is the
+per-minute average and the band the peak, which keeps a service that idles at 2 % and
+spikes to 90 % distinguishable from one sitting at 40 %. Dotted verticals mark application
+starts.
 
-## 60 seconds to your first service
+The screenshot above is a demo service running a synthetic load cycle for half an hour and
+recycling itself every five minutes.
+
+## Setting up a service
 
 ![Quick setup](assets/screenshot-quicksetup.png)
 
-1. Start `easyservice.exe`, confirm UAC.
-2. **Add service…** — or drop the `.exe` straight onto the window.
-3. Pick the program. Service name, startup directory, log paths, rotation, restart policy
-   and monitoring thresholds are filled in and *shown to you*.
-4. **Create service.** Done.
+Pick a program, or drop an `.exe` onto the window. Service name, startup directory, log
+paths, rotation, restart policy and monitoring thresholds get filled in and shown; the
+account and password fields only appear if you switch away from the local system account.
+The full editor with all nine tabs is behind **Advanced settings…**.
 
-Four fields instead of nine tabs. The service account is remembered for the next one;
-the password stays in memory for the session only, unless you explicitly ask for it to be
-stored (DPAPI, your Windows account, not machine-wide).
+When the first start fails, EasyService offers the log straight away. In practice the
+cause is a wrong path or a wrong argument, and the log says which.
 
-If the first start fails, EasyService offers you the log immediately — it is almost
-always a wrong path or a wrong argument, and you will see which in about four seconds.
-
-Need the full control panel? **Advanced settings…** opens the nine-tab editor.
-
-Scripting a rollout instead?
+From a script:
 
 ```cmd
 easyservice install MyDaemon "C:\apps\daemon.exe" --config C:\apps\daemon.yml
-easyservice status MyDaemon   :: exit code 0 = running, 3 = not
+easyservice status MyDaemon
 ```
 
-## How it compares
+`status` exits with 0 when the service is running and 3 when it is not.
 
-| | `sc.exe` | NSSM | **EasyService** |
-|---|---|---|---|
-| Run any program as a service | ✗ | ✓ | ✓ |
-| stdout/stderr to files | ✗ | ✓ | ✓ |
-| Automatic log rotation | ✗ | ✓ | ✓ |
-| Restart policy per exit code | ✗ | ✓ | ✓ |
-| Staged, graceful shutdown | ✗ | ✓ | ✓ |
-| Reliable process-tree cleanup | ✗ | ✓ | ✓ |
-| Single .exe, no installation | ✓ | ✓ | ✓ |
-| Graphical interface | ✗ | partly | **✓ complete** |
-| **Monitoring integration** | ✗ | ✗ | **✓ Checkmk, Prometheus, Zabbix, Nagios** |
-| **Flapping detection** | ✗ | ✗ | **✓** |
-| **Stable event IDs to alert on** | ✗ | ✗ | **✓** |
-| **Built-in live log viewer** | ✗ | ✗ | **✓** |
-| **History: CPU, memory, restarts** | ✗ | ✗ | **✓** |
-| **Quick setup with sensible defaults** | ✗ | ✗ | **✓** |
-| **Five UI languages** | ✗ | English only | **✓ en, de, fr, es, it** |
-| Dark mode | ✗ | ✗ | ✓ |
-| Open source | ✗ | ✓ (public domain) | ✓ (MIT) |
+## Rolling out to many machines
 
-NSSM is a good tool and EasyService owes it the idea. What it does not do is tell your
-monitoring anything.
-
-## Download
-
-**[→ Releases](../../releases)**
-
-| File | Description |
-|---|---|
-| `easyservice.exe` | Everything included, runs straight away. No installation. |
-| `easyservice-framework-dependent.exe` | Only ~300 KB, needs the [.NET 9 Desktop Runtime](https://dotnet.microsoft.com/download/dotnet/9.0). |
-
-> **Important:** the path to `easyservice.exe` is stored in every service you create.
-> Move the file later and those services stop working. Pick a permanent location right
-> away, for example `C:\Program Files\EasyService\` — a directory ordinary users cannot
-> write to, which also matters because the service runs as SYSTEM.
-
-Requirements: Windows 10 / Server 2016 or newer, x64, administrator rights (managing
-services on Windows always requires elevation — EasyService asks via UAC at start).
-
-The binaries are **not code-signed yet**, so SmartScreen will warn on first download.
-Checksums are published with every release.
-
----
-
-## Everything else
-
-### The editor, tab by tab
-
-**Application** — program, startup directory and arguments.
-
-**Details** — display name, description, startup type (automatic / delayed / manual /
-disabled), process priority, processor affinity and an optional startup delay.
-
-**Log on** — local system account, local service, network service or a user account. For
-a user account EasyService grants the *Log on as a service* right
-(`SeServiceLogonRight`) automatically, which otherwise has to be set by hand in
-`secpol.msc`.
-
-**Dependencies** — other services that have to run first, from a picker.
-
-**Environment** — additional environment variables (`NAME=VALUE`), either extending or
-completely replacing the system environment.
-
-**Logging** — the file, rotation and timestamp settings described above.
-
-**Exit actions** — restart, ignore, or stop the service, optionally per exit code. A
-throttle window prevents restart loops: if the application exits faster than configured,
-EasyService doubles the wait, up to 60 seconds.
-
-**Monitoring** — thresholds for restarts per hour, CPU and memory, plus ready-made
-copy-paste snippets for the Checkmk, Prometheus, Nagios and Zabbix agents.
-
-**Shutdown** — the staged shutdown. Every stage switchable, each with its own timeout:
-
-1. `Ctrl+C` to the application's console (for console programs)
-2. `WM_CLOSE` to all of the application's windows
-3. `WM_QUIT` to all of the application's threads
-4. Hard terminate — optionally including all child processes
-
-### Safety net when deleting
-
-Services *not* created with EasyService cannot be edited, and can only be removed after
-an extra confirmation in which the service name has to be typed out. A misclick cannot
-destroy a system service.
-
-### Languages
-
-English, German, French, Spanish and Italian. Left alone, EasyService follows the
-language Windows runs in; the **Language** menu pins it. For servers where monitoring
-runs under a different account than the administrator who set it up:
+A complete definition — including exit-code rules, thresholds, environment variables and
+the shutdown stages — can be written to a file and applied elsewhere:
 
 ```cmd
-reg add HKLM\SOFTWARE\EasyService /v Language /t REG_SZ /d en /f
+easyservice export MyDaemon --output daemon.json
+easyservice import daemon.json
 ```
 
-Status codes, metric names, perfdata, JSON fields and event IDs never translate — only
-the human-readable messages do, so alerts keep working across languages. Translations are
-`.resx` files under `src/EasyService/Resources/`.
+```powershell
+# same definition on every server
+$servers | ForEach-Object {
+    Copy-Item daemon.json "\\$_\C$\temp\"
+    Invoke-Command -ComputerName $_ { easyservice import C:\temp\daemon.json }
+}
 
-> The French, Spanish and Italian translations have not yet been reviewed by native
-> speakers. Corrections are very welcome.
-
-### Command line
-
-```
-easyservice list [--json]
-easyservice install <name> <program> [arguments...]
-easyservice remove <name>
-easyservice start|stop|restart|status <name>
-easyservice checkmk | prometheus [--output <file>] | check <name> | json | zabbix-discovery
-easyservice gui [name] | gui --new
+# what drifted?
+easyservice export MyDaemon | git diff --no-index golden.json -
 ```
 
-### How it works
+Two things about the format. Passwords are not written to the file, since a file that
+ends up in a repository must not carry a service credential; on import the password is
+read from `EASYSERVICE_PASSWORD`, which keeps it out of the process list where a command
+line argument would be visible. Updating an existing service without that variable leaves
+the stored password alone. Enum values are written as text (`"startup": "AutomaticDelayed"`)
+so that a diff against a reference file can be read.
 
-`easyservice.exe` is deliberately a single file with two modes — exactly like `nssm.exe`:
+`export --all` writes every managed service into one file, and `import` accepts both
+shapes.
 
+## Install
+
+Binaries are on the [releases page](../../releases).
+
+| File | |
+|---|---|
+| `easyservice.exe` | Self-contained, about 63 MB, no runtime needed |
+| `easyservice-framework-dependent.exe` | About 300 KB, needs the [.NET 9 Desktop Runtime](https://dotnet.microsoft.com/download/dotnet/9.0) |
+
+The path to the executable is stored in every service you create, so pick a permanent
+location before creating anything. `C:\Program Files\EasyService\` is a reasonable choice
+and has the useful property that ordinary users cannot write to it — the service runs as
+SYSTEM, so a writable location would be a privilege escalation waiting to happen.
+
+Requirements: Windows 10 or Server 2016 and newer, x64, administrator rights. Managing
+services always requires elevation; EasyService asks for it via UAC at start.
+
+## Limitations
+
+* **Not code-signed.** SmartScreen warns on first download, and AppLocker or WDAC will
+  block it outright. Checksums are published with each release. Signing is planned but
+  needs an organisation-level certificate.
+* **No installer.** You copy the exe somewhere and run it. No MSI, no winget package yet.
+* **x64 only.** No ARM64 build.
+* **Interacting with the desktop does not really work.** The option exists because the
+  service API has it, but Windows isolates services in session 0, so nobody sees those
+  windows.
+* **Resource measurement depends on the job object.** If a child process escapes it, that
+  process is neither counted nor terminated with the service. The service's diagnostic log
+  notes when the job object could not be set up.
+
+## Documentation
+
+* [docs/monitoring.md](docs/monitoring.md) — Checkmk, Prometheus, Zabbix, Nagios, the
+  event IDs, and the language setting for check output
+* The editor's **Monitoring** tab carries copy-paste snippets for each agent
+
+## Building
+
+Needs the [.NET 9 SDK](https://dotnet.microsoft.com/download/dotnet/9.0) on Windows.
+
+```cmd
+git clone https://github.com/sdrabent/easyservice.git
+cd easyservice
+dotnet build EasyService.sln -c Release
+dotnet run --project tests/EasyService.Tests -c Release
 ```
-Double-click                     Service Control Manager
-      │                                    │
-      ▼                                    ▼
-easyservice.exe            easyservice.exe run "MyService"
-      │                                    │
-   GUI mode                        supervisor mode
-   (MainForm)                              │
-                              ┌────────────┴────────────┐
-                              │                         │
-                      read configuration        CreateProcess with
-                      from the registry         redirected pipes
-                                                         │
-                                          ┌──────────────┼──────────────┐
-                                          ▼              ▼              ▼
-                                       stdout         stderr       job object
-                                          │              │       (process tree)
-                                          ▼              ▼
-                                      rotating log files
-```
 
-When you create a service, EasyService registers itself as the service binary
-(`"C:\Program Files\EasyService\easyservice.exe" run "MyService"`) and stores the
-configuration under `HKLM\SYSTEM\CurrentControlSet\Services\<name>\Parameters`. When
-Windows starts the service, the same `.exe` runs in supervisor mode, reads the
-configuration, launches the real application and watches over it.
+There are no NuGet dependencies; the Windows calls go through P/Invoke against
+`advapi32`, `kernel32`, `user32` and `crypt32`. Interface texts live in `.resx` files
+under `src/EasyService/Resources/`; after editing one, run `python tools/generate-strings.py`
+to regenerate the typed accessors. CI checks that the two have not drifted apart, and that
+every string exists in all five languages with its placeholders intact.
 
-The application ends up inside a Windows job object. That is what makes it possible to
-reliably take all child processes down with it — the classic case where a service created
-with `sc.exe` leaves orphans behind. It is also the accounting boundary for the CPU and
-memory measurements, so a batch file that spawns `java.exe` is counted properly instead
-of reporting zero.
+The tests drive the supervisor directly, so they need neither administrator rights nor an
+installed service.
 
-Windows' own service recovery actions are configured as well, as a second safety net in
-case the supervisor process itself fails.
+## How it works
 
-### Registry reference
+`easyservice.exe` has two modes, like `nssm.exe`. Double-clicked it is the management
+GUI. Started by the Service Control Manager as `easyservice.exe run "MyService"` it reads
+the configuration from `HKLM\SYSTEM\CurrentControlSet\Services\<name>\Parameters`,
+launches the application with redirected pipes, and supervises it.
 
-All values live under `HKLM\SYSTEM\CurrentControlSet\Services\<name>\Parameters`,
-inspectable with `regedit` and settable from a script:
+The application is assigned to a job object. That is what makes it possible to take child
+processes down reliably, which is the usual failure of a service created with `sc.exe`,
+and it doubles as the accounting boundary for the CPU and memory figures — a batch file
+that starts `java.exe` is counted properly rather than reported as zero.
+
+Windows' own service recovery actions are configured as a second line of defence in case
+the supervisor process itself fails.
+
+<details>
+<summary>Registry reference — every value under <code>Parameters</code></summary>
+
+Inspectable with `regedit`, settable from a script, and what `export` and `import`
+read and write.
 
 | Value | Type | Meaning |
 |---|---|---|
@@ -354,80 +271,16 @@ inspectable with `regedit` and settable from a script:
 Logs default to `%ProgramData%\EasyService\logs\`, history to
 `%ProgramData%\EasyService\history\`.
 
-### Building from source
-
-You need the [.NET 9 SDK](https://dotnet.microsoft.com/download/dotnet/9.0) (or newer) on
-a Windows machine.
-
-```cmd
-git clone https://github.com/sdrabent/easyservice.git
-cd easyservice
-dotnet build EasyService.sln -c Release
-```
-
-Single file:
-
-```cmd
-dotnet publish src/EasyService/EasyService.csproj -c Release -r win-x64 ^
-  --self-contained true -p:PublishSingleFile=true ^
-  -p:EnableCompressionInSingleFile=true -p:IncludeNativeLibrariesForSelfExtract=true ^
-  -o publish
-```
-
-No NuGet dependencies; every Windows call goes straight through P/Invoke (`advapi32`,
-`kernel32`, `user32`, `crypt32`). After editing a `.resx`, regenerate the typed string
-accessors with `python tools/generate-strings.py` — CI checks that they have not drifted.
-
-### Tests
-
-```cmd
-dotnet run --project tests/EasyService.Tests -c Release
-```
-
-The tests drive the supervisor directly and need neither administrator rights nor an
-installed service. They cover output redirection, the restart policy, exit-code actions,
-rotation including the archive cap, stopping running applications, timestamps,
-environment variables, reading the service list, constructing every dialog, the complete
-monitoring chain down to the Checkmk and Prometheus output formats, the history store and
-its retention, and that every text exists in all five languages with its placeholders
-intact — a lost `{0}` would otherwise surface as a `FormatException` at runtime.
-
-### Troubleshooting
-
-**The service does not start and stops immediately.**
-Look at the service's EasyService log (`…-easyservice.log`, via **Logs…** → the file
-picker). It records whether the program was found, which code it exited with, and which
-action was taken. The same messages go to the Windows application log under the source
-`EasyService`.
-
-**The service runs but the application does nothing.**
-Usually the startup directory is wrong. Many programs look for configuration files
-relative to the current directory; without one specified, EasyService uses the program's
-own folder.
-
-**Processes are left behind after stopping.**
-Enable *Also terminate all child processes* on the *Shutdown* tab.
-
-**The application is restarted over and over.**
-If it exits with code 0 on purpose, add a rule `exit code 0 → stop the service` under
-*Exit actions*.
-
-**A service cannot be created: "marked for deletion".**
-Windows keeps the service key as long as a handle is still open — typically an open
-`services.msc`. Close that window or reboot.
-
-**The monitoring check says UNKNOWN.**
-Either the service still runs an older EasyService version (restart it once), or its
-status report is stale, which means the supervising process is not responding. A dead
-measurement is reported as unknown on purpose rather than as healthy.
+</details>
 
 ## Contributing
 
-Bug reports and pull requests are welcome. For larger changes please open an issue first
-so the direction is agreed. `dotnet build` has to run warning-free and the tests have to
-pass. Translation fixes are especially welcome — the `.resx` files under
-`src/EasyService/Resources/` are the source of truth.
+Issues and pull requests are welcome. For anything larger than a fix, an issue first
+saves us both time. `dotnet build` has to stay warning-free and the tests have to pass.
+
+Translation corrections are especially welcome — the `.resx` files are the source of
+truth and open in any translation tool.
 
 ## License
 
-MIT — see [LICENSE](LICENSE).
+MIT, see [LICENSE](LICENSE).
