@@ -102,9 +102,13 @@ function Test-EventPresent([int] $Id, [datetime] $Since) {
 if (-not (Test-Path $Exe)) { throw "Nicht gefunden: $Exe" }
 $Exe = (Resolve-Path $Exe).Path
 
+# Die eingebaute Rolle, nicht der Gruppenname: IsInRole("Administrator") sucht eine Gruppe
+# dieses Namens und findet sie nie - die Gruppe heisst "Administrators", auf Deutsch
+# "Administratoren".
 $identity = [Security.Principal.WindowsIdentity]::GetCurrent()
-if (-not (New-Object Security.Principal.WindowsPrincipal $identity).IsInRole("Administrator")) {
-    throw "Dieser Test legt echte Dienste an und braucht eine erhöhte PowerShell."
+$principal = New-Object Security.Principal.WindowsPrincipal $identity
+if (-not $principal.IsInRole([Security.Principal.WindowsBuiltInRole]::Administrator)) {
+    throw "Dieser Test legt echte Dienste an und braucht eine erhöhte PowerShell. Angemeldet als $($identity.Name)."
 }
 
 Write-Host "easyservice: $Exe"
