@@ -16,6 +16,10 @@ internal static class Program
     [STAThread]
     private static int Main()
     {
+        // Die Tests auf Englisch festnageln: sonst haengen Zusicherungen an Meldungstexten
+        // von der Sprache der Maschine ab und laufen lokal durch, auf dem CI-Runner aber nicht.
+        Localization.Apply("en");
+
         _root = Path.Combine(Path.GetTempPath(), "easyservice-tests-" + Guid.NewGuid().ToString("N")[..8]);
         Directory.CreateDirectory(_root);
         Console.WriteLine($"Arbeitsverzeichnis: {_root}");

@@ -148,7 +148,13 @@ internal static class MonitoringTests
     private static void NagiosFormatIsValid()
     {
         var line = MonitoringOutput.Nagios(Sample(status: CheckStatus.Warning));
-        Assert(line.StartsWith("EASYSERVICE WARNUNG - "), $"unerwarteter Präfix: {line}");
+
+        // Der Statustext ist übersetzt; geprüft wird gegen den Wert, den die Bewertung
+        // selbst liefert, nicht gegen ein Literal einer bestimmten Sprache.
+        var expected = $"EASYSERVICE {Monitoring.Describe(CheckStatus.Warning)} - ";
+        Assert(line.StartsWith(expected), $"unerwarteter Präfix: {line}");
+        Assert(expected == "EASYSERVICE WARNING - ",
+            $"die Tests laufen nicht auf Englisch, sondern liefern: {expected}");
 
         var pipes = line.Count(c => c == '|');
         Assert(pipes == 1, $"ein Nagios-Plugin trennt Text und Perfdaten mit genau einem |, gefunden: {pipes}");
