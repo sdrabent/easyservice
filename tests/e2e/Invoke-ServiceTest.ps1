@@ -181,8 +181,15 @@ try {
     Confirm-That (($checkmk -join "`n") -match "EasyService_$ServiceName") "der Checkmk-Ausgabe liegt eine Zeile für den Dienst bei"
 
     Step "Neustart nach Absturz des Kindes"
+    # Erst die Drosselschwelle abwarten (Standard 5 s). Stirbt ein Kind frueher, meldet der
+    # Supervisor zu Recht 1004 "Neustart gedrosselt" statt 1003 "wird neu gestartet" - der
+    # Test will hier den gewoehnlichen Neustart sehen.
+    $ranSince = Get-Date
+    Wait-Until { ((Get-Date) - $ranSince).TotalSeconds -gt 6 } "das Kind läuft länger als die Drosselschwelle" -TimeoutSeconds 20
+
     Stop-Process -Id $firstPid -Force
     Wait-Until { (Get-State).RestartCount -ge 1 } "der Neustartzähler steht auf mindestens 1"
+    Wait-Until { Test-EventPresent 1002 $startedAt } "Ereignis 1002 (Anwendung beendet) steht im Anwendungsprotokoll"
     Wait-Until {
         $s = Get-State
         $s.State -eq "Running" -and $s.ApplicationPid -ne $firstPid -and $s.ApplicationPid -gt 0
