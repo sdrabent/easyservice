@@ -253,6 +253,38 @@ internal static class Ui
         return c;
     }
 
+    /// <summary>
+    /// Asks for a single password. Used on import, where the file deliberately does not
+    /// carry one. Returns null when the user cancels.
+    /// </summary>
+    public static string? PromptPassword(IWin32Window? owner, string caption, string prompt)
+    {
+        using var form = new Form
+        {
+            Text = caption,
+            Icon = AppIcon,
+            FormBorderStyle = FormBorderStyle.FixedDialog,
+            StartPosition = FormStartPosition.CenterParent,
+            MinimizeBox = false,
+            MaximizeBox = false,
+            ShowInTaskbar = false,
+            ClientSize = new Size(430, 132),
+            Font = SystemFonts.MessageBoxFont ?? SystemFonts.DefaultFont,
+        };
+
+        // AutoEllipsis, weil im Text ein Kontoname mit langer Domaene stehen kann.
+        var label = new Label { Text = prompt, AutoSize = false, AutoEllipsis = true, Bounds = new Rectangle(14, 14, 400, 34) };
+        var box = new TextBox { UseSystemPasswordChar = true, Bounds = new Rectangle(14, 52, 400, 24) };
+        var ok = new Button { Text = "OK", DialogResult = DialogResult.OK, Bounds = new Rectangle(228, 92, 90, 28) };
+        var cancel = new Button { Text = S.Common_Cancel, DialogResult = DialogResult.Cancel, Bounds = new Rectangle(324, 92, 90, 28) };
+
+        form.Controls.AddRange(new Control[] { label, box, ok, cancel });
+        form.AcceptButton = ok;
+        form.CancelButton = cancel;
+
+        return form.ShowDialog(owner) == DialogResult.OK ? box.Text : null;
+    }
+
     public static void OpenInExplorer(string path)
     {
         try

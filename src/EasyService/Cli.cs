@@ -198,7 +198,7 @@ internal static class Cli
             var configs = ServiceRegistry.EnumerateServices()
                                          .Where(s => s.ManagedByEasyService)
                                          .OrderBy(s => s.Name, StringComparer.OrdinalIgnoreCase)
-                                         .Select(s => ServiceConfig.Load(s.Name))
+                                         .Select(s => ServiceRegistry.LoadComplete(s.Name))
                                          .Where(c => c is not null)
                                          .Select(c => c!)
                                          .ToList();
@@ -212,15 +212,12 @@ internal static class Cli
         }
         else
         {
-            var config = ServiceConfig.Load(name!);
+            var config = ServiceRegistry.LoadComplete(name!);
             if (config is null)
             {
                 Console.Error.WriteLine(S.Cli_NotExists(name!));
                 return 2;
             }
-            // Anzeigename, Beschreibung, Starttyp und Abhaengigkeiten stehen beim SCM,
-            // nicht unter Parameters - fuer eine vollstaendige Datei muessen sie mit.
-            EnrichFromScm(config);
             json = ConfigTransfer.Export(config);
             count = 1;
         }
@@ -237,31 +234,6 @@ internal static class Cli
         File.WriteAllText(output, json, new System.Text.UTF8Encoding(false));
         Console.WriteLine(all ? S.Cfg_ExportedMany(count, output) : S.Cfg_Exported(output));
         return 0;
-    }
-
-    /// <summary>Fills in the parts of a definition the SCM owns rather than our Parameters key.</summary>
-    private static void EnrichFromScm(ServiceConfig config)
-    {
-        var info = ServiceRegistry.Query(config.ServiceName);
-        if (info is null) return;
-
-        config.DisplayName = info.DisplayName;
-        config.Startup = info.Startup;
-        config.Description = ServiceRegistry.GetDescription(config.ServiceName);
-        config.Dependencies = ServiceRegistry.GetDependencies(config.ServiceName);
-
-        var account = (info.Account ?? "").Trim();
-        if (account.Equals("LocalSystem", StringComparison.OrdinalIgnoreCase))
-            config.Logon = LogonType.LocalSystem;
-        else if (account.EndsWith(@"\LocalService", StringComparison.OrdinalIgnoreCase))
-            config.Logon = LogonType.LocalService;
-        else if (account.EndsWith(@"\NetworkService", StringComparison.OrdinalIgnoreCase))
-            config.Logon = LogonType.NetworkService;
-        else if (account.Length > 0)
-        {
-            config.Logon = LogonType.Account;
-            config.AccountName = account;
-        }
     }
 
     private static int Import(string[] args)

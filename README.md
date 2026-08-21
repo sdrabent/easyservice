@@ -41,7 +41,7 @@ attached is genuinely useful.
 | Process tree | Children run inside a job object, so they are terminated with the service and counted in its resource usage |
 | Monitoring | Checkmk, Prometheus, Nagios/Icinga and Zabbix output, plus stable event IDs |
 | History | Per-minute CPU, memory and restart records, kept as CSV |
-| Configuration as a file | JSON export and import, for rolling the same definition out to many machines |
+| Configuration as a file | JSON export and import, in the window or on the command line, for rolling the same definition out to many machines |
 | Languages | English, German, French, Spanish, Italian |
 
 ![EasyService overview](assets/screenshot-overview.png)
@@ -157,6 +157,11 @@ so that a diff against a reference file can be read.
 
 `export --all` writes every managed service into one file, and `import` accepts both
 shapes.
+
+The same three actions sit under **Configuration** in the window's toolbar, which is
+usually where the first file comes from: set a service up by hand, export it, put it in
+the repository, roll it out from the command line. On import the window asks for the
+password of a service account instead of reading the environment variable.
 
 ## Install
 

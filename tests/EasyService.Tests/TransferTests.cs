@@ -1,4 +1,5 @@
 using EasyService.Core;
+using EasyService.Resources;
 
 namespace EasyService.Tests;
 
@@ -16,7 +17,31 @@ internal static class TransferTests
         yield return ("Mehrere Dienste in einer Datei", ArrayImports);
         yield return ("Unbrauchbare Dateien werden abgelehnt", BadInputIsRejected);
         yield return ("Aufzählungen stehen als Text in der Datei", EnumsAreReadable);
+        yield return ("Export und Import hängen in der Werkzeugleiste", MenuIsWiredUp);
     }
+
+    /// <summary>
+    /// The dropdown is built in code, so a renamed handler or a missing resource key only
+    /// shows up when somebody opens the window. This builds it once and looks inside.
+    /// </summary>
+    private static void MenuIsWiredUp()
+    {
+        using var form = new Gui.MainForm();
+
+        var toolbar = Descend(form).OfType<ToolStrip>().FirstOrDefault();
+        Assert(toolbar is not null, "keine Werkzeugleiste gefunden");
+
+        var menu = toolbar!.Items.OfType<ToolStripDropDownButton>()
+                                 .FirstOrDefault(i => i.Text == S.Main_Menu_Config);
+        Assert(menu is not null, $"kein Menüpunkt \"{S.Main_Menu_Config}\" in der Werkzeugleiste");
+
+        var entries = menu!.DropDownItems.OfType<ToolStripMenuItem>().Select(i => i.Text).ToList();
+        foreach (var expected in new[] { S.Main_Btn_Export, S.Main_Btn_ExportAll, S.Main_Btn_Import })
+            Assert(entries.Contains(expected), $"Eintrag fehlt: {expected}");
+    }
+
+    private static IEnumerable<Control> Descend(Control control) =>
+        new[] { control }.Concat(control.Controls.Cast<Control>().SelectMany(Descend));
 
     private static ServiceConfig Sample() => new()
     {

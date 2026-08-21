@@ -42,7 +42,7 @@ im Anhang wirklich weiter.
 | Prozessbaum | Kindprozesse laufen im Job-Objekt, werden also mit beendet und mitgezählt |
 | Monitoring | Ausgabe für Checkmk, Prometheus, Nagios/Icinga und Zabbix, dazu stabile Ereignis-IDs |
 | Verlauf | CPU, Speicher und Neustarts je Minute, als CSV aufbewahrt |
-| Konfiguration als Datei | Export und Import als JSON, um dieselbe Definition auf viele Rechner zu bringen |
+| Konfiguration als Datei | Export und Import als JSON, im Fenster oder auf der Kommandozeile, um dieselbe Definition auf viele Rechner zu bringen |
 | Sprachen | Englisch, Deutsch, Französisch, Spanisch, Italienisch |
 
 ![EasyService-Übersicht](assets/screenshot-overview.png)
@@ -163,6 +163,11 @@ Referenzdatei lesbar bleibt.
 
 `export --all` schreibt alle verwalteten Dienste in eine Datei, und `import` versteht
 beide Formen.
+
+Dieselben drei Aktionen liegen im Fenster unter **Konfiguration** in der Werkzeugleiste.
+Von dort kommt üblicherweise die erste Datei: einen Dienst von Hand einrichten,
+exportieren, ins Repository legen, per Kommandozeile ausrollen. Beim Import fragt das
+Fenster nach dem Kennwort eines Dienstkontos, statt die Umgebungsvariable zu lesen.
 
 ## Installieren
 

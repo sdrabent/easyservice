@@ -220,6 +220,44 @@ public static class ServiceRegistry
         return key?.GetValue("Application") is string s && !string.IsNullOrWhiteSpace(s);
     }
 
+    /// <summary>
+    /// The complete definition of a service: our own Parameters plus the parts the SCM
+    /// owns (display name, description, start type, dependencies, account). Callers that
+    /// want to edit, export or copy a service need all of it, and reassembling it in three
+    /// places was one place too many.
+    /// </summary>
+    public static ServiceConfig? LoadComplete(string serviceName)
+    {
+        var config = ServiceConfig.Load(serviceName);
+        if (config is null) return null;
+
+        var info = Query(serviceName);
+        if (info is null) return config;
+
+        config.DisplayName = info.DisplayName;
+        config.Startup = info.Startup;
+        config.Description = GetDescription(serviceName);
+        config.Dependencies = GetDependencies(serviceName);
+        ApplyAccount(config, info.Account);
+        return config;
+    }
+
+    private static void ApplyAccount(ServiceConfig config, string? account)
+    {
+        var name = (account ?? "").Trim();
+        if (name.Equals("LocalSystem", StringComparison.OrdinalIgnoreCase))
+            config.Logon = LogonType.LocalSystem;
+        else if (name.EndsWith(@"\LocalService", StringComparison.OrdinalIgnoreCase))
+            config.Logon = LogonType.LocalService;
+        else if (name.EndsWith(@"\NetworkService", StringComparison.OrdinalIgnoreCase))
+            config.Logon = LogonType.NetworkService;
+        else if (name.Length > 0)
+        {
+            config.Logon = LogonType.Account;
+            config.AccountName = name;
+        }
+    }
+
     public static ServiceInfo? Query(string name)
     {
         try

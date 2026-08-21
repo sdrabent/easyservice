@@ -22,6 +22,7 @@ public sealed class MainForm : Form
     private bool _sortAscending = true;
     private readonly string? _initialSelection;
 
+    private ToolStripMenuItem _menuExport = null!;
     private readonly bool _openQuickAdd;
     private readonly string? _openHistoryFor;
 
@@ -83,6 +84,7 @@ public sealed class MainForm : Form
         _toolbar.Items.Add(_btnRemove);
         _toolbar.Items.Add(new ToolStripSeparator());
         _toolbar.Items.Add(Button(S.Main_Btn_Refresh, (_, _) => Reload(), S.Main_Tip_Refresh));
+        _toolbar.Items.Add(BuildConfigMenu());
         _toolbar.Items.Add(BuildLanguageMenu());
 
         _toolbar.Items.Add(new ToolStripSeparator());
@@ -440,6 +442,7 @@ public sealed class MainForm : Form
         _btnEdit.Enabled = managed;
         _btnLogs.Enabled = managed;
         _btnHistory.Enabled = managed;
+        _menuExport.Enabled = managed;
         _btnRemove.Enabled = s is not null;
         _btnStart.Enabled = s is { IsStopped: true, Startup: not StartupType.Disabled };
         _btnStop.Enabled = s is { IsRunning: true };
@@ -482,18 +485,12 @@ public sealed class MainForm : Form
             return;
         }
 
-        var config = ServiceConfig.Load(s.Name);
+        var config = ServiceRegistry.LoadComplete(s.Name);
         if (config is null)
         {
             Ui.ShowError(this, S.Main_MissingConfig_Title, S.Main_MissingConfig_Text(s.Name));
             return;
         }
-
-        config.DisplayName = s.DisplayName;
-        config.Description = ServiceRegistry.GetDescription(s.Name);
-        config.Startup = s.Startup;
-        config.Dependencies = ServiceRegistry.GetDependencies(s.Name);
-        ApplyAccount(config, s.Account);
 
         using var dlg = new ServiceEditorForm(config, isNew: false);
         if (dlg.ShowDialog(this) != DialogResult.OK) return;
@@ -507,20 +504,136 @@ public sealed class MainForm : Form
         Reload();
     }
 
-    private static void ApplyAccount(ServiceConfig config, string account)
+    /// <summary>
+    /// Export and import of a complete definition. The command line is the more likely
+    /// route for a rollout, but the first template usually gets made from a service that
+    /// was set up by hand, and that happens here.
+    /// </summary>
+    private ToolStripDropDownButton BuildConfigMenu()
     {
-        var a = (account ?? "").Trim();
-        if (a.Equals("LocalSystem", StringComparison.OrdinalIgnoreCase))
-            config.Logon = LogonType.LocalSystem;
-        else if (a.EndsWith(@"\LocalService", StringComparison.OrdinalIgnoreCase))
-            config.Logon = LogonType.LocalService;
-        else if (a.EndsWith(@"\NetworkService", StringComparison.OrdinalIgnoreCase))
-            config.Logon = LogonType.NetworkService;
-        else if (a.Length > 0)
+        var button = new ToolStripDropDownButton(S.Main_Menu_Config)
         {
-            config.Logon = LogonType.Account;
-            config.AccountName = a;
+            DisplayStyle = ToolStripItemDisplayStyle.Text,
+        };
+
+        _menuExport = new ToolStripMenuItem(S.Main_Btn_Export, null, (_, _) => ExportSelected());
+        button.DropDownItems.Add(_menuExport);
+        button.DropDownItems.Add(new ToolStripMenuItem(S.Main_Btn_ExportAll, null, (_, _) => ExportAll()));
+        button.DropDownItems.Add(new ToolStripSeparator());
+        button.DropDownItems.Add(new ToolStripMenuItem(S.Main_Btn_Import, null, (_, _) => ImportFromFile()));
+        return button;
+    }
+
+    private void ExportSelected()
+    {
+        if (Selected is not { ManagedByEasyService: true } s) return;
+
+        var config = ServiceRegistry.LoadComplete(s.Name);
+        if (config is null)
+        {
+            Ui.ShowError(this, S.Main_MissingConfig_Title, S.Main_MissingConfig_Text(s.Name));
+            return;
         }
+
+        WriteConfigFile(s.Name + ".json", () => ConfigTransfer.Export(config), path => S.Cfg_Exported(path));
+    }
+
+    private void ExportAll()
+    {
+        var configs = _services.Where(s => s.ManagedByEasyService)
+                               .OrderBy(s => s.Name, StringComparer.OrdinalIgnoreCase)
+                               .Select(s => ServiceRegistry.LoadComplete(s.Name))
+                               .Where(c => c is not null)
+                               .Select(c => c!)
+                               .ToList();
+
+        if (configs.Count == 0)
+        {
+            Ui.ShowInfo(this, S.Main_Menu_Config, S.Cli_NothingToExport);
+            return;
+        }
+
+        WriteConfigFile("easyservice-services.json",
+            () => ConfigTransfer.ExportMany(configs),
+            path => S.Cfg_ExportedMany(configs.Count, path));
+    }
+
+    private void WriteConfigFile(string suggestedName, Func<string> content, Func<string, string> message)
+    {
+        using var dialog = new SaveFileDialog { FileName = suggestedName, Filter = S.Cfg_Filter };
+        if (dialog.ShowDialog(this) != DialogResult.OK) return;
+
+        try
+        {
+            File.WriteAllText(dialog.FileName, content(), new System.Text.UTF8Encoding(false));
+            _status.Text = message(dialog.FileName);
+        }
+        catch (Exception e)
+        {
+            Ui.ShowError(this, S.Cfg_Export_Failed, e);
+        }
+    }
+
+    private void ImportFromFile()
+    {
+        using var dialog = new OpenFileDialog { Filter = S.Cfg_Filter, CheckFileExists = true };
+        if (dialog.ShowDialog(this) != DialogResult.OK) return;
+
+        List<ServiceConfig> configs;
+        try
+        {
+            configs = ConfigTransfer.Import(File.ReadAllText(dialog.FileName));
+        }
+        catch (ConfigTransfer.TransferException e)
+        {
+            Ui.ShowError(this, S.Cfg_Import_Failed, e.Message);
+            return;
+        }
+        catch (Exception e)
+        {
+            Ui.ShowError(this, S.Cfg_Import_Failed, e);
+            return;
+        }
+
+        foreach (var config in configs)
+        {
+            var exists = ServiceRegistry.Exists(config.ServiceName);
+
+            // Dieselbe Regel wie im Rest der Oberflaeche: fremde Dienste fasst
+            // EasyService nicht an.
+            if (exists && !ServiceRegistry.IsManaged(config.ServiceName))
+            {
+                Ui.ShowError(this, S.Cfg_Import_Failed, S.Cfg_Err_Foreign(config.ServiceName));
+                continue;
+            }
+
+            if (exists && !Ui.Confirm(this, S.Cfg_Import_Title, S.Cfg_Import_Overwrite(config.ServiceName)))
+                continue;
+
+            // Die Datei enthaelt bewusst kein Kennwort. Beim Aktualisieren behaelt der
+            // Dienst-Manager das gespeicherte, beim Anlegen brauchen wir eines.
+            if (config.Logon == LogonType.Account && !exists)
+            {
+                var password = Ui.PromptPassword(this, S.Cfg_Import_Title,
+                    S.Cfg_Import_PasswordPrompt(config.AccountName));
+                if (password is null) continue;
+                config.Password = password;
+            }
+
+            var definition = config;
+            if (exists)
+            {
+                if (Run(S.Main_Task_Update(definition.ServiceName), () => ServiceRegistry.Update(definition))
+                    && ServiceRegistry.Query(definition.ServiceName)?.IsRunning == true)
+                    _status.Text = S.Cfg_Import_Restart;
+            }
+            else
+            {
+                Run(S.Main_Task_Install(definition.ServiceName), () => ServiceRegistry.Install(definition));
+            }
+        }
+
+        Reload();
     }
 
     private enum ServiceAction { Start, Stop, Restart }
