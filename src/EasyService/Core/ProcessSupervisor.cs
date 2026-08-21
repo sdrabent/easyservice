@@ -320,7 +320,11 @@ public sealed class ProcessSupervisor : IDisposable
         }
         else
         {
-            LogQuiet(S.Sup_NextAttempt(delay));
+            // 1003 ist als "Anwendung wird neu gestartet" dokumentiert und stand bis hierher
+            // nur im Diagnoseprotokoll. Wer im Ereignisprotokoll darauf filtert, wartete
+            // vergeblich. Der Drosselfall bleibt bei 1004, sonst gaebe es im Absturzkreis
+            // zwei Eintraege pro Runde.
+            Log(EasyServiceEvent.ApplicationRestarting, S.Sup_NextAttempt(delay));
         }
 
         return delay <= 0 || !_stopRequested.Wait(delay);

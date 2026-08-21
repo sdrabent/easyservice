@@ -17,6 +17,7 @@ internal static class HistoryTests
         yield return ("Ereignistexte mit Komma und Anführungszeichen bleiben heil", EventQuotingSurvives);
         yield return ("Alte Zeilen werden nach Ablauf entfernt", PruneDropsOldRows);
         yield return ("Der Supervisor schreibt Ereignisse in die Historie", SupervisorRecordsEvents);
+        yield return ("Ein Neustart hinterlässt das dokumentierte Ereignis 1003", RestartWritesEvent1003);
         yield return ("Die Zusammenfassung rechnet Mittel, Spitze und Neustarts", SummaryAggregates);
         yield return ("Das Verlaufsfenster zeichnet sich fehlerfrei", HistoryWindowRenders);
     }
@@ -135,6 +136,53 @@ internal static class HistoryTests
     }
 
     // ---------------------------------------------------------- Supervisorlauf
+
+    /// <summary>
+    /// 1003 ist in docs/monitoring.md als "Anwendung wird neu gestartet" veroeffentlicht.
+    /// Es stand lange nur im Diagnoseprotokoll, nicht im Ereignisprotokoll - wer darauf
+    /// alarmiert hat, bekam nie etwas. Die ID ist Teil der Zusage, also wird sie geprueft.
+    /// </summary>
+    private static void RestartWritesEvent1003()
+    {
+        var dir = Path.Combine(_root, "restart-event");
+        Directory.CreateDirectory(dir);
+
+        var config = new ServiceConfig
+        {
+            ServiceName = Name("restartevent"),
+            Application = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.System), "cmd.exe"),
+            AppParameters = "/c \"exit /b 1\"",
+            AppDirectory = dir,
+            StdoutPath = Path.Combine(dir, "stdout.log"),
+            StderrPath = Path.Combine(dir, "stderr.log"),
+            DefaultExitAction = ExitAction.Restart,
+            RestartDelayMs = 100,
+            ThrottleMs = 0,          // ohne Drossel, sonst meldet der Supervisor 1004 statt 1003
+            HistoryDays = 30,
+        };
+
+        try
+        {
+            HistoryStore.Delete(config.ServiceName);
+
+            using (var supervisor = new ProcessSupervisor(config))
+            {
+                var task = Task.Run(supervisor.Run);
+                Thread.Sleep(2500);
+                supervisor.RequestStop();
+                task.Wait(TimeSpan.FromSeconds(20));
+            }
+
+            var events = HistoryStore.ReadEvents(config.ServiceName, DateTime.UtcNow.AddMinutes(-10));
+            Assert(events.Any(e => e.EventId == (int)EasyServiceEvent.ApplicationRestarting),
+                "kein Ereignis 1003 aufgezeichnet, obwohl mehrfach neu gestartet wurde");
+        }
+        finally
+        {
+            HistoryStore.Delete(config.ServiceName);
+            ServiceState.Delete(config.ServiceName);
+        }
+    }
 
     private static void SupervisorRecordsEvents()
     {
