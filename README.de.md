@@ -81,7 +81,7 @@ Ereignis zusätzlich mit einer **stabilen Ereignis-ID** im Windows-Anwendungspro
 Get-WinEvent -FilterHashtable @{ LogName='Application'; ProviderName='EasyService'; Id=1004,1005,1008 }
 ```
 
-Diese IDs ändern sich nie und werden nie übersetzt. → **[docs/monitoring.md](docs/monitoring.md)**
+Diese IDs ändern sich nie und werden nie übersetzt. → **[docs/monitoring.md](docs/monitoring.de.md)**
 
 ## Logging, das Sie sich nicht selbst bauen müssen
 
@@ -108,7 +108,7 @@ Notepad öffnen müssen:
 
 `mk_logwatch` auf `%ProgramData%\EasyService\logs\*-stderr.log` zeigen lassen, und die
 Fehlerausgabe Ihrer Anwendung wird zum überwachten Protokoll — die Konfiguration steht im
-[Monitoring-Leitfaden](docs/monitoring.md).
+[Monitoring-Leitfaden](docs/monitoring.de.md).
 
 ## Verlauf: Was hat das Ding heute Nacht getrieben?
 

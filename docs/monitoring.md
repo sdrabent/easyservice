@@ -1,127 +1,129 @@
-# Monitoring-Anbindung
+# Monitoring integration
 
-EasyService ist so gebaut, dass ein Administrator es nicht anschauen muss, um zu wissen,
-wie es den Diensten geht. Alle Zustände gehen an das vorhandene Monitoring.
+EasyService is built so that an administrator does not have to look at it to know how the
+services are doing. Every state goes to the monitoring you already run.
 
-## Warum das nötig ist
+**Deutsch:** [monitoring.de.md](monitoring.de.md)
 
-Der Windows-Dienst-Manager kennt nur einen Zustand: läuft der Dienstprozess oder nicht.
-Bei einem Wrapper wie EasyService (oder NSSM) ist der Dienstprozess aber der *Wrapper* —
-nicht die eigentliche Anwendung.
+## Why this is needed
+
+The Windows service manager knows exactly one state: is the service process running or
+not. With a wrapper like EasyService (or NSSM) the service process is the *wrapper* — not
+the actual application.
 
 ```
-sc query MeinDaemon
-        STATE : 4  RUNNING          <- sieht gut aus
+sc query MyDaemon
+        STATE : 4  RUNNING          <- looks fine
 ```
 
-Dahinter kann die Anwendung heute 412-mal abgestürzt und neu gestartet worden sein.
-`sc query`, `services.msc` und jeder Check, der nur den Dienststatus abfragt, melden
-trotzdem „alles in Ordnung".
+Behind that, the application may have crashed and restarted 412 times today. `sc query`,
+`services.msc` and every check that only asks for the service state will still report
+"all good".
 
-Genau diese Lücke schließt EasyService: es weiß, wie oft die Anwendung neu gestartet
-wurde, wie lange sie diesmal läuft, was sie an CPU und Speicher kostet und mit welchem
-Exit-Code sie zuletzt gestorben ist — und gibt das in den Formaten aus, die die gängigen
-Monitoring-Systeme direkt lesen.
+That is exactly the gap EasyService closes: it knows how often the application was
+restarted, how long it has been up this time, what it costs in CPU and memory, and which
+exit code it died with last — and it emits that in the formats the common monitoring
+systems read directly.
 
-## Was gemessen wird
+## What is measured
 
-| Wert | Bedeutung |
+| Value | Meaning |
 |---|---|
-| `service_running` | Der Windows-Dienst selbst läuft |
-| `app_running` | Die überwachte Anwendung läuft |
-| `uptime` | Laufzeit der Anwendung seit dem letzten Start |
-| `restarts_1h` / `restarts_24h` | Neustarts im Zeitfenster — die Flapping-Erkennung |
-| `restarts_total` | Neustarts seit dem Start des Dienstes |
-| `cpu` | CPU-Last des **gesamten Prozessbaums** (100 % = alle Kerne ausgelastet) |
-| `mem` | Arbeitsspeicher des gesamten Prozessbaums |
-| `procs` | Anzahl Prozesse im Baum |
-| `cpu_seconds` | Verbrauchte CPU-Zeit, als Zähler für Raten |
+| `service_running` | The Windows service itself is running |
+| `app_running` | The supervised application is running |
+| `uptime` | Uptime of the application since its last start |
+| `restarts_1h` / `restarts_24h` | Restarts in the window — the flapping detection |
+| `restarts_total` | Restarts since the service was started |
+| `cpu` | CPU load of the **whole process tree** (100 % = all cores busy) |
+| `mem` | Memory of the whole process tree |
+| `procs` | Number of processes in the tree |
+| `cpu_seconds` | CPU time consumed, as a counter for rates |
 
-Gemessen wird über das Job-Objekt, in dem die Anwendung ohnehin für das saubere Beenden
-läuft. Ein Startskript, das `java.exe` nachlädt, wird dadurch mitgezählt — bei einer
-Messung nur auf den Hauptprozess stünde dort eine glatte Null.
+Measurement goes through the job object the application already lives in for clean
+shutdown. A launcher script that pulls in `java.exe` is therefore counted — measuring
+only the main process would report a flat zero there.
 
-Die Werte werden alle 5 Sekunden aktualisiert und liegen als JSON unter
-`%ProgramData%\EasyService\state\<Dienst>.json`. Bleibt diese Datei älter als zwei
-Minuten stehen, meldet der Check **UNKNOWN** statt weiterhin die alten Zahlen — eine
-tote Messung ist schlimmer als gar keine.
+The values are refreshed every 5 seconds and stored as JSON under
+`%ProgramData%\EasyService\state\<service>.json`. If that file stops being updated for
+more than two minutes, the check reports **UNKNOWN** instead of continuing to serve the
+old numbers — a dead measurement is worse than none.
 
-## Langzeitverlauf
+## Long-term history
 
-Neben dem Momentanzustand schreibt der überwachende Prozess einen Verlauf: eine Zeile
-pro Minute als CSV unter `%ProgramData%\EasyService\history\`.
+Besides the current state, the supervising process records a history: one row per minute
+as CSV under `%ProgramData%\EasyService\history\`.
 
-| Datei | Inhalt |
+| File | Contents |
 |---|---|
-| `<Dienst>-metrics.csv` | `utc,cpu_avg,cpu_max,mem_avg,mem_max,procs,restarts_total` |
-| `<Dienst>-events.csv` | `utc,event_id,exit_code,detail` |
+| `<service>-metrics.csv` | `utc,cpu_avg,cpu_max,mem_avg,mem_max,procs,restarts_total` |
+| `<service>-events.csv` | `utc,event_id,exit_code,detail` |
 
-Zeitstempel sind UTC im Format `yyyy-MM-ddTHH:mm:ssZ`, Zahlen invariant formatiert —
-beides direkt maschinenlesbar. Eine Zeile ist rund 56 Byte, macht etwa 80 KB je Dienst
-und Tag oder 2,3 MB für die voreingestellten 30 Tage. Die Aufbewahrung steht pro Dienst
-im Editor auf der Registerkarte *Überwachung* (0 schaltet ab); ältere Zeilen werden
-täglich entfernt.
+Timestamps are UTC in the form `yyyy-MM-ddTHH:mm:ssZ`, numbers are formatted invariantly —
+both directly machine-readable. A row is about 56 bytes, which works out to roughly 80 KB
+per service and day, or 2.3 MB for the 30 days kept by default. Retention is set per
+service in the editor on the *Monitoring* tab (0 turns it off); older rows are dropped
+daily.
 
-Wer die Werte lieber im eigenen Zeitreihensystem hätte, kann `metrics.csv` direkt
-einlesen — oder gleich den Prometheus-Weg unten nehmen und die Historie dort führen.
-In der Oberfläche zeigt ein Doppelklick auf den Dienst dieselben Daten als Diagramm.
+If you would rather keep the values in your own time-series system, read `metrics.csv`
+directly — or take the Prometheus route below and keep the history there. In the interface
+a double-click on the service shows the same data as charts.
 
-## Bewertung
+## Verdict
 
-Aus den Rohwerten wird ein Status nach Nagios-Konvention (0 OK, 1 WARN, 2 CRIT, 3 UNKNOWN):
+The raw values are turned into a status following the Nagios convention (0 OK, 1 WARN,
+2 CRIT, 3 UNKNOWN):
 
 | Situation | Status |
 |---|---|
-| Dienst beendet, Starttyp *Automatisch* | **CRIT** |
-| Dienst beendet, Starttyp *Manuell* oder *Deaktiviert* | OK |
-| Anwendung startet ständig neu und wird gedrosselt | **CRIT** |
-| Anwendung ließ sich nicht starten | **CRIT** |
-| Anwendung beendet, kein Neustart konfiguriert | **WARN** |
-| Statusmeldung älter als 2 Minuten | **UNKNOWN** |
-| Schwellwerte für Neustarts/CPU/RAM überschritten | **WARN** / **CRIT** |
+| Service stopped, startup type *Automatic* | **CRIT** |
+| Service stopped, startup type *Manual* or *Disabled* | OK |
+| Application restarting constantly and being throttled | **CRIT** |
+| Application could not be started | **CRIT** |
+| Application exited, no restart configured | **WARN** |
+| Status report older than 2 minutes | **UNKNOWN** |
+| Thresholds for restarts/CPU/RAM exceeded | **WARN** / **CRIT** |
 
-Die Schwellwerte stehen pro Dienst im Editor auf der Registerkarte **Überwachung**.
-Voreingestellt sind 3 Neustarts pro Stunde als Warnung und 10 als kritisch; CPU und
-Speicher sind ab Werk unbegrenzt (0 = nicht prüfen).
+Thresholds live per service in the editor on the **Monitoring** tab. The defaults are
+3 restarts per hour for a warning and 10 for critical; CPU and memory are unlimited out
+of the box (0 = do not check).
 
 ---
 
 ## Checkmk
 
-### Zustände als Local Check
+### States as a local check
 
-Ein Local Check reicht für alle überwachten Dienste — EasyService gibt eine Zeile je
-Dienst aus, inklusive Perfdaten für die Graphen.
+One local check covers all supervised services — EasyService prints one line per service,
+including perfdata for the graphs.
 
-Datei `C:\ProgramData\checkmk\agent\local\easyservice.bat`:
+File `C:\ProgramData\checkmk\agent\local\easyservice.bat`:
 
 ```bat
 @"C:\Program Files\EasyService\easyservice.exe" checkmk
 ```
 
-Ergebnis (eine Zeile je Dienst):
+Result (one line per service):
 
 ```
-0 EasyService_MeinDaemon uptime=86400s;;;0;|restarts_1h=0;3;10;0|cpu=2.5%;80;95;0;100|mem=140509184B;;;0|procs=2 Running for 1d 0h, PID 1234, CPU 2.5 %, RAM 134 MB, 0 restarts/h
+0 EasyService_MyDaemon uptime=86400s;;;0;|restarts_1h=0;3;10;0|cpu=2.5%;80;95;0;100|mem=140509184B;;;0|procs=2 Running for 1d 0h, PID 1234, CPU 2.5 %, RAM 134 MB, 0 restarts/h
 2 EasyService_Importer uptime=3s;;;0;|restarts_1h=37;3;10;0|cpu=0%;80;95;0;100|mem=8192000B;;;0|procs=1 37 restarts in the last hour (critical from 10) - Running for 3s, PID 9876
 ```
 
-Der Meldungstext folgt der eingestellten Sprache (siehe unten); Statuscode, Item-Name und
-Perfdaten sind sprachunabhängig.
+The message text follows the configured language (see below); status code, item name and
+perfdata are language-independent.
 
-Danach `cmk -II <host>` und `cmk -O` auf dem Checkmk-Server, und jeder Dienst erscheint
-als eigener Service mit Graphen für CPU, Speicher und Neustarts.
+Then run `cmk -II <host>` and `cmk -O` on the Checkmk server, and every service shows up
+as its own service with graphs for CPU, memory and restarts.
 
-### Protokolldateien einbinden
+### Wiring up the log files
 
-Wichtig: Die `logfiles`-Sektion des Windows-Agenten ist für Textdateien **nicht**
-zuständig — in `check_mk.user.yml` steht ausdrücklich „We do not support logfiles
-monitoring in agent at the moment. Please, use plugin mk_logwatch". Der richtige Weg
-ist das Plugin.
+Important: the `logfiles` section of the Windows agent is **not** responsible for text
+files — `check_mk.user.yml` says so explicitly: "We do not support logfiles monitoring in
+agent at the moment. Please, use plugin mk_logwatch". The plugin is the right way.
 
-1. `mk_logwatch.py` vom Checkmk-Server (`~/share/check_mk/agents/plugins/`) nach
-   `C:\ProgramData\checkmk\agent\plugins\` kopieren.
-2. Konfiguration unter `C:\ProgramData\checkmk\agent\config\logwatch.cfg` anlegen:
+1. Copy `mk_logwatch.py` from the Checkmk server (`~/share/check_mk/agents/plugins/`) to
+   `C:\ProgramData\checkmk\agent\plugins\`.
+2. Create the configuration at `C:\ProgramData\checkmk\agent\config\logwatch.cfg`:
 
 ```
 C:\ProgramData\EasyService\logs\*-stderr.log
@@ -132,17 +134,16 @@ C:\ProgramData\EasyService\logs\*-stderr.log
  I .*
 ```
 
-Für das Diagnoseprotokoll von EasyService selbst (`*-easyservice.log`) gilt eine
-Einschränkung: dessen Meldungstexte folgen der eingestellten Sprache, Textmuster wären
-also nicht portabel. **Nutze dafür lieber die Ereignis-IDs** (siehe unten) — die sind
-sprachunabhängig und genau dafür da. Wer trotzdem die Datei überwachen will, sollte die
-Sprache maschinenweit auf Englisch festnageln:
+For EasyService's own diagnostic log (`*-easyservice.log`) there is a caveat: its message
+texts follow the configured language, so text patterns would not be portable. **Prefer
+the event IDs** (see below) — they are language-independent and exist for exactly this
+purpose. If you still want to watch the file, pin the language machine-wide to English:
 
 ```cmd
 reg add HKLM\SOFTWARE\EasyService /v Language /t REG_SZ /d en /f
 ```
 
-und dann auf den englischen Text matchen:
+and then match on the English text:
 
 ```
 C:\ProgramData\EasyService\logs\*-easyservice.log
@@ -152,14 +153,13 @@ C:\ProgramData\EasyService\logs\*-easyservice.log
  I .*
 ```
 
-Pfade und Plugin-Verzeichnis unterscheiden sich je nach Agent-Version; im Zweifel die
-[Checkmk-Dokumentation zur Logdatei-Überwachung](https://docs.checkmk.com/latest/en/monitoring_logfiles.html)
-gegenprüfen.
+Paths and the plugin directory differ between agent versions; when in doubt check the
+[Checkmk documentation on log file monitoring](https://docs.checkmk.com/latest/en/monitoring_logfiles.html).
 
-### Windows-Ereignisse
+### Windows events
 
-Der Windows-Agent liest das Anwendungsprotokoll ohnehin. EasyService schreibt dort mit
-stabilen Ereignis-IDs (siehe unten), auf die sich ohne Textmustersuche alarmieren lässt.
+The Windows agent reads the application log anyway. EasyService writes there with stable
+event IDs (see below), which can be alerted on without matching message text.
 
 ---
 
@@ -169,30 +169,30 @@ stabilen Ereignis-IDs (siehe unten), auf die sich ohne Textmustersuche alarmiere
 "C:\Program Files\EasyService\easyservice.exe" prometheus
 ```
 
-Für den Textfile-Collector des `node_exporter` — die Datei wird atomar ersetzt, der
-Collector sieht also nie einen halben Stand:
+For the textfile collector of `node_exporter` — the file is replaced atomically, so the
+collector never sees a half-written state:
 
 ```cmd
 "C:\Program Files\EasyService\easyservice.exe" prometheus --output C:\ProgramData\node_exporter\textfile\easyservice.prom
 ```
 
-Als Aufgabe, die minütlich läuft:
+As a task that runs every minute:
 
 ```cmd
 schtasks /create /tn "EasyService Metrics" /sc minute /mo 1 /ru SYSTEM ^
   /tr "\"C:\Program Files\EasyService\easyservice.exe\" prometheus --output C:\ProgramData\node_exporter\textfile\easyservice.prom"
 ```
 
-Ausgabe:
+Output:
 
 ```
 # HELP easyservice_restarts_1h Restarts in the last hour
 # TYPE easyservice_restarts_1h gauge
-easyservice_restarts_1h{service="MeinDaemon"} 0
+easyservice_restarts_1h{service="MyDaemon"} 0
 easyservice_restarts_1h{service="Importer"} 37
 ```
 
-Beispiel-Alarmregel:
+Example alerting rules:
 
 ```yaml
 groups:
@@ -202,22 +202,22 @@ groups:
         expr: easyservice_restarts_1h > 10
         for: 5m
         annotations:
-          summary: "{{ $labels.service }} startet ständig neu"
+          summary: "{{ $labels.service }} keeps restarting"
 
       - alert: EasyServiceApplicationDown
         expr: easyservice_service_running == 1 and easyservice_application_running == 0
         for: 2m
         annotations:
-          summary: "{{ $labels.service }}: Dienst läuft, Anwendung nicht"
+          summary: "{{ $labels.service }}: service up, application not"
 
       - alert: EasyServiceStale
         expr: easyservice_state_age_seconds > 120
         for: 5m
         annotations:
-          summary: "{{ $labels.service }} liefert keine Messwerte mehr"
+          summary: "{{ $labels.service }} stopped reporting measurements"
 ```
 
-Die mittlere Regel ist die, die `sc query` nicht kann.
+The middle rule is the one `sc query` cannot give you.
 
 ---
 
@@ -231,56 +231,56 @@ UserParameter=easyservice.check[*],"C:\Program Files\EasyService\easyservice.exe
 UserParameter=easyservice.json,"C:\Program Files\EasyService\easyservice.exe" json
 ```
 
-`easyservice.discovery` liefert die Low-Level-Discovery-Liste:
+`easyservice.discovery` returns the low-level discovery list:
 
 ```json
-{ "data": [ { "{#SERVICE}": "MeinDaemon", "{#DISPLAYNAME}": "Mein Daemon" } ] }
+{ "data": [ { "{#SERVICE}": "MyDaemon", "{#DISPLAYNAME}": "My Daemon" } ] }
 ```
 
-Damit legt ein Template automatisch Items für jeden überwachten Dienst an. Für die
-Einzelwerte eignet sich `easyservice.json` mit einem Dependent Item und JSONPath-Vorverarbeitung,
-etwa `$[?(@.service=='MeinDaemon')].restartsLastHour`.
+A template can use that to create items for every supervised service automatically. For
+the individual values, `easyservice.json` works well with a dependent item and JSONPath
+preprocessing, for example `$[?(@.service=='MyDaemon')].restartsLastHour`.
 
 ---
 
 ## Nagios / Icinga
 
 ```cmd
-"C:\Program Files\EasyService\easyservice.exe" check "MeinDaemon"
+"C:\Program Files\EasyService\easyservice.exe" check "MyDaemon"
 ```
 
 ```
 EASYSERVICE CRITICAL - 37 restarts in the last hour (critical from 10) - Running for 3s, PID 9876 | uptime=3s;;;0 restarts_1h=37;3;10;0 cpu=0%;80;95;0;100
 ```
 
-Exit-Code: `0` OK, `1` Warnung, `2` kritisch, `3` unbekannt — die übliche Plugin-Konvention,
-also direkt über NSClient++/NRPE verwendbar.
+Exit code: `0` OK, `1` warning, `2` critical, `3` unknown — the usual plugin convention,
+so it can be used straight through NSClient++/NRPE.
 
 ---
 
-## Windows-Ereignisprotokoll
+## Windows event log
 
-EasyService schreibt in das **Anwendungsprotokoll** unter der Quelle `EasyService`.
-Die Ereignis-IDs sind Teil des öffentlichen Vertrags und werden nie umnummeriert —
-alarmiere auf die ID, nicht auf den Meldungstext.
+EasyService writes to the **application log** under the source `EasyService`. The event
+IDs are part of the public contract and are never renumbered — alert on the ID, not on
+the message text.
 
-| ID | Bedeutung | Typ |
+| ID | Meaning | Type |
 |---|---|---|
-| 1000 | Überwachung gestartet | Information |
-| 1001 | Anwendung gestartet | Information |
-| 1002 | Anwendung beendet | Information / Warnung |
-| 1003 | Anwendung wird neu gestartet | Information |
-| **1004** | **Neustart gedrosselt** — die Anwendung stirbt schneller als sie startet | **Warnung** |
-| **1005** | **Start fehlgeschlagen** | **Fehler** |
-| 1006 | Dienst wird beendet | Information |
-| 1007 | Durch Beenden-Aktion gestoppt | Information |
-| **1008** | **Anwendung hart beendet** — sie hat auf keine Aufforderung reagiert | **Warnung** |
-| 1009 | Konfigurationsproblem | Fehler |
-| 1010 | Protokollierungsproblem | Warnung |
+| 1000 | Supervision started | Information |
+| 1001 | Application started | Information |
+| 1002 | Application exited | Information / Warning |
+| 1003 | Application is restarting | Information |
+| **1004** | **Restart throttled** — the application dies faster than it starts | **Warning** |
+| **1005** | **Start failed** | **Error** |
+| 1006 | Service is stopping | Information |
+| 1007 | Stopped by exit action | Information |
+| **1008** | **Application terminated** — it responded to no request to close | **Warning** |
+| 1009 | Configuration problem | Error |
+| 1010 | Logging problem | Warning |
 
-Die fett markierten sind die, auf die sich ein Alarm lohnt.
+The ones in bold are the ones worth an alert.
 
-Abfrage per PowerShell, etwa für einen eigenen Check:
+Querying with PowerShell, for example for a check of your own:
 
 ```powershell
 Get-WinEvent -FilterHashtable @{ LogName='Application'; ProviderName='EasyService'; Id=1004,1005,1008 } -MaxEvents 20
@@ -288,7 +288,7 @@ Get-WinEvent -FilterHashtable @{ LogName='Application'; ProviderName='EasyServic
 
 ---
 
-## JSON für alles andere
+## JSON for everything else
 
 ```cmd
 "C:\Program Files\EasyService\easyservice.exe" json
@@ -297,7 +297,7 @@ Get-WinEvent -FilterHashtable @{ LogName='Application'; ProviderName='EasyServic
 ```json
 [
   {
-    "service": "MeinDaemon",
+    "service": "MyDaemon",
     "status": 0,
     "statusText": "OK",
     "summary": "Running for 1d 0h, PID 1234, CPU 2.5 %, RAM 134 MB, 0 restarts/h",
@@ -315,53 +315,53 @@ Get-WinEvent -FilterHashtable @{ LogName='Application'; ProviderName='EasyServic
 ]
 ```
 
-Alle Zahlen nutzen den Punkt als Dezimaltrenner, unabhängig von der Systemsprache —
-ein deutsches „2,5" würde jeden Parser zerlegen. Das ist durch einen Test abgesichert.
+All numbers use the dot as the decimal separator regardless of the system language — a
+German "2,5" would take every parser apart. A test guards this.
 
-Für einen einzelnen Dienst: `easyservice status <Name> --json`.
+For a single service: `easyservice status <name> --json`.
 
 ---
 
-## Sprache der Ausgabe
+## Language of the output
 
-EasyService spricht Englisch und Deutsch. Welche Sprache eine Ausgabe verwendet, ergibt
-sich in dieser Reihenfolge:
+EasyService speaks English, German, French, Spanish and Italian. Which language an output
+uses is decided in this order:
 
-1. `HKCU\Software\EasyService\Language` — die Wahl im Menü **Sprache** der Oberfläche
-2. `HKLM\SOFTWARE\EasyService\Language` — maschinenweite Vorgabe
-3. die Sprache, in der Windows läuft
+1. `HKCU\Software\EasyService\Language` — the choice in the interface's **Language** menu
+2. `HKLM\SOFTWARE\EasyService\Language` — machine-wide default
+3. the language Windows itself runs in
 
-Gültige Werte sind `en`, `de` und ein leerer Wert für „wie Windows".
+Valid values are `en`, `de`, `fr`, `es`, `it` and an empty value for "follow Windows".
 
-Für das Monitoring ist Punkt 2 der wichtige: die Checks laufen unter dem Konto des Agenten,
-nicht unter dem des Administrators, der sie eingerichtet hat. Wer englische Ausgaben auf
-einem deutschen Server will, setzt
+For monitoring, point 2 is the important one: the checks run under the agent's account,
+not under the account of the administrator who configured them. To get English output on
+a German server:
 
 ```cmd
 reg add HKLM\SOFTWARE\EasyService /v Language /t REG_SZ /d en /f
 ```
 
-**Sprachunabhängig sind in jedem Fall:** Statuscodes (0/1/2/3), Item-Namen, Metriknamen,
-Perfdaten, JSON-Feldnamen und die Ereignis-IDs. Nur die Meldungstexte übersetzen sich.
-Alarme sollten deshalb auf Codes und IDs aufsetzen, nicht auf Text.
+**Language-independent in every case:** status codes (0/1/2/3), item names, metric names,
+perfdata, JSON field names and the event IDs. Only the human-readable messages translate.
+Alerts should therefore be built on codes and IDs, not on text.
 
 ---
 
-## Fehlersuche
+## Troubleshooting
 
-**Der Check meldet UNKNOWN und „meldet aber noch keinen Zustand".**
-Der Dienst läuft noch mit einer EasyService-Version vor der Monitoring-Unterstützung.
-Einmal neu starten genügt.
+**The check reports UNKNOWN and "has not reported any state yet".**
+The service is still running an EasyService version from before monitoring support.
+Restarting it once is enough.
 
-**Der Check meldet UNKNOWN und „Die letzte Statusmeldung ist … alt".**
-Der überwachende Prozess hängt oder wurde hart abgeschossen. Die Zustandsdatei unter
-`%ProgramData%\EasyService\state\` bleibt in dem Fall liegen; die Werte darin sind
-absichtlich nicht mehr gültig.
+**The check reports UNKNOWN and "The last status report is … old".**
+The supervising process is hung or was killed hard. The state file under
+`%ProgramData%\EasyService\state\` stays behind in that case; its values are deliberately
+no longer treated as valid.
 
-**CPU steht dauerhaft auf 0.**
-Die CPU-Last ist eine Differenz zwischen zwei Messungen; der erste Wert kommt daher
-frühestens rund sieben Sekunden nach dem Start der Anwendung.
+**CPU stays at 0 permanently.**
+CPU load is a difference between two measurements, so the first value arrives at the
+earliest about seven seconds after the application starts.
 
-**Speicher wird zu niedrig gemeldet.**
-Konnte der Prozess keinem Job-Objekt zugeordnet werden, misst EasyService nur den
-Hauptprozess. Das steht dann als Hinweis im Diagnoseprotokoll des Dienstes.
+**Memory is reported too low.**
+If the process could not be assigned to a job object, EasyService only measures the main
+process. That is noted in the service's diagnostic log.
