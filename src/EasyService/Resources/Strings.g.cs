@@ -38,6 +38,9 @@ internal static class S
     /// <summary>Startup directory not found: {0}</summary>
     public static string Cfg_Err_DirNotFound(object? p0) => Fmt("Cfg_Err_DirNotFound", p0);
 
+    /// <summary>"{0}" already exists but was not created with EasyService. Importing would overwrite a foreign service.</summary>
+    public static string Cfg_Err_Foreign(object? p0) => Fmt("Cfg_Err_Foreign", p0);
+
     /// <summary>The service name must not be empty.</summary>
     public static string Cfg_Err_NameEmpty => Get("Cfg_Err_NameEmpty");
 
@@ -47,11 +50,65 @@ internal static class S
     /// <summary>The service name is too long (256 characters maximum).</summary>
     public static string Cfg_Err_NameTooLong => Get("Cfg_Err_NameTooLong");
 
+    /// <summary>The configuration logs on as "{0}". Passwords are never exported - set {1} before importing.</summary>
+    public static string Cfg_Err_NeedsPassword(object? p0, object? p1) => Fmt("Cfg_Err_NeedsPassword", p0, p1);
+
+    /// <summary>This configuration was written by a newer version of EasyService (format {0}).</summary>
+    public static string Cfg_Err_NewerFormat(object? p0) => Fmt("Cfg_Err_NewerFormat", p0);
+
     /// <summary>No program was specified.</summary>
     public static string Cfg_Err_NoApplication => Get("Cfg_Err_NoApplication");
 
+    /// <summary>The configuration has no service name.</summary>
+    public static string Cfg_Err_NoServiceName => Get("Cfg_Err_NoServiceName");
+
+    /// <summary>The file is not an EasyService configuration.</summary>
+    public static string Cfg_Err_NotConfig => Get("Cfg_Err_NotConfig");
+
+    /// <summary>The file is not valid JSON: {0}</summary>
+    public static string Cfg_Err_NotJson(object? p0) => Fmt("Cfg_Err_NotJson", p0);
+
+    /// <summary>Export failed</summary>
+    public static string Cfg_Export_Failed => Get("Cfg_Export_Failed");
+
+    /// <summary>Configuration written to {0}</summary>
+    public static string Cfg_Exported(object? p0) => Fmt("Cfg_Exported", p0);
+
+    /// <summary>{0} configurations written to {1}</summary>
+    public static string Cfg_ExportedMany(object? p0, object? p1) => Fmt("Cfg_ExportedMany", p0, p1);
+
+    /// <summary>EasyService configuration (*.json)|*.json|All files (*.*)|*.*</summary>
+    public static string Cfg_Filter => Get("Cfg_Filter");
+
+    /// <summary>Import failed</summary>
+    public static string Cfg_Import_Failed => Get("Cfg_Import_Failed");
+
+    /// <summary>The service "{0}" already exists. Overwrite its configuration?</summary>
+    public static string Cfg_Import_Overwrite(object? p0) => Fmt("Cfg_Import_Overwrite", p0);
+
+    /// <summary>Password for "{0}":</summary>
+    public static string Cfg_Import_PasswordPrompt(object? p0) => Fmt("Cfg_Import_PasswordPrompt", p0);
+
+    /// <summary>The service is running; the changes take effect after a restart.</summary>
+    public static string Cfg_Import_Restart => Get("Cfg_Import_Restart");
+
+    /// <summary>Import configuration</summary>
+    public static string Cfg_Import_Title => Get("Cfg_Import_Title");
+
+    /// <summary>Service "{0}" was created from the configuration.</summary>
+    public static string Cfg_Imported_Created(object? p0) => Fmt("Cfg_Imported_Created", p0);
+
+    /// <summary>Service "{0}" was updated from the configuration.</summary>
+    public static string Cfg_Imported_Updated(object? p0) => Fmt("Cfg_Imported_Updated", p0);
+
     /// <summary>Error: {0}</summary>
     public static string Cli_Err(object? p0) => Fmt("Cli_Err", p0);
+
+    /// <summary>export requires &lt;name&gt; or --all.</summary>
+    public static string Cli_ExportNeedsName => Get("Cli_ExportNeedsName");
+
+    /// <summary>File not found: {0}</summary>
+    public static string Cli_FileNotFound(object? p0) => Fmt("Cli_FileNotFound", p0);
 
     /// <summary>DISPLAY NAME</summary>
     public static string Cli_Hdr_DisplayName => Get("Cli_Hdr_DisplayName");
@@ -64,6 +121,9 @@ internal static class S
 
     /// <summary>STATUS</summary>
     public static string Cli_Hdr_Status => Get("Cli_Hdr_Status");
+
+    /// <summary>import requires a file.</summary>
+    public static string Cli_ImportNeedsFile => Get("Cli_ImportNeedsFile");
 
     /// <summary>install requires &lt;name&gt; and &lt;program&gt;.</summary>
     public static string Cli_InstallNeedsArgs => Get("Cli_InstallNeedsArgs");
@@ -85,6 +145,9 @@ internal static class S
 
     /// <summary>Error: service "{0}" does not exist.</summary>
     public static string Cli_NotExists(object? p0) => Fmt("Cli_NotExists", p0);
+
+    /// <summary>No services managed by EasyService were found.</summary>
+    public static string Cli_NothingToExport => Get("Cli_NothingToExport");
 
     /// <summary>--output requires a file name.</summary>
     public static string Cli_OutputNeedsFile => Get("Cli_OutputNeedsFile");
@@ -797,8 +860,17 @@ internal static class S
     /// <summary>Edit...</summary>
     public static string Main_Btn_Edit => Get("Main_Btn_Edit");
 
+    /// <summary>Export...</summary>
+    public static string Main_Btn_Export => Get("Main_Btn_Export");
+
+    /// <summary>Export all...</summary>
+    public static string Main_Btn_ExportAll => Get("Main_Btn_ExportAll");
+
     /// <summary>History...</summary>
     public static string Main_Btn_History => Get("Main_Btn_History");
+
+    /// <summary>Import...</summary>
+    public static string Main_Btn_Import => Get("Main_Btn_Import");
 
     /// <summary>Logs...</summary>
     public static string Main_Btn_Logs => Get("Main_Btn_Logs");
@@ -871,6 +943,9 @@ internal static class S
 
     /// <summary>Filter:</summary>
     public static string Main_Lbl_Filter => Get("Main_Lbl_Filter");
+
+    /// <summary>Configuration</summary>
+    public static string Main_Menu_Config => Get("Main_Menu_Config");
 
     /// <summary>Language</summary>
     public static string Main_Menu_Language => Get("Main_Menu_Language");

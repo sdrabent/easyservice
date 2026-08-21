@@ -43,6 +43,9 @@ internal static class Program
 
             foreach (var (name, test) in HistoryTests.All(_root))
                 Run(name, test);
+
+            foreach (var (name, test) in TransferTests.All())
+                Run(name, test);
         }
         finally
         {

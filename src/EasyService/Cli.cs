@@ -26,6 +26,8 @@ internal static class Cli
                 "stop" => Simple(args, n => ServiceRegistry.Stop(n, TimeSpan.FromSeconds(60)), S.Cli_Stopped),
                 "restart" => Simple(args, n => ServiceRegistry.Restart(n, TimeSpan.FromSeconds(60)), S.Cli_Restarted),
                 "status" => Status(args),
+                "export" => Export(args),
+                "import" => Import(args),
 
                 // monitoring integrations
                 "checkmk" => Checkmk(),
@@ -178,6 +180,174 @@ internal static class Cli
             }
         }
         return info.IsRunning ? 0 : 3;
+    }
+
+    // ------------------------------------------------ Konfiguration als Datei ---
+
+    private static int Export(string[] args)
+    {
+        var all = args.Contains("--all");
+        var name = args.Length >= 2 && !args[1].StartsWith('-') ? args[1] : null;
+        if (!all && name is null) return Usage(2, S.Cli_ExportNeedsName);
+
+        string json;
+        int count;
+
+        if (all)
+        {
+            var configs = ServiceRegistry.EnumerateServices()
+                                         .Where(s => s.ManagedByEasyService)
+                                         .OrderBy(s => s.Name, StringComparer.OrdinalIgnoreCase)
+                                         .Select(s => ServiceConfig.Load(s.Name))
+                                         .Where(c => c is not null)
+                                         .Select(c => c!)
+                                         .ToList();
+            if (configs.Count == 0)
+            {
+                Console.Error.WriteLine(S.Cli_NothingToExport);
+                return 2;
+            }
+            json = ConfigTransfer.ExportMany(configs);
+            count = configs.Count;
+        }
+        else
+        {
+            var config = ServiceConfig.Load(name!);
+            if (config is null)
+            {
+                Console.Error.WriteLine(S.Cli_NotExists(name!));
+                return 2;
+            }
+            // Anzeigename, Beschreibung, Starttyp und Abhaengigkeiten stehen beim SCM,
+            // nicht unter Parameters - fuer eine vollstaendige Datei muessen sie mit.
+            EnrichFromScm(config);
+            json = ConfigTransfer.Export(config);
+            count = 1;
+        }
+
+        var output = ValueAfter(args, "--output");
+        if (output is null)
+        {
+            Console.WriteLine(json);
+            return 0;
+        }
+
+        var directory = Path.GetDirectoryName(Path.GetFullPath(output));
+        if (!string.IsNullOrEmpty(directory)) Directory.CreateDirectory(directory);
+        File.WriteAllText(output, json, new System.Text.UTF8Encoding(false));
+        Console.WriteLine(all ? S.Cfg_ExportedMany(count, output) : S.Cfg_Exported(output));
+        return 0;
+    }
+
+    /// <summary>Fills in the parts of a definition the SCM owns rather than our Parameters key.</summary>
+    private static void EnrichFromScm(ServiceConfig config)
+    {
+        var info = ServiceRegistry.Query(config.ServiceName);
+        if (info is null) return;
+
+        config.DisplayName = info.DisplayName;
+        config.Startup = info.Startup;
+        config.Description = ServiceRegistry.GetDescription(config.ServiceName);
+        config.Dependencies = ServiceRegistry.GetDependencies(config.ServiceName);
+
+        var account = (info.Account ?? "").Trim();
+        if (account.Equals("LocalSystem", StringComparison.OrdinalIgnoreCase))
+            config.Logon = LogonType.LocalSystem;
+        else if (account.EndsWith(@"\LocalService", StringComparison.OrdinalIgnoreCase))
+            config.Logon = LogonType.LocalService;
+        else if (account.EndsWith(@"\NetworkService", StringComparison.OrdinalIgnoreCase))
+            config.Logon = LogonType.NetworkService;
+        else if (account.Length > 0)
+        {
+            config.Logon = LogonType.Account;
+            config.AccountName = account;
+        }
+    }
+
+    private static int Import(string[] args)
+    {
+        if (args.Length < 2 || args[1].StartsWith('-')) return Usage(2, S.Cli_ImportNeedsFile);
+
+        var path = args[1];
+        if (!File.Exists(path))
+        {
+            Console.Error.WriteLine(S.Cli_FileNotFound(path));
+            return 2;
+        }
+
+        List<ServiceConfig> configs;
+        try
+        {
+            configs = ConfigTransfer.Import(File.ReadAllText(path));
+        }
+        catch (ConfigTransfer.TransferException e)
+        {
+            Console.Error.WriteLine(S.Cli_Err(e.Message));
+            return 2;
+        }
+
+        var password = ConfigTransfer.PasswordFromEnvironment();
+        var start = args.Contains("--start");
+        var failed = false;
+
+        foreach (var config in configs)
+        {
+            var existing = ServiceRegistry.Exists(config.ServiceName);
+            if (existing && !ServiceRegistry.IsManaged(config.ServiceName))
+            {
+                Console.Error.WriteLine(S.Cfg_Err_Foreign(config.ServiceName));
+                failed = true;
+                continue;
+            }
+
+            // Beim Anlegen braucht ein Konto zwingend ein Kennwort; beim Aktualisieren
+            // behaelt der SCM das gespeicherte, wenn keines mitkommt.
+            if (config.Logon == LogonType.Account && password is null && !existing)
+            {
+                Console.Error.WriteLine(S.Cfg_Err_NeedsPassword(config.AccountName, ConfigTransfer.PasswordVariable));
+                failed = true;
+                continue;
+            }
+            config.Password = password ?? "";
+
+            var problems = config.Validate(isNew: false).ToList();
+            if (problems.Count > 0)
+            {
+                foreach (var problem in problems) Console.Error.WriteLine(S.Cli_Err(problem));
+                failed = true;
+                continue;
+            }
+
+            try
+            {
+                if (existing)
+                {
+                    ServiceRegistry.Update(config);
+                    Console.WriteLine(S.Cfg_Imported_Updated(config.ServiceName));
+                    if (ServiceRegistry.Query(config.ServiceName)?.IsRunning == true)
+                        Console.WriteLine(S.Cfg_Import_Restart);
+                }
+                else
+                {
+                    ServiceRegistry.Install(config);
+                    Console.WriteLine(S.Cfg_Imported_Created(config.ServiceName));
+                    if (start) ServiceRegistry.Start(config.ServiceName, TimeSpan.FromSeconds(60));
+                }
+            }
+            catch (Exception e)
+            {
+                Console.Error.WriteLine(S.Cli_Err(e.Message));
+                failed = true;
+            }
+        }
+
+        return failed ? 1 : 0;
+    }
+
+    private static string? ValueAfter(string[] args, string option)
+    {
+        var index = Array.FindIndex(args, a => a.Equals(option, StringComparison.OrdinalIgnoreCase));
+        return index >= 0 && index + 1 < args.Length ? args[index + 1] : null;
     }
 
     // ------------------------------------------------------------ überwachung ---

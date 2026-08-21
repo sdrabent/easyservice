@@ -24,6 +24,9 @@
   <data name="Cfg_Err_DirNotFound" xml:space="preserve">
     <value>Directorio de inicio no encontrado: {0}</value>
   </data>
+  <data name="Cfg_Err_Foreign" xml:space="preserve">
+    <value>«{0}» ya existe, pero no se creó con EasyService. La importación sobrescribiría un servicio ajeno.</value>
+  </data>
   <data name="Cfg_Err_NameEmpty" xml:space="preserve">
     <value>El nombre del servicio no puede estar vacío.</value>
   </data>
@@ -33,11 +36,67 @@
   <data name="Cfg_Err_NameTooLong" xml:space="preserve">
     <value>El nombre del servicio es demasiado largo (256 caracteres como máximo).</value>
   </data>
+  <data name="Cfg_Err_NeedsPassword" xml:space="preserve">
+    <value>La configuración inicia sesión como «{0}». Las contraseñas nunca se exportan: defina {1} antes de importar.</value>
+  </data>
+  <data name="Cfg_Err_NewerFormat" xml:space="preserve">
+    <value>Esta configuración procede de una versión más reciente de EasyService (formato {0}).</value>
+  </data>
   <data name="Cfg_Err_NoApplication" xml:space="preserve">
     <value>No se ha indicado ningún programa.</value>
   </data>
+  <data name="Cfg_Err_NoServiceName" xml:space="preserve">
+    <value>A la configuración le falta el nombre del servicio.</value>
+  </data>
+  <data name="Cfg_Err_NotConfig" xml:space="preserve">
+    <value>El archivo no es una configuración de EasyService.</value>
+  </data>
+  <data name="Cfg_Err_NotJson" xml:space="preserve">
+    <value>El archivo no es JSON válido: {0}</value>
+  </data>
+  <data name="Cfg_Export_Failed" xml:space="preserve">
+    <value>Error al exportar</value>
+  </data>
+  <data name="Cfg_Exported" xml:space="preserve">
+    <value>Configuración escrita en {0}</value>
+  </data>
+  <data name="Cfg_ExportedMany" xml:space="preserve">
+    <value>{0} configuraciones escritas en {1}</value>
+  </data>
+  <data name="Cfg_Filter" xml:space="preserve">
+    <value>Configuración de EasyService (*.json)|*.json|Todos los archivos (*.*)|*.*</value>
+  </data>
+  <data name="Cfg_Import_Failed" xml:space="preserve">
+    <value>Error al importar</value>
+  </data>
+  <data name="Cfg_Import_Overwrite" xml:space="preserve">
+    <value>El servicio «{0}» ya existe.
+
+¿Sobrescribir su configuración?</value>
+  </data>
+  <data name="Cfg_Import_PasswordPrompt" xml:space="preserve">
+    <value>Contraseña para «{0}»:</value>
+  </data>
+  <data name="Cfg_Import_Restart" xml:space="preserve">
+    <value>El servicio está en ejecución; los cambios surtirán efecto tras un reinicio.</value>
+  </data>
+  <data name="Cfg_Import_Title" xml:space="preserve">
+    <value>Importar configuración</value>
+  </data>
+  <data name="Cfg_Imported_Created" xml:space="preserve">
+    <value>El servicio «{0}» se creó a partir de la configuración.</value>
+  </data>
+  <data name="Cfg_Imported_Updated" xml:space="preserve">
+    <value>El servicio «{0}» se actualizó a partir de la configuración.</value>
+  </data>
   <data name="Cli_Err" xml:space="preserve">
     <value>Error: {0}</value>
+  </data>
+  <data name="Cli_ExportNeedsName" xml:space="preserve">
+    <value>export requiere &lt;nombre&gt; o --all.</value>
+  </data>
+  <data name="Cli_FileNotFound" xml:space="preserve">
+    <value>Archivo no encontrado: {0}</value>
   </data>
   <data name="Cli_Hdr_DisplayName" xml:space="preserve">
     <value>NOMBRE PARA MOSTRAR</value>
@@ -50,6 +109,9 @@
   </data>
   <data name="Cli_Hdr_Status" xml:space="preserve">
     <value>ESTADO</value>
+  </data>
+  <data name="Cli_ImportNeedsFile" xml:space="preserve">
+    <value>import requiere un archivo.</value>
   </data>
   <data name="Cli_InstallNeedsArgs" xml:space="preserve">
     <value>install requiere &lt;nombre&gt; y &lt;programa&gt;.</value>
@@ -71,6 +133,9 @@
   </data>
   <data name="Cli_NotExists" xml:space="preserve">
     <value>Error: el servicio «{0}» no existe.</value>
+  </data>
+  <data name="Cli_NothingToExport" xml:space="preserve">
+    <value>No se encontró ningún servicio gestionado por EasyService.</value>
   </data>
   <data name="Cli_OutputNeedsFile" xml:space="preserve">
     <value>--output requiere un nombre de archivo.</value>
@@ -164,6 +229,14 @@ ADMINISTRAR
 
   easyservice start|stop|restart|status &lt;nombre&gt;
       Controla un servicio existente. status admite además --json.
+
+  easyservice export &lt;nombre&gt; [--output &lt;archivo&gt;]
+  easyservice export --all [--output &lt;archivo&gt;]
+      Escribe la definición completa en JSON. Las contraseñas nunca se exportan.
+
+  easyservice import &lt;archivo&gt; [--start]
+      Crea o actualiza los servicios descritos en el archivo. Para una cuenta de
+      servicio, defina antes EASYSERVICE_PASSWORD.
 
 SUPERVISIÓN
   easyservice checkmk
@@ -836,8 +909,17 @@ Administrar requiere permisos de administrador; los comandos de supervisión sol
   <data name="Main_Btn_Edit" xml:space="preserve">
     <value>Editar...</value>
   </data>
+  <data name="Main_Btn_Export" xml:space="preserve">
+    <value>Exportar...</value>
+  </data>
+  <data name="Main_Btn_ExportAll" xml:space="preserve">
+    <value>Exportar todo...</value>
+  </data>
   <data name="Main_Btn_History" xml:space="preserve">
     <value>Historial...</value>
+  </data>
+  <data name="Main_Btn_Import" xml:space="preserve">
+    <value>Importar...</value>
   </data>
   <data name="Main_Btn_Logs" xml:space="preserve">
     <value>Registros...</value>
@@ -910,6 +992,9 @@ Administrar requiere permisos de administrador; los comandos de supervisión sol
   </data>
   <data name="Main_Lbl_Filter" xml:space="preserve">
     <value>  Filtro:</value>
+  </data>
+  <data name="Main_Menu_Config" xml:space="preserve">
+    <value>Configuración</value>
   </data>
   <data name="Main_Menu_Language" xml:space="preserve">
     <value>Idioma</value>
