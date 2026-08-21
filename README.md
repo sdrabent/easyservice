@@ -18,8 +18,9 @@ whatever monitoring you already run.
 This is a young project. What that means concretely:
 
 * The supervisor, the monitoring output and the configuration format have automated
-  tests, and the install/start/stop/remove path has been verified end to end against a
-  real Service Control Manager.
+  tests. On top of that, every commit runs an end-to-end test on a clean Windows machine
+  in CI: it creates a real service, starts it, checks the log file and the event log,
+  kills the child process and watches it come back, stops it and removes it again.
 * It has been run on Windows 11 and in CI on `windows-latest`. Nobody has run it on
   Server 2016, 2019 or 2022 yet, as far as I know.
 * The binaries are not code-signed, so SmartScreen warns on first download. See
@@ -224,6 +225,13 @@ git clone https://github.com/sdrabent/easyservice.git
 cd easyservice
 dotnet build EasyService.sln -c Release
 dotnet run --project tests/EasyService.Tests -c Release
+```
+
+The end-to-end test creates a real service, so it needs an elevated shell:
+
+```powershell
+dotnet publish src/EasyService/EasyService.csproj -c Release -r win-x64 --self-contained true -p:PublishSingleFile=true -o publish/standalone
+powershell -ExecutionPolicy Bypass -File tests\e2e\Invoke-ServiceTest.ps1
 ```
 
 There are no NuGet dependencies; the Windows calls go through P/Invoke against

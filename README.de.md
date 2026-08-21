@@ -17,9 +17,11 @@ Monitoring weitergibt, das ohnehin läuft.
 
 Das Projekt ist jung. Konkret heißt das:
 
-* Supervisor, Monitoring-Ausgabe und Konfigurationsformat sind automatisiert getestet,
-  und der Weg Anlegen/Starten/Beenden/Entfernen wurde von Anfang bis Ende gegen einen
-  echten Dienst-Manager geprüft.
+* Supervisor, Monitoring-Ausgabe und Konfigurationsformat sind automatisiert getestet.
+  Dazu läuft bei jedem Commit ein Test von Anfang bis Ende auf einem frischen
+  Windows-Rechner in der CI: er legt einen echten Dienst an, startet ihn, prüft
+  Protokolldatei und Ereignisprotokoll, beendet den Kindprozess hart, sieht ihn
+  wiederkommen, stoppt und entfernt ihn.
 * Gelaufen ist es auf Windows 11 und in der CI auf `windows-latest`. Auf Server 2016,
   2019 oder 2022 hat es meines Wissens noch niemand ausprobiert.
 * Die Binärdateien sind nicht signiert, SmartScreen warnt also beim ersten Download.
@@ -233,6 +235,14 @@ git clone https://github.com/sdrabent/easyservice.git
 cd easyservice
 dotnet build EasyService.sln -c Release
 dotnet run --project tests/EasyService.Tests -c Release
+```
+
+Der Test von Anfang bis Ende legt einen echten Dienst an und braucht deshalb eine erhöhte
+Shell:
+
+```powershell
+dotnet publish src/EasyService/EasyService.csproj -c Release -r win-x64 --self-contained true -p:PublishSingleFile=true -o publish/standalone
+powershell -ExecutionPolicy Bypass -File tests\e2e\Invoke-ServiceTest.ps1
 ```
 
 Es gibt keine NuGet-Abhängigkeiten; die Windows-Aufrufe laufen über P/Invoke gegen
