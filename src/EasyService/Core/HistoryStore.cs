@@ -25,7 +25,8 @@ public sealed record HistoryEvent(DateTime Utc, int EventId, uint? ExitCode, str
 ///
 /// Measurements are aggregated to one row per minute before they are written.
 /// The raw 5-second samples would be 17280 rows per service per day; one row per
-/// minute is 1440 and keeps a month of history in roughly 100 KB.
+/// minute is 1440, which at ~56 bytes per row costs about 80 KB per service and day -
+/// roughly 2.3 MB for the 30 days kept by default.
 /// </summary>
 public static class HistoryStore
 {
