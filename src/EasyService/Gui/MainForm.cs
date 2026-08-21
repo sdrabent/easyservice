@@ -59,7 +59,8 @@ public sealed class MainForm : Form
         _list.KeyDown += OnListKeyDown;
 
         _toolbar = new ToolStrip { GripStyle = ToolStripGripStyle.Hidden, Padding = new Padding(6, 2, 6, 2) };
-        _toolbar.Items.Add(Button("Neuer Dienst...", (_, _) => CreateNew(), "Einen beliebigen Prozess als Windows-Dienst einrichten"));
+        _toolbar.Items.Add(Button("Dienst hinzufügen...", (_, _) => CreateNew(),
+            "Schnell einrichten: Programm wählen, Rest wird vorbelegt (oder eine .exe ins Fenster ziehen)"));
         _btnEdit = Button("Bearbeiten...", (_, _) => EditSelected(), "Konfiguration des markierten Dienstes ändern");
         _toolbar.Items.Add(_btnEdit);
         _toolbar.Items.Add(new ToolStripSeparator());
@@ -104,6 +105,18 @@ public sealed class MainForm : Form
 
         _refreshTimer = new System.Windows.Forms.Timer { Interval = 3000 };
         _refreshTimer.Tick += (_, _) => Reload(silent: true);
+
+        AllowDrop = true;
+        DragEnter += (_, e) =>
+        {
+            if (e.Data?.GetDataPresent(DataFormats.FileDrop) == true)
+                e.Effect = DragDropEffects.Copy;
+        };
+        DragDrop += (_, e) =>
+        {
+            if (e.Data?.GetData(DataFormats.FileDrop) is string[] { Length: > 0 } files)
+                CreateNew(files[0]);
+        };
 
         KeyPreview = true;
         KeyDown += (_, e) =>
@@ -358,17 +371,30 @@ public sealed class MainForm : Form
 
     // ------------------------------------------------------------- actions ---
 
-    private void CreateNew()
+    private void CreateNew(string? program = null)
     {
-        var config = new ServiceConfig();
-        using var dlg = new ServiceEditorForm(config, isNew: true);
+        using var dlg = new QuickAddForm(program);
         if (dlg.ShowDialog(this) != DialogResult.OK) return;
 
-        Run($"Dienst \"{dlg.Config.ServiceName}\" wird angelegt", () => ServiceRegistry.Install(dlg.Config));
+        var config = dlg.Config;
+        if (!Run($"Dienst \"{config.ServiceName}\" wird angelegt", () => ServiceRegistry.Install(config)))
+        {
+            Reload();
+            return;
+        }
 
-        if (dlg.StartAfterSave)
-            Run($"Dienst \"{dlg.Config.ServiceName}\" wird gestartet",
-                () => ServiceRegistry.Start(dlg.Config.ServiceName, TimeSpan.FromSeconds(60)));
+        if (dlg.StartAfterCreate &&
+            !Run($"Dienst \"{config.ServiceName}\" wird gestartet",
+                 () => ServiceRegistry.Start(config.ServiceName, TimeSpan.FromSeconds(60))))
+        {
+            // Ein fehlgeschlagener erster Start ist fast immer ein falscher Pfad oder ein
+            // falsches Argument - das steht im Protokoll, also direkt dorthin anbieten.
+            if (Ui.Confirm(this, "Start fehlgeschlagen",
+                    $"Der Dienst \"{config.ServiceName}\" wurde angelegt, ließ sich aber nicht starten." +
+                    System.Environment.NewLine + System.Environment.NewLine +
+                    "Die Ursache steht meist im Protokoll. Jetzt öffnen?"))
+                new LogViewerForm(config).Show(this);
+        }
 
         Reload();
     }
@@ -482,8 +508,11 @@ public sealed class MainForm : Form
         new LogViewerForm(config).Show(this);
     }
 
-    /// <summary>Runs a blocking SCM call with an hourglass and turns failures into a dialog.</summary>
-    private void Run(string what, Action action)
+    /// <summary>
+    /// Runs a blocking SCM call with an hourglass and turns failures into a dialog.
+    /// Returns false when it failed, so callers can offer a next step.
+    /// </summary>
+    private bool Run(string what, Action action)
     {
         _refreshTimer.Stop();
         var previousCursor = Cursor;
@@ -494,11 +523,13 @@ public sealed class MainForm : Form
         {
             action();
             _status.Text = what + " - fertig.";
+            return true;
         }
         catch (Exception e)
         {
             Ui.ShowError(this, what, e);
             _status.Text = what + " - fehlgeschlagen.";
+            return false;
         }
         finally
         {

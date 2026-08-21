@@ -25,6 +25,10 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <InternalsVisibleTo Include="easyservice-tests" />
+  </ItemGroup>
+
+  <ItemGroup>
     <EmbeddedResource Include="..\..\assets\easyservice.ico" LogicalName="EasyService.AppIcon.ico" />
   </ItemGroup>
 

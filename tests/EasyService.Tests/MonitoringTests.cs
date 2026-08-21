@@ -23,6 +23,7 @@ internal static class MonitoringTests
         yield return ("Zahlen nutzen immer den Punkt als Dezimaltrenner", NumbersAreInvariant);
         yield return ("Schwellwerte lösen Warnung und kritisch aus", ThresholdsEscalate);
         yield return ("Veralteter Zustand gilt als unbekannt, nicht als gesund", StaleStateIsUnknown);
+        yield return ("Gemerkte Zugangsdaten sind verschlüsselt und wiederherstellbar", CredentialRoundTrips);
     }
 
     // ----------------------------------------------------- supervisor produces ---
@@ -182,6 +183,29 @@ internal static class MonitoringTests
         Assert(warn == CheckStatus.Warning, $"4 Neustarts/h sollten warnen, waren: {warn}");
         Assert(crit == CheckStatus.Critical, $"12 Neustarts/h sollten kritisch sein, waren: {crit}");
         Assert(cpuCrit == CheckStatus.Critical, $"99 % CPU sollten kritisch sein, waren: {cpuCrit}");
+    }
+
+    private static void CredentialRoundTrips()
+    {
+        // Die Fast Lane merkt sich das Dienstkonto, damit der zweite Dienst schneller geht.
+        // Im Klartext darf das Kennwort dabei nirgends landen.
+        const string secret = "Str3ng-Geheim!";
+        var bytes = System.Text.Encoding.UTF8.GetBytes(secret);
+
+        var encrypted = Dpapi.Protect(bytes);
+        Assert(encrypted is not null, "das Kennwort konnte nicht verschlüsselt werden");
+        Assert(!System.Text.Encoding.UTF8.GetString(encrypted!).Contains(secret),
+            "das Kennwort steht im Klartext im verschlüsselten Blob");
+        Assert(encrypted!.Length > bytes.Length, "der verschlüsselte Wert ist verdächtig kurz");
+
+        var decrypted = Dpapi.Unprotect(encrypted);
+        Assert(decrypted is not null, "das Kennwort ließ sich nicht wieder entschlüsseln");
+        Assert(System.Text.Encoding.UTF8.GetString(decrypted!) == secret, "das entschlüsselte Kennwort weicht ab");
+
+        // Ein manipulierter Blob darf nicht stillschweigend Müll liefern.
+        var tampered = (byte[])encrypted.Clone();
+        tampered[^1] ^= 0xFF;
+        Assert(Dpapi.Unprotect(tampered) is null, "ein manipulierter Blob wurde akzeptiert");
     }
 
     private static void StaleStateIsUnknown()

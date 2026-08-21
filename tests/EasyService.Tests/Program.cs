@@ -231,6 +231,12 @@ internal static class Program
 
         using (var main = new Gui.MainForm())
             main.CreateControl();
+
+        using (var quick = new Gui.QuickAddForm())
+            quick.CreateControl();
+
+        using (var quick = new Gui.QuickAddForm(Cmd))
+            quick.CreateControl();
     }
 
     // ------------------------------------------------------------- infrastructure
