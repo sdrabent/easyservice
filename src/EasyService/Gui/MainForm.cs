@@ -211,7 +211,7 @@ public sealed class MainForm : Form
                 {
                     s.Name, s.DisplayName, s.StateText, s.StartupText,
                     s.ProcessId == 0 ? "" : s.ProcessId.ToString(),
-                    s.Account, DescribeTarget(s),
+                    s.Account, s.Target,
                 };
 
                 ListViewItem item;
@@ -262,14 +262,6 @@ public sealed class MainForm : Form
         var managed = _services.Count(s => s.ManagedByEasyService);
         _status.Text = $"{visible.Count} von {_services.Count} Diensten angezeigt - {managed} davon von EasyService verwaltet";
         UpdateButtons();
-    }
-
-    private static string DescribeTarget(ServiceInfo s)
-    {
-        if (!s.ManagedByEasyService) return s.BinaryPath;
-        var c = ServiceConfig.Load(s.Name);
-        if (c is null) return s.BinaryPath;
-        return string.IsNullOrWhiteSpace(c.AppParameters) ? c.Application : $"{c.Application} {c.AppParameters}";
     }
 
     private List<ServiceInfo> Sort(List<ServiceInfo> items)

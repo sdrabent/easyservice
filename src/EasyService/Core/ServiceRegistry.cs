@@ -13,7 +13,8 @@ public sealed record ServiceInfo(
     StartupType Startup,
     string BinaryPath,
     string Account,
-    bool ManagedByEasyService)
+    bool ManagedByEasyService,
+    string Target)
 {
     public string StateText => State switch
     {
@@ -103,12 +104,13 @@ public static class ServiceRegistry
                 var display = Marshal.PtrToStringUni(entry.lpDisplayName) ?? name;
 
                 var (startup, binPath, account) = ReadStaticConfig(name);
+                var managed = IsManaged(name);
                 result.Add(new ServiceInfo(
                     name, display,
                     entry.ServiceStatusProcess.dwCurrentState,
                     entry.ServiceStatusProcess.dwProcessId,
                     startup, binPath, account,
-                    IsManaged(name)));
+                    managed, DescribeTarget(name, managed, binPath)));
             }
         }
         finally { Marshal.FreeHGlobal(buffer); }
@@ -171,6 +173,28 @@ public static class ServiceRegistry
         }
     }
 
+    /// <summary>
+    /// What the service actually launches: for our own services the supervised application,
+    /// for everything else the raw image path. Resolved during enumeration so the UI thread
+    /// never has to touch the registry while refreshing the list.
+    /// </summary>
+    private static string DescribeTarget(string name, bool managed, string binaryPath)
+    {
+        if (!managed) return binaryPath;
+        try
+        {
+            var config = ServiceConfig.Load(name);
+            if (config is null) return binaryPath;
+            return string.IsNullOrWhiteSpace(config.AppParameters)
+                ? config.Application
+                : $"{config.Application} {config.AppParameters}";
+        }
+        catch
+        {
+            return binaryPath;
+        }
+    }
+
     public static bool Exists(string name)
     {
         try
@@ -202,8 +226,10 @@ public static class ServiceRegistry
             using var svc = OpenService(scm, name, Native.SERVICE_QUERY_STATUS);
             var status = QueryStatus(svc);
             var (startup, binPath, account) = ReadStaticConfig(name);
+            var managed = IsManaged(name);
             return new ServiceInfo(name, GetDisplayName(name) ?? name, status.dwCurrentState,
-                status.dwProcessId, startup, binPath, account, IsManaged(name));
+                status.dwProcessId, startup, binPath, account, managed,
+                DescribeTarget(name, managed, binPath));
         }
         catch
         {
