@@ -190,6 +190,9 @@ INTERFAZ
   easyservice gui --new
       Inicia la interfaz y abre directamente la configuración rápida.
 
+  easyservice gui --history &lt;nombre&gt;
+      Inicia la interfaz y abre directamente el historial de ese servicio.
+
 Administrar requiere permisos de administrador; los comandos de supervisión solo leen.</value>
   </data>
   <data name="Common_Cancel" xml:space="preserve">

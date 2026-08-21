@@ -190,6 +190,9 @@ INTERFACCIA
   easyservice gui --new
       Avvia l'interfaccia e apre subito la configurazione rapida.
 
+  easyservice gui --history &lt;nome&gt;
+      Avvia l'interfaccia e apre subito la cronologia di quel servizio.
+
 La gestione richiede i diritti di amministratore; i comandi di monitoraggio si limitano a leggere.</value>
   </data>
   <data name="Common_Cancel" xml:space="preserve">

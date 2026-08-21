@@ -110,7 +110,7 @@ the config.
 
 ## History: what did this thing do last night?
 
-![EasyService overview](assets/screenshot-uebersicht.png)
+![EasyService overview](assets/screenshot-overview.png)
 
 *Three supervised services. One healthy, one restarting in a loop and flagged red, one
 deliberately stopped. Windows would report the first two identically.*
@@ -125,6 +125,8 @@ Double-click a service and you get its past, not just its present:
 - **Event list** with exit codes
 - 1 hour to 30 days, exportable as CSV
 
+![Service history](assets/screenshot-history.png)
+
 Stored as plain **CSV** under `%ProgramData%\EasyService\history\` — about 80 KB per
 service and day, so roughly 2.3 MB for the 30 days kept by default (adjustable, 0 turns
 recording off). In five years you will still be able to open it in Excel without
@@ -132,7 +134,7 @@ EasyService installed.
 
 ## 60 seconds to your first service
 
-![Quick setup](assets/screenshot-schnelleinrichtung.png)
+![Quick setup](assets/screenshot-quicksetup.png)
 
 1. Start `easyservice.exe`, confirm UAC.
 2. **Add service…** — or drop the `.exe` straight onto the window.

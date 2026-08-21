@@ -26,6 +26,7 @@ internal static class MonitoringTests
         yield return ("Gemerkte Zugangsdaten sind verschlüsselt und wiederherstellbar", CredentialRoundTrips);
         yield return ("Oberflächentexte lassen sich zwischen Englisch und Deutsch umschalten", LanguagesSwitch);
         yield return ("Jeder Text ist übersetzt und behält seine Platzhalter", TranslationsAreComplete);
+        yield return ("Feste Sprachwahl stellt auch das Zahlenformat um", ExplicitLanguageSetsNumberFormat);
     }
 
     // ----------------------------------------------------- supervisor produces ---
@@ -273,6 +274,38 @@ internal static class MonitoringTests
                  System.Text.RegularExpressions.Regex.Matches(text, @"\{(\d+)[^}]*\}"))
             highest = Math.Max(highest, int.Parse(m.Groups[1].Value));
         return highest + 1;
+    }
+
+    /// <summary>
+    /// Wer die Sprache fest auf Englisch stellt, will englische Ausgaben - kein deutsches
+    /// Komma mitten in einer englischen Meldung. Maschinenlesbares bleibt davon unberührt.
+    /// </summary>
+    private static void ExplicitLanguageSetsNumberFormat()
+    {
+        var beforeUi = System.Globalization.CultureInfo.CurrentUICulture;
+        var before = System.Globalization.CultureInfo.CurrentCulture;
+        try
+        {
+            Localization.Apply("de");
+            Assert(2.5.ToString("0.#") == "2,5", $"Deutsch formatiert nicht mit Komma: {2.5:0.#}");
+
+            Localization.Apply("en");
+            Assert(2.5.ToString("0.#") == "2.5", $"Englisch formatiert nicht mit Punkt: {2.5:0.#}");
+
+            // Und in beiden Fällen bleibt die Maschinenausgabe invariant.
+            foreach (var code in new[] { "de", "en", "fr" })
+            {
+                Localization.Apply(code);
+                var text = MonitoringOutput.Checkmk(new[] { Sample() });
+                Assert(text.Contains("cpu=2.5%"), $"{code}: Perfdaten nicht invariant formatiert");
+                Assert(!text.Contains("cpu=2,5"), $"{code}: Komma in den Perfdaten");
+            }
+        }
+        finally
+        {
+            System.Globalization.CultureInfo.CurrentUICulture = beforeUi;
+            System.Globalization.CultureInfo.CurrentCulture = before;
+        }
     }
 
     private static void CredentialRoundTrips()

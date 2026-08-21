@@ -66,6 +66,18 @@ public static class Localization
         Apply(code);
     }
 
+    /// <summary>
+    /// Applies a language explicitly chosen by the administrator.
+    ///
+    /// This also switches the formatting culture, not just the interface language. Someone
+    /// who pins the language to English does so to get consistent English output - a German
+    /// decimal comma in an otherwise English Checkmk summary is exactly the inconsistency
+    /// they were trying to avoid. Without an explicit choice EasyService touches neither and
+    /// leaves the regional format Windows is configured with alone.
+    ///
+    /// Machine-readable output is unaffected either way: perfdata, Prometheus samples and
+    /// JSON format with the invariant culture explicitly.
+    /// </summary>
     public static void Apply(string code)
     {
         try
@@ -73,6 +85,8 @@ public static class Localization
             var culture = CultureInfo.GetCultureInfo(code);
             CultureInfo.CurrentUICulture = culture;
             CultureInfo.DefaultThreadCurrentUICulture = culture;
+            CultureInfo.CurrentCulture = culture;
+            CultureInfo.DefaultThreadCurrentCulture = culture;
         }
         catch (CultureNotFoundException)
         {

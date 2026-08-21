@@ -190,6 +190,9 @@ OBERFLÄCHE
   easyservice gui --new
       Startet die Oberfläche und öffnet sofort die Schnelleinrichtung.
 
+  easyservice gui --history &lt;Name&gt;
+      Startet die Oberfläche und öffnet sofort den Verlauf dieses Dienstes.
+
 Verwalten benötigt Administratorrechte; die Überwachungsbefehle lesen nur.</value>
   </data>
   <data name="Common_Cancel" xml:space="preserve">

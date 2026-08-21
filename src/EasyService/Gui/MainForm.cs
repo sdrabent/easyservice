@@ -23,11 +23,13 @@ public sealed class MainForm : Form
     private readonly string? _initialSelection;
 
     private readonly bool _openQuickAdd;
+    private readonly string? _openHistoryFor;
 
-    public MainForm(string? selectService = null, bool openQuickAdd = false)
+    public MainForm(string? selectService = null, bool openQuickAdd = false, string? openHistoryFor = null)
     {
         _initialSelection = selectService;
         _openQuickAdd = openQuickAdd;
+        _openHistoryFor = openHistoryFor;
 
         Text = S.Main_Title;
         Icon = Ui.AppIcon;
@@ -137,6 +139,7 @@ public sealed class MainForm : Form
             Reload();
             _refreshTimer.Start();
             if (_openQuickAdd) BeginInvoke(() => CreateNew());
+            if (_openHistoryFor is { } service) BeginInvoke(() => ShowHistoryFor(service));
         };
         FormClosing += (_, _) => SaveWindowState();
         FormClosed += (_, _) => _refreshTimer.Stop();
@@ -563,11 +566,15 @@ public sealed class MainForm : Form
 
     private void ShowHistory()
     {
-        if (Selected is not { } s) return;
-        var config = ServiceConfig.Load(s.Name);
+        if (Selected is { } s) ShowHistoryFor(s.Name);
+    }
+
+    private void ShowHistoryFor(string serviceName)
+    {
+        var config = ServiceConfig.Load(serviceName);
         if (config is null)
         {
-            Ui.ShowInfo(this, S.Main_NotEditable_Title, S.Main_MissingConfig_Text(s.Name));
+            Ui.ShowInfo(this, S.Main_NotEditable_Title, S.Main_MissingConfig_Text(serviceName));
             return;
         }
         new HistoryForm(config).Show(this);

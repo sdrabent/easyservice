@@ -190,6 +190,9 @@ INTERFACE
   easyservice gui --new
       Starts the interface and opens the quick setup right away.
 
+  easyservice gui --history &lt;name&gt;
+      Starts the interface and opens that service's history right away.
+
 Managing requires administrator rights; the monitoring commands only read.</value>
   </data>
   <data name="Common_Cancel" xml:space="preserve">

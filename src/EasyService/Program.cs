@@ -39,11 +39,15 @@ internal static class Program
 
         EventLogSink.EnsureSource();
 
-        // "gui --new" springt direkt in die Schnelleinrichtung - praktisch für eine
-        // Desktop- oder Startmenü-Verknüpfung "Dienst hinzufügen".
+        // "gui --new" springt direkt in die Schnelleinrichtung, "gui --history <Dienst>"
+        // direkt in den Verlauf - praktisch für Verknüpfungen und für den Link in einer
+        // Alarmmail des Monitorings.
         var openQuickAdd = args.Any(a => a.Equals("--new", StringComparison.OrdinalIgnoreCase));
-        var startArg = args.Length >= 2 && !args[1].StartsWith('-') ? args[1] : null;
-        Application.Run(new MainForm(startArg, openQuickAdd));
+        var historyIndex = Array.FindIndex(args, a => a.Equals("--history", StringComparison.OrdinalIgnoreCase));
+        var openHistory = historyIndex >= 0 && historyIndex + 1 < args.Length ? args[historyIndex + 1] : null;
+
+        var startArg = openHistory ?? (args.Length >= 2 && !args[1].StartsWith('-') ? args[1] : null);
+        Application.Run(new MainForm(startArg, openQuickAdd, openHistory));
         return 0;
     }
 

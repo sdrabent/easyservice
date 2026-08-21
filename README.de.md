@@ -112,7 +112,7 @@ Fehlerausgabe Ihrer Anwendung wird zum überwachten Protokoll — die Konfigurat
 
 ## Verlauf: Was hat das Ding heute Nacht getrieben?
 
-![EasyService-Übersicht](assets/screenshot-uebersicht.png)
+![EasyService-Übersicht](assets/screenshot-overview.png)
 
 *Drei überwachte Dienste. Einer gesund, einer im Neustart-Dauerlauf und rot markiert,
 einer bewusst gestoppt. Windows würde die ersten beiden gleich melden.*
@@ -129,6 +129,10 @@ Doppelklick auf einen Dienst zeigt seine Vergangenheit, nicht nur seine Gegenwar
 - **Ereignisliste** mit Exit-Codes
 - 1 Stunde bis 30 Tage, als CSV exportierbar
 
+![Verlauf eines Dienstes](assets/screenshot-history.png)
+
+*Die Aufnahmen zeigen die englische Oberfläche; zwei Bildersätze zu pflegen lohnt nicht.*
+
 Abgelegt als schlichtes **CSV** unter `%ProgramData%\EasyService\history\` — rund 80 KB
 je Dienst und Tag, also etwa 2,3 MB für die voreingestellten 30 Tage (einstellbar, 0
 schaltet die Aufzeichnung ab). In fünf Jahren können Sie das immer noch in Excel öffnen,
@@ -136,7 +140,7 @@ auch ohne installiertes EasyService.
 
 ## 60 Sekunden bis zum ersten Dienst
 
-![Schnelleinrichtung](assets/screenshot-schnelleinrichtung.png)
+![Schnelleinrichtung](assets/screenshot-quicksetup.png)
 
 1. `easyservice.exe` starten, UAC bestätigen.
 2. **Dienst hinzufügen…** — oder die `.exe` einfach ins Fenster ziehen.
