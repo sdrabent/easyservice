@@ -92,6 +92,9 @@
   <data name="Cli_Err" xml:space="preserve">
     <value>Error: {0}</value>
   </data>
+  <data name="Cli_Err_NeedsAdmin" xml:space="preserve">
+    <value>«{0}» requiere permisos de administrador. Ejecutar el comando en un símbolo del sistema abierto como administrador.</value>
+  </data>
   <data name="Cli_ExportNeedsName" xml:space="preserve">
     <value>export requiere &lt;nombre&gt; o --all.</value>
   </data>
@@ -266,7 +269,9 @@ INTERFAZ
   easyservice gui --history &lt;nombre&gt;
       Inicia la interfaz y abre directamente el historial de ese servicio.
 
-Administrar requiere permisos de administrador; los comandos de supervisión solo leen.</value>
+install, remove, start, stop, restart e import requieren permisos de administrador; sin ellos
+terminan con el código 5. Los comandos de supervisión solo leen y funcionan con
+cualquier cuenta.</value>
   </data>
   <data name="Common_Cancel" xml:space="preserve">
     <value>Cancelar</value>
@@ -1394,6 +1399,9 @@ La causa suele estar en el registro. ¿Abrirlo ahora?</value>
   </data>
   <data name="Sup_Throttled" xml:space="preserve">
     <value>La aplicación estuvo en ejecución menos que la ventana de limitación ({0} ms); próximo intento en {1} ms. Reinicios en la última hora: {2}.</value>
+  </data>
+  <data name="Svc_Err_Busy" xml:space="preserve">
+    <value>Otro proceso de EasyService lleva más de {0} segundos modificando servicios. Volver a intentarlo cuando termine.</value>
   </data>
   <data name="Svc_Err_ChangeConfig" xml:space="preserve">
     <value>No se pudo cambiar la configuración del servicio</value>

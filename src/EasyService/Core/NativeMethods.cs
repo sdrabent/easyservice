@@ -472,6 +472,16 @@ internal static class Native
     [return: MarshalAs(UnmanagedType.Bool)]
     public static extern bool FreeConsole();
 
+    public const int STD_OUTPUT_HANDLE = -11;
+    public const uint FILE_TYPE_DISK = 0x0001;
+    public const uint FILE_TYPE_PIPE = 0x0003;
+
+    [DllImport("kernel32.dll", SetLastError = true)]
+    public static extern IntPtr GetStdHandle(int stdHandle);
+
+    [DllImport("kernel32.dll", SetLastError = true)]
+    public static extern uint GetFileType(IntPtr handle);
+
     [DllImport("kernel32.dll", SetLastError = true)]
     [return: MarshalAs(UnmanagedType.Bool)]
     public static extern bool SetConsoleCtrlHandler(IntPtr handlerRoutine, [MarshalAs(UnmanagedType.Bool)] bool add);

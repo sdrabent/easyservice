@@ -46,6 +46,9 @@ internal static class Program
 
             foreach (var (name, test) in TransferTests.All())
                 Run(name, test);
+
+            foreach (var (name, test) in LockTests.All())
+                Run(name, test);
         }
         finally
         {

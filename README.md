@@ -145,7 +145,8 @@ $servers | ForEach-Object {
 }
 
 # what drifted?
-easyservice export MyDaemon | git diff --no-index golden.json -
+easyservice export MyDaemon --output current.json
+git diff --no-index golden.json current.json
 ```
 
 Two things about the format. Passwords are not written to the file, since a file that
@@ -177,14 +178,26 @@ location before creating anything. `C:\Program Files\EasyService\` is a reasonab
 and has the useful property that ordinary users cannot write to it — the service runs as
 SYSTEM, so a writable location would be a privilege escalation waiting to happen.
 
-Requirements: Windows 10 or Server 2016 and newer, x64, administrator rights. Managing
-services always requires elevation; EasyService asks for it via UAC at start.
+Requirements: Windows 10 or Server 2016 and newer, x64. The monitoring commands run
+under any account — that is what lets a monitoring agent use them without a privileged
+service account. Creating, changing and removing services needs administrator rights;
+those commands exit with code 5 without it, and the interface asks for elevation via UAC
+when it starts.
+
+Before rolling it out: [docs/deployment.md](docs/deployment.md) covers verifying the
+download, the AppLocker and WDAC rules, and the machine-wide language setting.
 
 ## Limitations
 
 * **Not code-signed.** SmartScreen warns on first download, and AppLocker or WDAC will
-  block it outright. Checksums are published with each release. Signing is planned but
-  needs an organisation-level certificate.
+  block it outright until you allow it by hash. Releases carry SHA256 checksums, a
+  CycloneDX SBOM and a GitHub build attestation, so the origin is at least verifiable —
+  see [docs/deployment.md](docs/deployment.md). A real signature needs a certificate.
+* **Exit codes are not visible to a shell.** `easyservice.exe` is a Windows subsystem
+  program, so cmd and PowerShell do not wait for it and `%ERRORLEVEL%` / `$LASTEXITCODE`
+  stay empty. Output redirection and pipes work; for the exit code, use
+  `Start-Process -Wait -PassThru`. Monitoring agents that spawn the process themselves are
+  not affected.
 * **No installer.** You copy the exe somewhere and run it. No MSI, no winget package yet.
 * **x64 only.** No ARM64 build.
 * **Interacting with the desktop does not really work.** The option exists because the
@@ -196,6 +209,8 @@ services always requires elevation; EasyService asks for it via UAC at start.
 
 ## Documentation
 
+* [docs/deployment.md](docs/deployment.md) — verifying a download, application control,
+  where to put the executable, one log language across the fleet
 * [docs/monitoring.md](docs/monitoring.md) — Checkmk, Prometheus, Zabbix, Nagios, the
   event IDs, and the language setting for check output
 * The editor's **Monitoring** tab carries copy-paste snippets for each agent

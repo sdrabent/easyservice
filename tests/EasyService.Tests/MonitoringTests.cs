@@ -63,21 +63,25 @@ internal static class MonitoringTests
         config.ThrottleMs = 0;
         ServiceState.Delete(config.ServiceName);
 
+        // Waehrend des Neustartens ablesen, nicht danach: das Stoppen beendet ein laufendes
+        // Kind selbst und schreibt dessen Exit-Code in die Datei. Wer erst hinterher
+        // hineinsieht, prueft je nach Zeitpunkt den Exit-Code des Abbruchs.
+        ServiceState? restarting;
         using (var supervisor = new ProcessSupervisor(config))
         {
             var task = Task.Run(supervisor.Run);
-            Thread.Sleep(3000);
+            restarting = WaitFor(config.ServiceName,
+                s => s.RestartCount >= 2 && s.LastExitCode == 1, TimeSpan.FromSeconds(20));
             supervisor.RequestStop();
             task.Wait(TimeSpan.FromSeconds(15));
         }
 
-        var state = ServiceState.Load(config.ServiceName);
-        Assert(state is not null, "es wurde keine Zustandsdatei geschrieben");
-        Assert(state!.RestartCount >= 2, $"erwartet: mindestens 2 gezählte Neustarts, tatsächlich: {state.RestartCount}");
-        Assert(state.RestartsLastHour >= 2,
-            $"erwartet: mindestens 2 Neustarts in der letzten Stunde, tatsächlich: {state.RestartsLastHour}");
-        Assert(state.LastExitCode == 1,
-            $"erwarteter letzter Exit-Code 1, gemeldet: {state.LastExitCode?.ToString() ?? "keiner"}");
+        Assert(restarting is not null,
+            "die Zustandsdatei meldete nie zwei Neustarts mit Exit-Code 1");
+        Assert(restarting!.RestartsLastHour >= 2,
+            $"erwartet: mindestens 2 Neustarts in der letzten Stunde, tatsächlich: {restarting.RestartsLastHour}");
+        Assert(ServiceState.Load(config.ServiceName) is not null,
+            "nach dem Stoppen ist keine Zustandsdatei mehr da");
     }
 
     private static void ResourcesAreMeasured()

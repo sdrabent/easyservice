@@ -5,8 +5,11 @@
   <trustInfo xmlns="urn:schemas-microsoft-com:asm.v2">
     <security>
       <requestedPrivileges xmlns="urn:schemas-microsoft-com:asm.v3">
-        <!-- Managing Windows services always requires elevation. -->
-        <requestedExecutionLevel level="requireAdministrator" uiAccess="false" />
+        <!-- asInvoker on purpose: reading the state of a service needs no rights at all,
+             and a monitoring agent under a restricted account has to be able to do it.
+             The commands that write ask for elevation themselves, the window relaunches
+             itself elevated. See Core/Elevation.cs. -->
+        <requestedExecutionLevel level="asInvoker" uiAccess="false" />
       </requestedPrivileges>
     </security>
   </trustInfo>

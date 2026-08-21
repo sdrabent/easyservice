@@ -1,3 +1,5 @@
+using System.Reflection;
+
 using EasyService.Core;
 
 using EasyService.Resources;
@@ -15,9 +17,19 @@ internal static class Cli
     {
         Program.AttachConsole();
 
+        var command = args[0].ToLowerInvariant();
+
+        // Reading is allowed for everyone; writing is not. Saying so before the call keeps
+        // the failure readable instead of "access denied" out of some P/Invoke.
+        if (NeedsElevation(command) && !Elevation.IsElevated)
+        {
+            Console.Error.WriteLine(S.Cli_Err_NeedsAdmin(command));
+            return Elevation.ExitCodeRequired;
+        }
+
         try
         {
-            return args[0].ToLowerInvariant() switch
+            return command switch
             {
                 "list" => List(args),
                 "install" => Install(args),
@@ -48,9 +60,19 @@ internal static class Cli
         }
     }
 
+    private static bool NeedsElevation(string command) =>
+        command is "install" or "remove" or "uninstall" or "start" or "stop" or "restart" or "import";
+
     private static int Version()
     {
-        Console.WriteLine($"easyservice {typeof(Cli).Assembly.GetName().Version?.ToString(3) ?? "1.0.0"}");
+        // Die informationelle Version traegt den Commit ("1.4.2+a1b2c3d"); im Supportfall
+        // ist das der Unterschied zwischen "1.4.2" und "welche 1.4.2".
+        var assembly = typeof(Cli).Assembly;
+        var version = assembly.GetCustomAttribute<AssemblyInformationalVersionAttribute>()?.InformationalVersion;
+        if (string.IsNullOrWhiteSpace(version))
+            version = assembly.GetName().Version?.ToString(3) ?? "1.0.0";
+
+        Console.WriteLine($"easyservice {version}");
         return 0;
     }
 

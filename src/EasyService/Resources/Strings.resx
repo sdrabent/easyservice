@@ -92,6 +92,9 @@ Overwrite its configuration?</value>
   <data name="Cli_Err" xml:space="preserve">
     <value>Error: {0}</value>
   </data>
+  <data name="Cli_Err_NeedsAdmin" xml:space="preserve">
+    <value>"{0}" needs administrator rights. Run the command from a command prompt opened as administrator.</value>
+  </data>
   <data name="Cli_ExportNeedsName" xml:space="preserve">
     <value>export requires &lt;name&gt; or --all.</value>
   </data>
@@ -266,7 +269,8 @@ INTERFACE
   easyservice gui --history &lt;name&gt;
       Starts the interface and opens that service's history right away.
 
-Managing requires administrator rights; the monitoring commands only read.</value>
+install, remove, start, stop, restart and import need administrator rights; without them
+they exit with code 5. The monitoring commands only read and run under any account.</value>
   </data>
   <data name="Common_Cancel" xml:space="preserve">
     <value>Cancel</value>
@@ -1394,6 +1398,9 @@ The cause is usually in the log. Open it now?</value>
   </data>
   <data name="Sup_Throttled" xml:space="preserve">
     <value>The application ran for less than the throttle window ({0} ms); next attempt in {1} ms. Restarts in the last hour: {2}.</value>
+  </data>
+  <data name="Svc_Err_Busy" xml:space="preserve">
+    <value>Another EasyService process has been changing services for more than {0} seconds. Try again once it is done.</value>
   </data>
   <data name="Svc_Err_ChangeConfig" xml:space="preserve">
     <value>The service configuration could not be changed</value>

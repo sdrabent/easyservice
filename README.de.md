@@ -150,7 +150,8 @@ $server | ForEach-Object {
 }
 
 # was ist abgedriftet?
-easyservice export MeinDaemon | git diff --no-index golden.json -
+easyservice export MeinDaemon --output aktuell.json
+git diff --no-index golden.json aktuell.json
 ```
 
 Zwei Dinge zum Format. Kennwörter stehen nicht in der Datei, weil eine Datei, die in
@@ -184,15 +185,27 @@ vernünftige Wahl und hat den nützlichen Nebeneffekt, dass normale Benutzer dor
 schreiben können — der Dienst läuft als SYSTEM, ein beschreibbarer Ort wäre eine
 Rechteausweitung mit Ansage.
 
-Voraussetzungen: Windows 10 beziehungsweise Server 2016 oder neuer, x64,
-Administratorrechte. Dienste zu verwalten geht unter Windows nur erhöht; EasyService
-fordert die Rechte beim Start per UAC an.
+Voraussetzungen: Windows 10 beziehungsweise Server 2016 oder neuer, x64. Die
+Überwachungsbefehle laufen unter jedem Konto — genau deshalb kommt ein Monitoring-Agent
+ohne privilegiertes Dienstkonto aus. Dienste anzulegen, zu ändern und zu entfernen braucht
+Administratorrechte; ohne sie enden diese Befehle mit Code 5, und die Oberfläche fordert
+die Erhöhung beim Start per UAC an.
+
+Vor dem Ausrollen: [docs/deployment.de.md](docs/deployment.de.md) behandelt das Prüfen des
+Downloads, die AppLocker- und WDAC-Regeln und die maschinenweite Spracheinstellung.
 
 ## Grenzen
 
 * **Nicht signiert.** SmartScreen warnt beim ersten Download, AppLocker oder WDAC
-  blockieren die Datei ganz. Zu jedem Release werden Prüfsummen veröffentlicht. Die
-  Signierung ist geplant, braucht aber ein Zertifikat auf Organisationsebene.
+  blockieren die Datei, bis man sie per Hash zulässt. Zu jedem Release gehören
+  SHA256-Prüfsummen, eine CycloneDX-Stückliste und eine GitHub-Build-Attestation, die
+  Herkunft ist also wenigstens nachprüfbar — siehe
+  [docs/deployment.de.md](docs/deployment.de.md). Eine echte Signatur braucht ein Zertifikat.
+* **Rückgabewerte erreichen die Shell nicht.** `easyservice.exe` ist ein
+  Windows-Subsystem-Programm, cmd und PowerShell warten nicht darauf, und
+  `%ERRORLEVEL%` beziehungsweise `$LASTEXITCODE` bleiben leer. Umleitung und Pipes
+  funktionieren; für den Rückgabewert hilft `Start-Process -Wait -PassThru`.
+  Monitoring-Agenten, die den Prozess selbst starten, sind nicht betroffen.
 * **Kein Installer.** Man kopiert die Exe irgendwohin und startet sie. Kein MSI, noch
   kein winget-Paket.
 * **Nur x64.** Keine ARM64-Fassung.
@@ -205,6 +218,8 @@ fordert die Rechte beim Start per UAC an.
 
 ## Dokumentation
 
+* [docs/deployment.de.md](docs/deployment.de.md) — Download prüfen, Anwendungssteuerung,
+  wohin mit der Programmdatei, eine Protokollsprache für die ganze Flotte
 * [docs/monitoring.de.md](docs/monitoring.de.md) — Checkmk, Prometheus, Zabbix, Nagios,
   die Ereignis-IDs und die Spracheinstellung für die Ausgabe
 * Die Registerkarte **Überwachung** im Editor enthält Copy-paste-Schnipsel für die Agenten

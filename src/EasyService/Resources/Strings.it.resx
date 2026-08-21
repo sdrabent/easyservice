@@ -92,6 +92,9 @@ Sovrascrivere la sua configurazione?</value>
   <data name="Cli_Err" xml:space="preserve">
     <value>Errore: {0}</value>
   </data>
+  <data name="Cli_Err_NeedsAdmin" xml:space="preserve">
+    <value>"{0}" richiede i diritti di amministratore. Eseguire il comando in un prompt aperto come amministratore.</value>
+  </data>
   <data name="Cli_ExportNeedsName" xml:space="preserve">
     <value>export richiede &lt;nome&gt; oppure --all.</value>
   </data>
@@ -266,7 +269,9 @@ INTERFACCIA
   easyservice gui --history &lt;nome&gt;
       Avvia l'interfaccia e apre subito la cronologia di quel servizio.
 
-La gestione richiede i diritti di amministratore; i comandi di monitoraggio si limitano a leggere.</value>
+install, remove, start, stop, restart e import richiedono i diritti di amministratore; senza
+di essi terminano con codice 5. I comandi di monitoraggio si limitano a leggere e
+funzionano con qualsiasi account.</value>
   </data>
   <data name="Common_Cancel" xml:space="preserve">
     <value>Annulla</value>
@@ -1394,6 +1399,9 @@ La causa si trova di solito nel registro. Aprirlo adesso?</value>
   </data>
   <data name="Sup_Throttled" xml:space="preserve">
     <value>L'applicazione è rimasta in esecuzione meno della finestra di limitazione ({0} ms); prossimo tentativo tra {1} ms. Riavvii nell'ultima ora: {2}.</value>
+  </data>
+  <data name="Svc_Err_Busy" xml:space="preserve">
+    <value>Un altro processo EasyService sta modificando servizi da più di {0} secondi. Riprovare al termine.</value>
   </data>
   <data name="Svc_Err_ChangeConfig" xml:space="preserve">
     <value>Impossibile modificare la configurazione del servizio</value>

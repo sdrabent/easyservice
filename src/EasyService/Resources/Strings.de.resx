@@ -92,6 +92,9 @@ Seine Konfiguration überschreiben?</value>
   <data name="Cli_Err" xml:space="preserve">
     <value>Fehler: {0}</value>
   </data>
+  <data name="Cli_Err_NeedsAdmin" xml:space="preserve">
+    <value>"{0}" benötigt Administratorrechte. Den Befehl in einer als Administrator geöffneten Eingabeaufforderung ausführen.</value>
+  </data>
   <data name="Cli_ExportNeedsName" xml:space="preserve">
     <value>export benötigt &lt;Name&gt; oder --all.</value>
   </data>
@@ -266,7 +269,8 @@ OBERFLÄCHE
   easyservice gui --history &lt;Name&gt;
       Startet die Oberfläche und öffnet sofort den Verlauf dieses Dienstes.
 
-Verwalten benötigt Administratorrechte; die Überwachungsbefehle lesen nur.</value>
+install, remove, start, stop, restart und import benötigen Administratorrechte; ohne sie
+enden sie mit Code 5. Die Überwachungsbefehle lesen nur und laufen unter jedem Konto.</value>
   </data>
   <data name="Common_Cancel" xml:space="preserve">
     <value>Abbrechen</value>
@@ -1394,6 +1398,9 @@ Die Ursache steht meist im Protokoll. Jetzt öffnen?</value>
   </data>
   <data name="Sup_Throttled" xml:space="preserve">
     <value>Die Anwendung lief kürzer als das Throttle-Fenster ({0} ms); nächster Versuch in {1} ms. Neustarts in der letzten Stunde: {2}.</value>
+  </data>
+  <data name="Svc_Err_Busy" xml:space="preserve">
+    <value>Ein anderer EasyService-Prozess ändert seit mehr als {0} Sekunden Dienste. Nach dessen Ende erneut versuchen.</value>
   </data>
   <data name="Svc_Err_ChangeConfig" xml:space="preserve">
     <value>Die Dienstkonfiguration konnte nicht geändert werden</value>

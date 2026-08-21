@@ -104,6 +104,9 @@ internal static class S
     /// <summary>Error: {0}</summary>
     public static string Cli_Err(object? p0) => Fmt("Cli_Err", p0);
 
+    /// <summary>"{0}" needs administrator rights. Run the command from a command prompt opened as administrator.</summary>
+    public static string Cli_Err_NeedsAdmin(object? p0) => Fmt("Cli_Err_NeedsAdmin", p0);
+
     /// <summary>export requires &lt;name&gt; or --all.</summary>
     public static string Cli_ExportNeedsName => Get("Cli_ExportNeedsName");
 
@@ -1333,6 +1336,9 @@ internal static class S
 
     /// <summary>The application ran for less than the throttle window ({0} ms); next attempt in {1} ms. Restarts in the last hour: {2}.</summary>
     public static string Sup_Throttled(object? p0, object? p1, object? p2) => Fmt("Sup_Throttled", p0, p1, p2);
+
+    /// <summary>Another EasyService process has been changing services for more than {0} seconds. Try again once it is done.</summary>
+    public static string Svc_Err_Busy(object? p0) => Fmt("Svc_Err_Busy", p0);
 
     /// <summary>The service configuration could not be changed</summary>
     public static string Svc_Err_ChangeConfig => Get("Svc_Err_ChangeConfig");

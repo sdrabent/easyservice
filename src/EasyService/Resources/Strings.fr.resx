@@ -92,6 +92,9 @@
   <data name="Cli_Err" xml:space="preserve">
     <value>Erreur : {0}</value>
   </data>
+  <data name="Cli_Err_NeedsAdmin" xml:space="preserve">
+    <value>« {0} » exige des droits d'administrateur. À lancer depuis une invite de commandes ouverte en tant qu'administrateur.</value>
+  </data>
   <data name="Cli_ExportNeedsName" xml:space="preserve">
     <value>export exige &lt;nom&gt; ou --all.</value>
   </data>
@@ -266,7 +269,9 @@ INTERFACE
   easyservice gui --history &lt;nom&gt;
       Démarre l'interface et ouvre directement l'historique de ce service.
 
-La gestion exige des droits d'administrateur ; les commandes de surveillance ne font que lire.</value>
+install, remove, start, stop, restart et import exigent des droits d'administrateur ; sans eux
+ils se terminent avec le code 5. Les commandes de surveillance ne font que lire et
+fonctionnent sous n'importe quel compte.</value>
   </data>
   <data name="Common_Cancel" xml:space="preserve">
     <value>Annuler</value>
@@ -1394,6 +1399,9 @@ La cause se trouve généralement dans le journal. L'ouvrir maintenant ?</value>
   </data>
   <data name="Sup_Throttled" xml:space="preserve">
     <value>L'application a fonctionné moins longtemps que la fenêtre de limitation ({0} ms) ; prochaine tentative dans {1} ms. Redémarrages dans la dernière heure : {2}.</value>
+  </data>
+  <data name="Svc_Err_Busy" xml:space="preserve">
+    <value>Un autre processus EasyService modifie des services depuis plus de {0} secondes. À réessayer une fois qu'il a terminé.</value>
   </data>
   <data name="Svc_Err_ChangeConfig" xml:space="preserve">
     <value>Impossible de modifier la configuration du service</value>

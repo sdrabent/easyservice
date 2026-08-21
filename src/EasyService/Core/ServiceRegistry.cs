@@ -306,6 +306,8 @@ public static class ServiceRegistry
 
     public static void Install(ServiceConfig config)
     {
+        using var _ = MachineLock.Acquire();
+
         if (config.Logon == LogonType.Account)
             LsaHelper.GrantServiceLogonRight(config.AccountName);
 
@@ -348,6 +350,8 @@ public static class ServiceRegistry
 
     public static void Update(ServiceConfig config)
     {
+        using var _ = MachineLock.Acquire();
+
         if (config.Logon == LogonType.Account)
             LsaHelper.GrantServiceLogonRight(config.AccountName);
 
@@ -498,6 +502,10 @@ public static class ServiceRegistry
 
     public static void Remove(string name, bool stopFirst = true)
     {
+        // Vor dem Stoppen genommen: sonst legt ein paralleler Import waehrend des
+        // Herunterfahrens eine neue Konfiguration an, die gleich mitgeloescht wird.
+        using var _ = MachineLock.Acquire();
+
         if (stopFirst)
         {
             try { Stop(name, TimeSpan.FromSeconds(30)); } catch { /* delete anyway */ }
