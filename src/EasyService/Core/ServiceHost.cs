@@ -1,5 +1,7 @@
 using System.Runtime.InteropServices;
 
+using EasyService.Resources;
+
 namespace EasyService.Core;
 
 /// <summary>
@@ -41,8 +43,7 @@ public static class ServiceHost
             {
                 var err = Marshal.GetLastWin32Error();
                 EventLogSink.Error(serviceName, EasyServiceEvent.ConfigurationProblem,
-                    $"StartServiceCtrlDispatcher ist fehlgeschlagen ({err}). " +
-                    "easyservice.exe run <Dienst> ist nur für den Start durch den Dienst-Manager gedacht.");
+                    S.Host_DispatcherFailed(err));
                 return err;
             }
             return 0;
@@ -78,14 +79,13 @@ public static class ServiceHost
         }
         catch (Exception e)
         {
-            Fail($"Die Konfiguration konnte nicht gelesen werden: {e.Message}", 1);
+            Fail(S.Host_ConfigReadFailed(e.Message), 1);
             return;
         }
 
         if (config is null || string.IsNullOrWhiteSpace(config.Application))
         {
-            Fail("Für diesen Dienst ist keine EasyService-Konfiguration hinterlegt " +
-                 @"(HKLM\SYSTEM\CurrentControlSet\Services\" + _serviceName + @"\Parameters).", 1);
+            Fail(S.Host_NoConfig(_serviceName), 1);
             return;
         }
 
@@ -103,9 +103,8 @@ public static class ServiceHost
         }
         catch (Exception e)
         {
-            EventLogSink.Error(_serviceName, EasyServiceEvent.ApplicationStartFailed,
-                "Der Dienst wurde durch einen Fehler beendet: " + e);
-            Fail("Unerwarteter Fehler: " + e.Message, 1);
+            EventLogSink.Error(_serviceName, EasyServiceEvent.ApplicationStartFailed, S.Host_Crashed(e));
+            Fail(S.Host_Unexpected(e.Message), 1);
         }
         finally
         {
@@ -137,7 +136,7 @@ public static class ServiceHost
                     catch (Exception e)
                     {
                         EventLogSink.Error(_serviceName, EasyServiceEvent.ServiceStopping,
-                            "Fehler beim Beenden: " + e.Message);
+                            S.Host_StopFailed(e.Message));
                     }
                 })
                 { IsBackground = true, Name = "easyservice-stop" };

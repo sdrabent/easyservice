@@ -1,5 +1,7 @@
 using System.Globalization;
 
+using EasyService.Resources;
+
 namespace EasyService.Core;
 
 /// <summary>Nagios/Checkmk status convention - the numbers are part of the contract.</summary>
@@ -59,12 +61,11 @@ public static class Monitoring
 
         if (info is null)
             return new CheckResult(serviceName, serviceName, CheckStatus.Unknown,
-                "Der Dienst existiert nicht (mehr).", Array.Empty<Metric>(), null, null);
+                S.Mon_NoService, Array.Empty<Metric>(), null, null);
 
         if (config is null)
             return new CheckResult(serviceName, info.DisplayName, CheckStatus.Unknown,
-                "Für diesen Dienst ist keine EasyService-Konfiguration hinterlegt.",
-                Array.Empty<Metric>(), null, info);
+                S.Mon_NoConfig, Array.Empty<Metric>(), null, info);
 
         if (!config.MonitoringEnabled) return null;
 
@@ -82,50 +83,43 @@ public static class Monitoring
         if (!info.IsRunning)
         {
             if (info.Startup == StartupType.Disabled)
-                return (CheckStatus.Ok, "Der Dienst ist deaktiviert.");
+                return (CheckStatus.Ok, S.Mon_Disabled);
 
             if (info.Startup is StartupType.Automatic or StartupType.AutomaticDelayed)
                 return (CheckStatus.Critical,
-                    $"Der Dienst ist {info.StateText.ToLowerInvariant()}, obwohl der Starttyp \"{info.StartupText}\" ist.");
+                    S.Mon_StoppedButAuto(info.StateText.ToLowerInvariant(), info.StartupText));
 
-            return (CheckStatus.Ok, $"Der Dienst ist beendet (Starttyp {info.StartupText}).");
+            return (CheckStatus.Ok, S.Mon_StoppedOk(info.StartupText));
         }
 
         // --- the supervisor's own report ---------------------------------------
         if (state is null)
-            return (CheckStatus.Unknown,
-                "Der Dienst läuft, meldet aber noch keinen Zustand. Läuft er mit einer älteren EasyService-Version?");
+            return (CheckStatus.Unknown, S.Mon_NoState);
 
         if (state.IsStale)
-            return (CheckStatus.Unknown,
-                $"Die letzte Statusmeldung ist {ServiceState.FormatDuration(state.Age)} alt - " +
-                "der überwachende Prozess reagiert möglicherweise nicht mehr.");
+            return (CheckStatus.Unknown, S.Mon_Stale(ServiceState.FormatDuration(state.Age)));
 
         switch (state.State)
         {
             case SupervisorState.Failed:
-                return (CheckStatus.Critical,
-                    "Die Anwendung konnte nicht gestartet werden: " + (state.LastError ?? "unbekannter Fehler"));
+                return (CheckStatus.Critical, S.Mon_Failed(state.LastError ?? S.Mon_UnknownError));
 
             case SupervisorState.Throttled:
-                return (CheckStatus.Critical,
-                    $"Die Anwendung startet ständig neu und wird gedrosselt. " +
-                    $"{state.RestartsLastHour} Neustarts in der letzten Stunde, " +
-                    $"zuletzt Exit-Code {state.LastExitCode?.ToString() ?? "?"}.");
+                return (CheckStatus.Critical, S.Mon_Throttled(state.RestartsLastHour,
+                    state.LastExitCode?.ToString() ?? S.Common_UnknownShort));
 
             case SupervisorState.Ignored:
                 return (CheckStatus.Warning,
-                    $"Die Anwendung hat sich beendet (Exit-Code {state.LastExitCode?.ToString() ?? "?"}) und wird " +
-                    "laut Konfiguration nicht neu gestartet. Der Dienst läuft ohne Anwendung.");
+                    S.Mon_Ignored(state.LastExitCode?.ToString() ?? S.Common_UnknownShort));
 
             case SupervisorState.Restarting:
-                return (CheckStatus.Warning, "Die Anwendung wird gerade neu gestartet.");
+                return (CheckStatus.Warning, S.Mon_Restarting);
 
             case SupervisorState.Starting:
-                return (CheckStatus.Ok, "Der Dienst startet.");
+                return (CheckStatus.Ok, S.Mon_Starting);
 
             case SupervisorState.Stopped:
-                return (CheckStatus.Warning, "Der Dienst läuft, die Anwendung ist aber nicht aktiv.");
+                return (CheckStatus.Warning, S.Mon_RunningNoApp);
         }
 
         // --- thresholds on a healthy, running application -----------------------
@@ -140,20 +134,20 @@ public static class Monitoring
 
         var restarts = state.RestartsLastHour;
         if (config.CritRestartsPerHour > 0 && restarts >= config.CritRestartsPerHour)
-            Raise(CheckStatus.Critical, $"{restarts} Neustarts in der letzten Stunde (kritisch ab {config.CritRestartsPerHour})");
+            Raise(CheckStatus.Critical, S.Mon_RestartsCrit(restarts, config.CritRestartsPerHour));
         else if (config.WarnRestartsPerHour > 0 && restarts >= config.WarnRestartsPerHour)
-            Raise(CheckStatus.Warning, $"{restarts} Neustarts in der letzten Stunde (Warnung ab {config.WarnRestartsPerHour})");
+            Raise(CheckStatus.Warning, S.Mon_RestartsWarn(restarts, config.WarnRestartsPerHour));
 
         if (config.CritCpuPercent > 0 && state.CpuPercent >= config.CritCpuPercent)
-            Raise(CheckStatus.Critical, $"CPU {Num(state.CpuPercent)} % (kritisch ab {config.CritCpuPercent} %)");
+            Raise(CheckStatus.Critical, S.Mon_CpuCrit(Num(state.CpuPercent), config.CritCpuPercent));
         else if (config.WarnCpuPercent > 0 && state.CpuPercent >= config.WarnCpuPercent)
-            Raise(CheckStatus.Warning, $"CPU {Num(state.CpuPercent)} % (Warnung ab {config.WarnCpuPercent} %)");
+            Raise(CheckStatus.Warning, S.Mon_CpuWarn(Num(state.CpuPercent), config.WarnCpuPercent));
 
         var memoryMb = state.WorkingSetBytes / (1024.0 * 1024.0);
         if (config.CritMemoryMb > 0 && memoryMb >= config.CritMemoryMb)
-            Raise(CheckStatus.Critical, $"RAM {Num(memoryMb)} MB (kritisch ab {config.CritMemoryMb} MB)");
+            Raise(CheckStatus.Critical, S.Mon_MemCrit(Num(memoryMb), config.CritMemoryMb));
         else if (config.WarnMemoryMb > 0 && memoryMb >= config.WarnMemoryMb)
-            Raise(CheckStatus.Warning, $"RAM {Num(memoryMb)} MB (Warnung ab {config.WarnMemoryMb} MB)");
+            Raise(CheckStatus.Warning, S.Mon_MemWarn(Num(memoryMb), config.WarnMemoryMb));
 
         var baseline = Describe(state);
         return problems.Count == 0
@@ -166,15 +160,15 @@ public static class Monitoring
         var parts = new List<string>();
 
         parts.Add(state.Uptime is { } up
-            ? $"Läuft seit {ServiceState.FormatDuration(up)}"
-            : "Läuft");
+            ? S.Mon_RunningSince(ServiceState.FormatDuration(up))
+            : S.Mon_RunningPlain);
 
-        if (state.ApplicationPid > 0) parts.Add($"PID {state.ApplicationPid}");
-        if (state.ProcessCount > 1) parts.Add($"{state.ProcessCount} Prozesse");
-        parts.Add($"CPU {Num(state.CpuPercent)} %");
-        parts.Add($"RAM {ServiceState.FormatBytes(state.WorkingSetBytes)}");
-        parts.Add($"{state.RestartsLastHour} Neustarts/h");
-        if (state.RestartCount > 0) parts.Add($"{state.RestartCount} Neustarts gesamt");
+        if (state.ApplicationPid > 0) parts.Add(S.Mon_Pid(state.ApplicationPid));
+        if (state.ProcessCount > 1) parts.Add(S.Mon_Processes(state.ProcessCount));
+        parts.Add(S.Mon_Cpu(Num(state.CpuPercent)));
+        parts.Add(S.Mon_Ram(ServiceState.FormatBytes(state.WorkingSetBytes)));
+        parts.Add(S.Mon_RestartsPerHour(state.RestartsLastHour));
+        if (state.RestartCount > 0) parts.Add(S.Mon_RestartsTotal(state.RestartCount));
 
         return string.Join(", ", parts);
     }
@@ -211,9 +205,9 @@ public static class Monitoring
 
     public static string Describe(CheckStatus status) => status switch
     {
-        CheckStatus.Ok => "OK",
-        CheckStatus.Warning => "WARNUNG",
-        CheckStatus.Critical => "KRITISCH",
-        _ => "UNBEKANNT",
+        CheckStatus.Ok => S.Mon_Status_Ok,
+        CheckStatus.Warning => S.Mon_Status_Warning,
+        CheckStatus.Critical => S.Mon_Status_Critical,
+        _ => S.Mon_Status_Unknown,
     };
 }

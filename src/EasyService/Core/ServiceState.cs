@@ -1,6 +1,8 @@
 using System.Text.Json;
 using System.Text.Json.Serialization;
 
+using EasyService.Resources;
+
 namespace EasyService.Core;
 
 /// <summary>What the supervisor is currently doing with the application.</summary>
@@ -194,13 +196,13 @@ public sealed class ServiceState
 
     public static string Describe(SupervisorState state) => state switch
     {
-        SupervisorState.Stopped => "Beendet",
-        SupervisorState.Starting => "Startet",
-        SupervisorState.Running => "Läuft",
-        SupervisorState.Restarting => "Startet neu",
-        SupervisorState.Throttled => "Neustart gedrosselt",
-        SupervisorState.Ignored => "Anwendung beendet (kein Neustart)",
-        SupervisorState.Failed => "Start fehlgeschlagen",
+        SupervisorState.Stopped => S.State_Stopped,
+        SupervisorState.Starting => S.State_Starting,
+        SupervisorState.Running => S.State_Running,
+        SupervisorState.Restarting => S.State_Restarting,
+        SupervisorState.Throttled => S.State_Throttled,
+        SupervisorState.Ignored => S.State_Ignored,
+        SupervisorState.Failed => S.State_Failed,
         _ => state.ToString(),
     };
 

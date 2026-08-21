@@ -1,5 +1,7 @@
 using EasyService.Core;
 
+using EasyService.Resources;
+
 namespace EasyService.Gui;
 
 /// <summary>
@@ -19,20 +21,20 @@ public sealed class QuickAddForm : Form
     private readonly TextBox _application;
     private readonly TextBox _arguments = new();
     private readonly TextBox _serviceName = new();
-    private readonly ComboBox _logon = Ui.Combo("Lokales Systemkonto (empfohlen)", "Lokaler Dienst",
-                                                "Netzwerkdienst", "Dieses Konto");
+    private readonly ComboBox _logon = Ui.Combo(S.Quick_Logon_LocalSystem, S.Editor_Logon_LocalService,
+                                                S.Editor_Logon_NetworkService, S.Editor_Logon_Account);
     private readonly TextBox _account = new();
     private readonly TextBox _password = new() { UseSystemPasswordChar = true };
     private readonly CheckBox _rememberPassword = new()
     {
-        Text = "Zugangsdaten für weitere Dienste merken",
+        Text = S.Quick_Chk_Remember,
         AutoSize = true,
     };
-    private readonly ComboBox _startup = Ui.Combo("Automatisch", "Automatisch (verzögerter Start)",
-                                                  "Manuell", "Deaktiviert");
+    private readonly ComboBox _startup = Ui.Combo(S.Svc_Startup_Automatic, S.Editor_Startup_AutoDelayed,
+                                                  S.Svc_Startup_Manual, S.Svc_Startup_Disabled);
     private readonly CheckBox _startAfter = new()
     {
-        Text = "Dienst sofort starten",
+        Text = S.Quick_Chk_StartNow,
         AutoSize = true,
         Checked = true,
     };
@@ -53,7 +55,7 @@ public sealed class QuickAddForm : Form
 
     public QuickAddForm(string? preselectedProgram = null)
     {
-        Text = "Dienst schnell einrichten";
+        Text = S.Quick_Title;
         Icon = Ui.AppIcon;
         StartPosition = FormStartPosition.CenterParent;
         FormBorderStyle = FormBorderStyle.Sizable;
@@ -68,27 +70,25 @@ public sealed class QuickAddForm : Form
 
         var p = Ui.FormPanel();
 
-        Ui.AddFullRow(p, Ui.Hint("Programm auswählen oder hierher ziehen - alles Weitere wird sinnvoll vorbelegt."));
-        Ui.AddRow(p, "Programm:", appPanel);
-        Ui.AddRow(p, "Argumente:", _arguments);
-        Ui.AddRow(p, "Dienstname:", _serviceName);
+        Ui.AddFullRow(p, Ui.Hint(S.Quick_Hint_Drop));
+        Ui.AddRow(p, S.Quick_Lbl_Program, appPanel);
+        Ui.AddRow(p, S.Quick_Lbl_Arguments, _arguments);
+        Ui.AddRow(p, S.Quick_Lbl_ServiceName, _serviceName);
 
-        Ui.AddSpacer(p, "Anmeldung und Start");
-        Ui.AddRow(p, "Anmelden als:", _logon);
-        (_accountLabel, _) = Ui.AddLabelledRow(p, "Konto:", _account);
-        (_passwordLabel, _) = Ui.AddLabelledRow(p, "Kennwort:", _password);
+        Ui.AddSpacer(p, S.Quick_Group_Logon);
+        Ui.AddRow(p, S.Quick_Lbl_LogonAs, _logon);
+        (_accountLabel, _) = Ui.AddLabelledRow(p, S.Quick_Lbl_Account, _account);
+        (_passwordLabel, _) = Ui.AddLabelledRow(p, S.Quick_Lbl_Password, _password);
         Ui.AddFullRow(p, _rememberPassword);
-        _passwordHint = Ui.AddFullRow(p, Ui.Hint(
-            "Gemerkt wird nur für Ihr Windows-Konto auf diesem Rechner (verschlüsselt per DPAPI). " +
-            "Ohne Häkchen bleibt das Kennwort nur bis zum Schließen von EasyService im Speicher."));
-        Ui.AddRow(p, "Starttyp:", _startup);
+        _passwordHint = Ui.AddFullRow(p, Ui.Hint(S.Quick_Hint_Remember));
+        Ui.AddRow(p, S.Quick_Lbl_Startup, _startup);
 
-        Ui.AddSpacer(p, "Wird automatisch eingerichtet");
+        Ui.AddSpacer(p, S.Quick_Group_Auto);
         Ui.AddFullRow(p, _summary);
 
-        var advanced = new Button { Text = "Erweiterte Einstellungen...", AutoSize = true, Height = 30 };
-        var create = new Button { Text = "Dienst anlegen", Width = 140, Height = 30 };
-        var cancel = new Button { Text = "Abbrechen", Width = 100, Height = 30, DialogResult = DialogResult.Cancel };
+        var advanced = new Button { Text = S.Quick_Btn_Advanced, AutoSize = true, Height = 30 };
+        var create = new Button { Text = S.Quick_Btn_Create, Width = 140, Height = 30 };
+        var cancel = new Button { Text = S.Common_Cancel, Width = 100, Height = 30, DialogResult = DialogResult.Cancel };
 
         advanced.Click += (_, _) => OpenAdvanced();
         create.Click += (_, _) => OnCreate();
@@ -209,18 +209,18 @@ public sealed class QuickAddForm : Form
 
         var logs = name.Length == 0
             ? directory
-            : Path.Combine(directory, name + "-stdout.log") + nl
-              + "                 " + Path.Combine(directory, name + "-stderr.log");
+            : Path.Combine(directory, name + "-stdout.log") + nl + "   "
+              + Path.Combine(directory, name + "-stderr.log");
 
         _summary.Text = string.Join(nl, new[]
         {
-            "Protokolle:      " + logs,
-            "                 Rotation ab 10 MB, die letzten 10 Dateien bleiben erhalten.",
+            S.Quick_Sum_Logs(logs),
+            "   " + S.Quick_Sum_Rotation,
             "",
-            "Neustart:        nach einem Absturz, 1 s Verzögerung, Drosselung bei Dauerabstürzen.",
+            S.Quick_Sum_Restart,
             "",
-            "Überwachung:     aktiv - Warnung ab 3, kritisch ab 10 Neustarts pro Stunde;",
-            "                 abrufbar über checkmk, prometheus, check und json.",
+            S.Quick_Sum_Monitoring,
+            "   " + S.Quick_Sum_MonitoringHow,
         });
     }
 
@@ -284,8 +284,8 @@ public sealed class QuickAddForm : Form
         var problems = config.Validate(isNew: true).ToList();
         if (problems.Count > 0)
         {
-            Ui.ShowError(this, "Eingaben prüfen", string.Join(System.Environment.NewLine + "- ",
-                problems.Prepend("Bitte folgende Punkte korrigieren:" + System.Environment.NewLine)));
+            Ui.ShowError(this, S.Quick_Err_Title, string.Join(System.Environment.NewLine + "- ",
+                problems.Prepend(S.Quick_Err_Intro + System.Environment.NewLine)));
             return;
         }
 

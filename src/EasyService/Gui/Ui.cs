@@ -1,5 +1,7 @@
 using System.ComponentModel;
 
+using EasyService.Resources;
+
 namespace EasyService.Gui;
 
 /// <summary>
@@ -179,8 +181,10 @@ internal static class Ui
     };
 
     /// <summary>A textbox plus a "..." button that opens a file or folder picker.</summary>
-    public static (Panel Panel, TextBox Box) BrowseRow(bool folder, string filter = "Programme (*.exe;*.bat;*.cmd)|*.exe;*.bat;*.cmd|Alle Dateien (*.*)|*.*")
+    public static (Panel Panel, TextBox Box) BrowseRow(bool folder, string? filter = null)
     {
+        // Kein Standardwert im Parameter: Ressourcen sind zur Compilezeit nicht konstant.
+        filter ??= S.Common_FilterProgram;
         var panel = new Panel { Height = 27, Margin = new Padding(0) };
         var box = new TextBox { Left = 0, Top = 1, Anchor = AnchorStyles.Left | AnchorStyles.Right | AnchorStyles.Top };
         var button = new Button { Text = "...", Width = 32, Top = 0, Anchor = AnchorStyles.Right | AnchorStyles.Top };
@@ -261,7 +265,7 @@ internal static class Ui
         }
         catch (Exception e)
         {
-            ShowError(null, "Explorer", e);
+            ShowError(null, S.Common_Explorer, e);
         }
     }
 }

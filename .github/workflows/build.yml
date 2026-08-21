@@ -25,6 +25,16 @@ jobs:
       - name: Restore
         run: dotnet restore EasyService.sln
 
+      - name: Verify generated strings match the resx
+        shell: pwsh
+        run: |
+          python tools/generate-strings.py
+          git diff --exit-code -- src/EasyService/Resources/Strings.g.cs
+          if ($LASTEXITCODE -ne 0) {
+            Write-Error "Strings.g.cs ist veraltet - bitte 'python tools/generate-strings.py' laufen lassen und einchecken."
+            exit 1
+          }
+
       - name: Build
         run: dotnet build EasyService.sln -c Release --no-restore
 

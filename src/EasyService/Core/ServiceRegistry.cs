@@ -3,6 +3,8 @@ using System.Runtime.InteropServices;
 using System.Text;
 using Microsoft.Win32;
 
+using EasyService.Resources;
+
 namespace EasyService.Core;
 
 public sealed record ServiceInfo(
@@ -18,23 +20,23 @@ public sealed record ServiceInfo(
 {
     public string StateText => State switch
     {
-        Native.SERVICE_STOPPED => "Beendet",
-        Native.SERVICE_START_PENDING => "Startet...",
-        Native.SERVICE_STOP_PENDING => "Beendet...",
-        Native.SERVICE_RUNNING => "Wird ausgeführt",
-        Native.SERVICE_CONTINUE_PENDING => "Fortsetzen...",
-        Native.SERVICE_PAUSE_PENDING => "Anhalten...",
-        Native.SERVICE_PAUSED => "Angehalten",
-        _ => "Unbekannt",
+        Native.SERVICE_STOPPED => S.Svc_State_Stopped,
+        Native.SERVICE_START_PENDING => S.Svc_State_StartPending,
+        Native.SERVICE_STOP_PENDING => S.Svc_State_StopPending,
+        Native.SERVICE_RUNNING => S.Svc_State_Running,
+        Native.SERVICE_CONTINUE_PENDING => S.Svc_State_ContinuePending,
+        Native.SERVICE_PAUSE_PENDING => S.Svc_State_PausePending,
+        Native.SERVICE_PAUSED => S.Svc_State_Paused,
+        _ => S.Svc_State_Unknown,
     };
 
     public string StartupText => Startup switch
     {
-        StartupType.Automatic => "Automatisch",
-        StartupType.AutomaticDelayed => "Automatisch (verzögert)",
-        StartupType.Manual => "Manuell",
-        StartupType.Disabled => "Deaktiviert",
-        _ => "?",
+        StartupType.Automatic => S.Svc_Startup_Automatic,
+        StartupType.AutomaticDelayed => S.Svc_Startup_AutomaticDelayed,
+        StartupType.Manual => S.Svc_Startup_Manual,
+        StartupType.Disabled => S.Svc_Startup_Disabled,
+        _ => S.Common_UnknownShort,
     };
 
     public bool IsRunning => State == Native.SERVICE_RUNNING;
@@ -57,14 +59,14 @@ public static class ServiceRegistry
     private static ScmHandle OpenManager(uint access)
     {
         var scm = Native.OpenSCManagerW(null, null, access);
-        if (scm == IntPtr.Zero) throw Fail("Der Dienst-Manager konnte nicht geöffnet werden");
+        if (scm == IntPtr.Zero) throw Fail(S.Svc_Err_OpenScm);
         return new ScmHandle(scm);
     }
 
     private static ScmHandle OpenService(ScmHandle scm, string name, uint access)
     {
         var svc = Native.OpenServiceW(scm, name, access);
-        if (svc == IntPtr.Zero) throw Fail($"Der Dienst \"{name}\" konnte nicht geöffnet werden");
+        if (svc == IntPtr.Zero) throw Fail(S.Svc_Err_OpenService(name));
         return new ScmHandle(svc);
     }
 
@@ -94,7 +96,7 @@ public static class ServiceRegistry
             resume = 0;
             if (!Native.EnumServicesStatusExW(scm, Native.SC_ENUM_PROCESS_INFO, Native.SERVICE_WIN32, 3,
                     buffer, needed, out _, out var count, ref resume, null))
-                throw Fail("Die Dienste konnten nicht aufgelistet werden");
+                throw Fail(S.Svc_Err_Enumerate);
 
             var size = Marshal.SizeOf<Native.ENUM_SERVICE_STATUS_PROCESS>();
             for (var i = 0; i < count; i++)
@@ -256,7 +258,7 @@ public static class ServiceRegistry
         try
         {
             if (!Native.QueryServiceStatusEx(service, Native.SC_STATUS_PROCESS_INFO, buf, (uint)size, out _))
-                throw Fail("Der Dienststatus konnte nicht abgefragt werden");
+                throw Fail(S.Svc_Err_QueryStatus);
             return Marshal.PtrToStructure<Native.SERVICE_STATUS_PROCESS>(buf);
         }
         finally { Marshal.FreeHGlobal(buf); }
@@ -295,10 +297,9 @@ public static class ServiceRegistry
             var err = Marshal.GetLastWin32Error();
             throw new Win32Exception(err, err switch
             {
-                Native.ERROR_SERVICE_EXISTS => $"Der Dienst \"{config.ServiceName}\" existiert bereits.",
-                Native.ERROR_SERVICE_MARKED_FOR_DELETE =>
-                    $"Der Dienst \"{config.ServiceName}\" ist zum Löschen vorgemerkt. Bitte neu starten und erneut versuchen.",
-                _ => $"Der Dienst konnte nicht angelegt werden: {new Win32Exception(err).Message}",
+                Native.ERROR_SERVICE_EXISTS => S.Svc_Err_Exists(config.ServiceName),
+                Native.ERROR_SERVICE_MARKED_FOR_DELETE => S.Svc_Err_MarkedForDelete(config.ServiceName),
+                _ => S.Svc_Err_Create(new Win32Exception(err).Message),
             });
         }
 
@@ -329,7 +330,7 @@ public static class ServiceRegistry
                 BuildBinaryPath(config.ServiceName), null, IntPtr.Zero,
                 DependencyString(config.Dependencies),
                 config.AccountForScm, password, config.EffectiveDisplayName))
-            throw Fail("Die Dienstkonfiguration konnte nicht geändert werden");
+            throw Fail(S.Svc_Err_ChangeConfig);
 
         ApplyExtendedConfig(svc, config);
         config.Save();
@@ -471,7 +472,7 @@ public static class ServiceRegistry
             {
                 var err = Marshal.GetLastWin32Error();
                 if (err != Native.ERROR_SERVICE_MARKED_FOR_DELETE)
-                    throw new Win32Exception(err, $"Der Dienst konnte nicht entfernt werden: {new Win32Exception(err).Message}");
+                    throw new Win32Exception(err, S.Svc_Err_Delete(new Win32Exception(err).Message));
             }
         }
 
@@ -490,7 +491,7 @@ public static class ServiceRegistry
         {
             var err = Marshal.GetLastWin32Error();
             if (err != Native.ERROR_SERVICE_ALREADY_RUNNING)
-                throw new Win32Exception(err, $"Der Dienst konnte nicht gestartet werden: {new Win32Exception(err).Message}");
+                throw new Win32Exception(err, S.Svc_Err_Start(new Win32Exception(err).Message));
         }
         WaitFor(svc, Native.SERVICE_RUNNING, timeout);
     }
@@ -505,7 +506,7 @@ public static class ServiceRegistry
         {
             var err = Marshal.GetLastWin32Error();
             if (err != Native.ERROR_SERVICE_NOT_ACTIVE)
-                throw new Win32Exception(err, $"Der Dienst konnte nicht beendet werden: {new Win32Exception(err).Message}");
+                throw new Win32Exception(err, S.Svc_Err_Stop(new Win32Exception(err).Message));
         }
         WaitFor(svc, Native.SERVICE_STOPPED, timeout);
     }
@@ -522,7 +523,7 @@ public static class ServiceRegistry
         using var svc = OpenService(scm, name, Native.SERVICE_PAUSE_CONTINUE | Native.SERVICE_QUERY_STATUS);
         var status = new Native.SERVICE_STATUS();
         if (!Native.ControlService(svc, Native.SERVICE_CONTROL_PAUSE, ref status))
-            throw Fail("Der Dienst konnte nicht angehalten werden");
+            throw Fail(S.Svc_Err_Pause);
     }
 
     public static void Continue(string name)
@@ -531,7 +532,7 @@ public static class ServiceRegistry
         using var svc = OpenService(scm, name, Native.SERVICE_PAUSE_CONTINUE | Native.SERVICE_QUERY_STATUS);
         var status = new Native.SERVICE_STATUS();
         if (!Native.ControlService(svc, Native.SERVICE_CONTROL_CONTINUE, ref status))
-            throw Fail("Der Dienst konnte nicht fortgesetzt werden");
+            throw Fail(S.Svc_Err_Continue);
     }
 
     private static void WaitFor(IntPtr svc, uint desiredState, TimeSpan timeout)
@@ -544,11 +545,10 @@ public static class ServiceRegistry
             if (desiredState == Native.SERVICE_RUNNING && status.dwCurrentState == Native.SERVICE_STOPPED
                 && status.dwWin32ExitCode != 0)
                 throw new Win32Exception((int)status.dwWin32ExitCode,
-                    $"Der Dienst wurde sofort wieder beendet (Fehlercode {status.dwWin32ExitCode}). " +
-                    "Details stehen im EasyService-Log des Dienstes.");
+                    S.Svc_Err_DiedOnStart(status.dwWin32ExitCode));
             Thread.Sleep(250);
         }
-        throw new TimeoutException($"Zeitüberschreitung beim Warten auf den Zielzustand des Dienstes.");
+        throw new TimeoutException(S.Svc_Err_Timeout);
     }
 }
 

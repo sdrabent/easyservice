@@ -1,6 +1,8 @@
 using EasyService.Core;
 using EasyService.Gui;
 
+using EasyService.Resources;
+
 namespace EasyService;
 
 internal static class Program
@@ -10,6 +12,10 @@ internal static class Program
     [STAThread]
     private static int Main(string[] args)
     {
+        // The language has to be settled before the first string is read - the supervisor
+        // writes its log in it just as much as the GUI shows its labels in it.
+        Localization.Initialize();
+
         // Mode 1: started by the Service Control Manager as "easyservice.exe run <name>".
         if (args.Length >= 2 && args[0].Equals("run", StringComparison.OrdinalIgnoreCase))
             return ServiceHost.Run(args[1]);
@@ -26,9 +32,10 @@ internal static class Program
         catch (Exception) { /* aeltere Runtime: dann eben klassisch hell */ }
 
         Application.SetUnhandledExceptionMode(UnhandledExceptionMode.CatchException);
-        Application.ThreadException += (_, e) => Ui.ShowError(null, "Unerwarteter Fehler", e.Exception);
+        Application.ThreadException += (_, e) => Ui.ShowError(null, S.Common_UnexpectedError, e.Exception);
         AppDomain.CurrentDomain.UnhandledException += (_, e) =>
-            Ui.ShowError(null, "Unerwarteter Fehler", e.ExceptionObject as Exception ?? new Exception("Unbekannter Fehler"));
+            Ui.ShowError(null, S.Common_UnexpectedError,
+                e.ExceptionObject as Exception ?? new Exception(S.Common_UnexpectedError));
 
         EventLogSink.EnsureSource();
 

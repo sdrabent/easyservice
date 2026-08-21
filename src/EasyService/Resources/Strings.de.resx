@@ -1,0 +1,1298 @@
+<?xml version="1.0" encoding="utf-8"?>
+<root>
+  <resheader name="resmimetype">
+    <value>text/microsoft-resx</value>
+  </resheader>
+  <resheader name="version">
+    <value>2.0</value>
+  </resheader>
+  <resheader name="reader">
+    <value>System.Resources.ResXResourceReader, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </resheader>
+  <resheader name="writer">
+    <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </resheader>
+  <data name="Cfg_Err_AccountRequired" xml:space="preserve">
+    <value>Für die Anmeldung als Konto muss ein Kontoname angegeben werden.</value>
+  </data>
+  <data name="Cfg_Err_AppNotFound" xml:space="preserve">
+    <value>Programm nicht gefunden: {0}</value>
+  </data>
+  <data name="Cfg_Err_BadEnvironment" xml:space="preserve">
+    <value>Ungültige Umgebungsvariable (erwartet NAME=WERT): {0}</value>
+  </data>
+  <data name="Cfg_Err_DirNotFound" xml:space="preserve">
+    <value>Startverzeichnis nicht gefunden: {0}</value>
+  </data>
+  <data name="Cfg_Err_NameEmpty" xml:space="preserve">
+    <value>Der Dienstname darf nicht leer sein.</value>
+  </data>
+  <data name="Cfg_Err_NameSlash" xml:space="preserve">
+    <value>Der Dienstname darf keine / oder \ enthalten.</value>
+  </data>
+  <data name="Cfg_Err_NameTooLong" xml:space="preserve">
+    <value>Der Dienstname ist zu lang (max. 256 Zeichen).</value>
+  </data>
+  <data name="Cfg_Err_NoApplication" xml:space="preserve">
+    <value>Es wurde kein Programm (Pfad) angegeben.</value>
+  </data>
+  <data name="Cli_Err" xml:space="preserve">
+    <value>Fehler: {0}</value>
+  </data>
+  <data name="Cli_Hdr_DisplayName" xml:space="preserve">
+    <value>ANZEIGENAME</value>
+  </data>
+  <data name="Cli_Hdr_Name" xml:space="preserve">
+    <value>NAME</value>
+  </data>
+  <data name="Cli_Hdr_Startup" xml:space="preserve">
+    <value>START</value>
+  </data>
+  <data name="Cli_Hdr_Status" xml:space="preserve">
+    <value>STATUS</value>
+  </data>
+  <data name="Cli_InstallNeedsArgs" xml:space="preserve">
+    <value>install benötigt &lt;Name&gt; und &lt;Programm&gt;.</value>
+  </data>
+  <data name="Cli_Installed" xml:space="preserve">
+    <value>Dienst "{0}" wurde angelegt.</value>
+  </data>
+  <data name="Cli_Logs" xml:space="preserve">
+    <value>Protokolle: {0}</value>
+  </data>
+  <data name="Cli_MetricsWritten" xml:space="preserve">
+    <value>{0} Dienste nach {1} geschrieben.</value>
+  </data>
+  <data name="Cli_MonitoringOff" xml:space="preserve">
+    <value>EASYSERVICE UNBEKANNT - Für "{0}" ist die Überwachung deaktiviert.</value>
+  </data>
+  <data name="Cli_NeedsName" xml:space="preserve">
+    <value>{0} benötigt &lt;Name&gt;.</value>
+  </data>
+  <data name="Cli_NotExists" xml:space="preserve">
+    <value>Fehler: Der Dienst "{0}" existiert nicht.</value>
+  </data>
+  <data name="Cli_OutputNeedsFile" xml:space="preserve">
+    <value>--output benötigt einen Dateinamen.</value>
+  </data>
+  <data name="Cli_Removed" xml:space="preserve">
+    <value>Dienst "{0}" wurde entfernt.</value>
+  </data>
+  <data name="Cli_Restarted" xml:space="preserve">
+    <value>Dienst "{0}" wurde neu gestartet.</value>
+  </data>
+  <data name="Cli_St_Account" xml:space="preserve">
+    <value>Konto       : {0}</value>
+  </data>
+  <data name="Cli_St_Application" xml:space="preserve">
+    <value>Anwendung   : {0}</value>
+  </data>
+  <data name="Cli_St_CpuRam" xml:space="preserve">
+    <value>CPU / RAM   : {0} % / {1}</value>
+  </data>
+  <data name="Cli_St_DisplayName" xml:space="preserve">
+    <value>Anzeigename : {0}</value>
+  </data>
+  <data name="Cli_St_LastError" xml:space="preserve">
+    <value>Letzter Fehler: {0}</value>
+  </data>
+  <data name="Cli_St_LastExit" xml:space="preserve">
+    <value>Letzter Exit: Code {0}</value>
+  </data>
+  <data name="Cli_St_LastExitAt" xml:space="preserve">
+    <value> am {0}</value>
+  </data>
+  <data name="Cli_St_Managed" xml:space="preserve">
+    <value>Verwaltet   : {0}</value>
+  </data>
+  <data name="Cli_St_Name" xml:space="preserve">
+    <value>Name        : {0}</value>
+  </data>
+  <data name="Cli_St_No" xml:space="preserve">
+    <value>nein</value>
+  </data>
+  <data name="Cli_St_Processes" xml:space="preserve">
+    <value> ({0} Prozesse)</value>
+  </data>
+  <data name="Cli_St_Program" xml:space="preserve">
+    <value>Programm    : {0}</value>
+  </data>
+  <data name="Cli_St_Restarts" xml:space="preserve">
+    <value>Neustarts   : {0} in der letzten Stunde, {1} an 24 h, {2} gesamt</value>
+  </data>
+  <data name="Cli_St_Startup" xml:space="preserve">
+    <value>Starttyp    : {0}</value>
+  </data>
+  <data name="Cli_St_Status" xml:space="preserve">
+    <value>Status      : {0}</value>
+  </data>
+  <data name="Cli_St_Stderr" xml:space="preserve">
+    <value>stderr      : {0}</value>
+  </data>
+  <data name="Cli_St_Stdout" xml:space="preserve">
+    <value>stdout      : {0}</value>
+  </data>
+  <data name="Cli_St_Uptime" xml:space="preserve">
+    <value>Laufzeit    : {0}</value>
+  </data>
+  <data name="Cli_St_Yes" xml:space="preserve">
+    <value>ja (EasyService)</value>
+  </data>
+  <data name="Cli_Started" xml:space="preserve">
+    <value>Dienst "{0}" wurde gestartet.</value>
+  </data>
+  <data name="Cli_Stopped" xml:space="preserve">
+    <value>Dienst "{0}" wurde beendet.</value>
+  </data>
+  <data name="Cli_UnknownCommand" xml:space="preserve">
+    <value>Unbekannter Befehl: {0}</value>
+  </data>
+  <data name="Cli_Usage" xml:space="preserve">
+    <value>easyservice - Windows-Dienste per GUI verwalten (Alternative zu nssm.exe)
+
+Ohne Argumente startet die grafische Oberfläche.
+
+VERWALTEN
+  easyservice list [--json]
+      Zeigt alle Dienste an; von EasyService verwaltete sind markiert.
+
+  easyservice install &lt;Name&gt; &lt;Programm&gt; [Argumente...]
+      Legt einen neuen Dienst an (Autostart, Logging unter %ProgramData%\EasyService\logs).
+
+  easyservice remove &lt;Name&gt;
+      Beendet und entfernt den Dienst.
+
+  easyservice start|stop|restart|status &lt;Name&gt;
+      Steuert einen vorhandenen Dienst. status kennt zusätzlich --json.
+
+ÜBERWACHUNG
+  easyservice checkmk
+      Checkmk-Local-Check: eine Zeile je überwachtem Dienst, mit Perfdata.
+
+  easyservice prometheus [--output &lt;Datei&gt;]
+      Prometheus-Exposition. Mit --output für den Textfile-Collector
+      des node_exporter (die Datei wird atomar ersetzt).
+
+  easyservice check &lt;Name&gt;
+      Nagios/Icinga-Plugin für einen Dienst.
+      Exit-Code 0 = OK, 1 = Warnung, 2 = kritisch, 3 = unbekannt.
+
+  easyservice json
+      Vollständiger Zustand aller überwachten Dienste als JSON.
+
+  easyservice zabbix-discovery
+      Low-Level-Discovery-Liste für Zabbix-Templates.
+
+OBERFLÄCHE
+  easyservice gui [Name]
+      Startet die Oberfläche, optional direkt beim angegebenen Dienst.
+
+  easyservice gui --new
+      Startet die Oberfläche und öffnet sofort die Schnelleinrichtung.
+
+Verwalten benötigt Administratorrechte; die Überwachungsbefehle lesen nur.</value>
+  </data>
+  <data name="Common_Cancel" xml:space="preserve">
+    <value>Abbrechen</value>
+  </data>
+  <data name="Common_Clipboard" xml:space="preserve">
+    <value>Zwischenablage</value>
+  </data>
+  <data name="Common_Error" xml:space="preserve">
+    <value>Fehler</value>
+  </data>
+  <data name="Common_Explorer" xml:space="preserve">
+    <value>Explorer</value>
+  </data>
+  <data name="Common_FilterLog" xml:space="preserve">
+    <value>Protokolldateien (*.log;*.txt)|*.log;*.txt|Alle Dateien (*.*)|*.*</value>
+  </data>
+  <data name="Common_FilterProgram" xml:space="preserve">
+    <value>Programme (*.exe;*.bat;*.cmd)|*.exe;*.bat;*.cmd|Alle Dateien (*.*)|*.*</value>
+  </data>
+  <data name="Common_FilterSaveLog" xml:space="preserve">
+    <value>Protokolldatei (*.log)|*.log|Textdatei (*.txt)|*.txt|Alle Dateien (*.*)|*.*</value>
+  </data>
+  <data name="Common_Remove" xml:space="preserve">
+    <value>Entfernen</value>
+  </data>
+  <data name="Common_Save" xml:space="preserve">
+    <value>Speichern</value>
+  </data>
+  <data name="Common_UnexpectedError" xml:space="preserve">
+    <value>Unerwarteter Fehler</value>
+  </data>
+  <data name="Common_UnknownShort" xml:space="preserve">
+    <value>?</value>
+  </data>
+  <data name="Confirm_Text" xml:space="preserve">
+    <value>Zum Bestätigen bitte den Dienstnamen eingeben:
+
+{0}</value>
+  </data>
+  <data name="Confirm_Title" xml:space="preserve">
+    <value>Löschen bestätigen</value>
+  </data>
+  <data name="Editor_Btn_Add" xml:space="preserve">
+    <value>Hinzufügen</value>
+  </data>
+  <data name="Editor_Btn_Copy" xml:space="preserve">
+    <value>In die Zwischenablage kopieren</value>
+  </data>
+  <data name="Editor_Btn_Create" xml:space="preserve">
+    <value>Dienst anlegen</value>
+  </data>
+  <data name="Editor_Btn_PickServices" xml:space="preserve">
+    <value>Dienste auswählen...</value>
+  </data>
+  <data name="Editor_Btn_RemoveEntry" xml:space="preserve">
+    <value>Entfernen</value>
+  </data>
+  <data name="Editor_Chk_AllProcessors" xml:space="preserve">
+    <value>Alle Prozessoren verwenden</value>
+  </data>
+  <data name="Editor_Chk_Append" xml:space="preserve">
+    <value>An vorhandene Dateien anhängen (statt beim Start zu leeren)</value>
+  </data>
+  <data name="Editor_Chk_Interact" xml:space="preserve">
+    <value>Datenaustausch zwischen Dienst und Desktop zulassen</value>
+  </data>
+  <data name="Editor_Chk_KillTree" xml:space="preserve">
+    <value>Auch alle Kindprozesse beenden (Prozessbaum)</value>
+  </data>
+  <data name="Editor_Chk_LogEvents" xml:space="preserve">
+    <value>Ereignisse von EasyService protokollieren (Start, Absturz, Neustart)</value>
+  </data>
+  <data name="Editor_Chk_MonitoringEnabled" xml:space="preserve">
+    <value>Diesen Dienst an das Monitoring melden</value>
+  </data>
+  <data name="Editor_Chk_ReplaceEnvironment" xml:space="preserve">
+    <value>Vorhandene Umgebung vollständig ersetzen</value>
+  </data>
+  <data name="Editor_Chk_Rotate" xml:space="preserve">
+    <value>Protokolle automatisch rotieren</value>
+  </data>
+  <data name="Editor_Chk_StartAfterSave" xml:space="preserve">
+    <value>Dienst nach dem Anlegen starten</value>
+  </data>
+  <data name="Editor_Chk_StopConsole" xml:space="preserve">
+    <value>Strg+C senden (Konsolenanwendungen)</value>
+  </data>
+  <data name="Editor_Chk_StopTerminate" xml:space="preserve">
+    <value>Prozess notfalls hart beenden</value>
+  </data>
+  <data name="Editor_Chk_StopThreads" xml:space="preserve">
+    <value>WM_QUIT an Threads senden</value>
+  </data>
+  <data name="Editor_Chk_StopWindow" xml:space="preserve">
+    <value>WM_CLOSE an Fenster senden</value>
+  </data>
+  <data name="Editor_Chk_Timestamp" xml:space="preserve">
+    <value>Jede Zeile mit Zeitstempel versehen</value>
+  </data>
+  <data name="Editor_Cpu" xml:space="preserve">
+    <value>CPU {0}</value>
+  </data>
+  <data name="Editor_Err_NoProcessor" xml:space="preserve">
+    <value>Es muss mindestens ein Prozessor ausgewählt sein.</value>
+  </data>
+  <data name="Editor_Err_NoStopMethod" xml:space="preserve">
+    <value>Es muss mindestens eine Methode zum Beenden der Anwendung aktiviert sein.</value>
+  </data>
+  <data name="Editor_ExitCodeEntry" xml:space="preserve">
+    <value>Exit-Code {0}  -&gt;  {1}</value>
+  </data>
+  <data name="Editor_ExitShort_Ignore" xml:space="preserve">
+    <value>Nichts tun</value>
+  </data>
+  <data name="Editor_ExitShort_Restart" xml:space="preserve">
+    <value>Neu starten</value>
+  </data>
+  <data name="Editor_ExitShort_Stop" xml:space="preserve">
+    <value>Dienst beenden</value>
+  </data>
+  <data name="Editor_Exit_Ignore" xml:space="preserve">
+    <value>Nichts tun (Dienst bleibt aktiv)</value>
+  </data>
+  <data name="Editor_Exit_Restart" xml:space="preserve">
+    <value>Anwendung neu starten</value>
+  </data>
+  <data name="Editor_Exit_Stop" xml:space="preserve">
+    <value>Dienst beenden</value>
+  </data>
+  <data name="Editor_Group_Diagnostics" xml:space="preserve">
+    <value>Diagnose</value>
+  </data>
+  <data name="Editor_Group_ExitCodes" xml:space="preserve">
+    <value>Aktionen für einzelne Exit-Codes</value>
+  </data>
+  <data name="Editor_Group_Integration" xml:space="preserve">
+    <value>Anbindung an das Monitoring</value>
+  </data>
+  <data name="Editor_Group_Process" xml:space="preserve">
+    <value>Prozess</value>
+  </data>
+  <data name="Editor_Group_Rotation" xml:space="preserve">
+    <value>Rotation</value>
+  </data>
+  <data name="Editor_Group_Thresholds" xml:space="preserve">
+    <value>Schwellwerte</value>
+  </data>
+  <data name="Editor_Hint_Account" xml:space="preserve">
+    <value>Format: DOMÄNE\Benutzer oder .\Benutzer für lokale Konten. EasyService vergibt dem Konto automatisch das Recht "Als Dienst anmelden".</value>
+  </data>
+  <data name="Editor_Hint_Arguments" xml:space="preserve">
+    <value>Argumente werden unverändert an das Programm übergeben. Pfade mit Leerzeichen bitte in Anführungszeichen setzen.</value>
+  </data>
+  <data name="Editor_Hint_Cpu100" xml:space="preserve">
+    <value>100 % bedeutet: alle Kerne der Maschine voll ausgelastet.</value>
+  </data>
+  <data name="Editor_Hint_Dependencies" xml:space="preserve">
+    <value>Dienste, die vor diesem Dienst laufen müssen - ein Name pro Zeile. Windows startet den Dienst erst, wenn alle genannten Dienste laufen.</value>
+  </data>
+  <data name="Editor_Hint_Environment" xml:space="preserve">
+    <value>Zusätzliche Umgebungsvariablen für die Anwendung - eine pro Zeile im Format NAME=WERT. Bereits vorhandene Variablen wie %PATH% können darin verwendet werden.</value>
+  </data>
+  <data name="Editor_Hint_Exit" xml:space="preserve">
+    <value>Was soll passieren, wenn sich die Anwendung von selbst beendet?</value>
+  </data>
+  <data name="Editor_Hint_ExitCodes" xml:space="preserve">
+    <value>Beispiel: Exit-Code 0 auf "Dienst beenden" setzen, damit ein sauber beendetes Programm nicht endlos neu gestartet wird.</value>
+  </data>
+  <data name="Editor_Hint_Interact" xml:space="preserve">
+    <value>Nur mit dem lokalen Systemkonto möglich. Moderne Windows-Versionen isolieren Dienste in Sitzung 0; Fenster der Anwendung sind für angemeldete Benutzer nicht sichtbar.</value>
+  </data>
+  <data name="Editor_Hint_KeepPassword" xml:space="preserve">
+    <value>Leer lassen, um das gespeicherte Kennwort beizubehalten.</value>
+  </data>
+  <data name="Editor_Hint_Logging" xml:space="preserve">
+    <value>Alles, was die Anwendung auf stdout und stderr schreibt, landet in diesen Dateien. Zeigen beide Felder auf dieselbe Datei, werden die Ströme zusammengeführt.</value>
+  </data>
+  <data name="Editor_Hint_Memory" xml:space="preserve">
+    <value>Gemessen wird der gesamte Prozessbaum, nicht nur der Hauptprozess.</value>
+  </data>
+  <data name="Editor_Hint_Monitoring" xml:space="preserve">
+    <value>Windows meldet einen Dienst als "wird ausgeführt", solange EasyService selbst läuft - auch wenn die Anwendung dahinter im Minutentakt abstürzt. Deshalb bewertet EasyService zusätzlich Neustarthäufigkeit, CPU und Speicher und gibt das Ergebnis an das Monitoring weiter.</value>
+  </data>
+  <data name="Editor_Hint_NoTerminate" xml:space="preserve">
+    <value>Ohne hartes Beenden kann ein hängender Prozess das Herunterfahren von Windows blockieren.</value>
+  </data>
+  <data name="Editor_Hint_ReplaceEnvironment" xml:space="preserve">
+    <value>Achtung: Beim Ersetzen erhält die Anwendung ausschließlich die oben genannten Variablen. Ohne PATH und SystemRoot starten viele Programme nicht.</value>
+  </data>
+  <data name="Editor_Hint_RotateHours" xml:space="preserve">
+    <value>0 Stunden = nur nach Größe rotieren.</value>
+  </data>
+  <data name="Editor_Hint_RotateKeep" xml:space="preserve">
+    <value>0 = alte Protokolle nie löschen.</value>
+  </data>
+  <data name="Editor_Hint_ServiceName" xml:space="preserve">
+    <value>Interner Name, unter dem Windows den Dienst führt. Nach dem Anlegen nicht mehr änderbar.</value>
+  </data>
+  <data name="Editor_Hint_Shutdown" xml:space="preserve">
+    <value>Beim Beenden des Dienstes versucht EasyService die Anwendung stufenweise sauber zu schließen. Jede aktivierte Stufe wartet die angegebene Zeit, bevor die nächste folgt.</value>
+  </data>
+  <data name="Editor_Hint_StartupDelay" xml:space="preserve">
+    <value>Wartezeit, bevor die Anwendung nach dem Dienststart erstmals gestartet wird.</value>
+  </data>
+  <data name="Editor_Hint_Throttle" xml:space="preserve">
+    <value>Beendet sich die Anwendung schneller als das Throttle-Fenster, verdoppelt EasyService die Wartezeit vor jedem weiteren Versuch (maximal 60 s). Das verhindert Neustart-Schleifen bei einer dauerhaft fehlerhaften Konfiguration.</value>
+  </data>
+  <data name="Editor_Hint_ZeroOff" xml:space="preserve">
+    <value>0 bedeutet: diesen Wert nicht prüfen.</value>
+  </data>
+  <data name="Editor_Integration_Checkmk" xml:space="preserve">
+    <value>Checkmk - alle überwachten Dienste in einem Local Check:</value>
+  </data>
+  <data name="Editor_Integration_Content" xml:space="preserve">
+    <value>  Inhalt: {0}</value>
+  </data>
+  <data name="Editor_Integration_File" xml:space="preserve">
+    <value>  Datei: {0}</value>
+  </data>
+  <data name="Editor_Integration_Json" xml:space="preserve">
+    <value>Beliebiges Tool - vollständiger Zustand als JSON:</value>
+  </data>
+  <data name="Editor_Integration_Nagios" xml:space="preserve">
+    <value>Nagios / Icinga - ein Dienst, Exit-Code 0/1/2/3:</value>
+  </data>
+  <data name="Editor_Integration_Prometheus" xml:space="preserve">
+    <value>Prometheus - Textfile-Collector des node_exporter, z. B. minütlich per Aufgabenplanung:</value>
+  </data>
+  <data name="Editor_Integration_Zabbix" xml:space="preserve">
+    <value>Zabbix - in zabbix_agentd.conf:</value>
+  </data>
+  <data name="Editor_Lbl_Account" xml:space="preserve">
+    <value>Konto:</value>
+  </data>
+  <data name="Editor_Lbl_Arguments" xml:space="preserve">
+    <value>Argumente:</value>
+  </data>
+  <data name="Editor_Lbl_CritCpu" xml:space="preserve">
+    <value>CPU in % - Kritisch:</value>
+  </data>
+  <data name="Editor_Lbl_CritMemory" xml:space="preserve">
+    <value>Arbeitsspeicher MB - Kritisch:</value>
+  </data>
+  <data name="Editor_Lbl_CritRestarts" xml:space="preserve">
+    <value>Neustarts/Stunde - Kritisch:</value>
+  </data>
+  <data name="Editor_Lbl_DefaultExit" xml:space="preserve">
+    <value>Standardaktion:</value>
+  </data>
+  <data name="Editor_Lbl_Description" xml:space="preserve">
+    <value>Beschreibung:</value>
+  </data>
+  <data name="Editor_Lbl_Directory" xml:space="preserve">
+    <value>Startverzeichnis:</value>
+  </data>
+  <data name="Editor_Lbl_DisplayName" xml:space="preserve">
+    <value>Anzeigename:</value>
+  </data>
+  <data name="Editor_Lbl_ExitCode" xml:space="preserve">
+    <value>Exit-Code:</value>
+  </data>
+  <data name="Editor_Lbl_LogonAs" xml:space="preserve">
+    <value>Anmelden als:</value>
+  </data>
+  <data name="Editor_Lbl_Password" xml:space="preserve">
+    <value>Kennwort:</value>
+  </data>
+  <data name="Editor_Lbl_Priority" xml:space="preserve">
+    <value>Priorität:</value>
+  </data>
+  <data name="Editor_Lbl_Processors" xml:space="preserve">
+    <value>Prozessoren:</value>
+  </data>
+  <data name="Editor_Lbl_Program" xml:space="preserve">
+    <value>Programm:</value>
+  </data>
+  <data name="Editor_Lbl_RestartDelay" xml:space="preserve">
+    <value>Verzögerung (ms):</value>
+  </data>
+  <data name="Editor_Lbl_RotateHours" xml:space="preserve">
+    <value>Rotieren alle (Stunden):</value>
+  </data>
+  <data name="Editor_Lbl_RotateKeep" xml:space="preserve">
+    <value>Archive behalten:</value>
+  </data>
+  <data name="Editor_Lbl_RotateMb" xml:space="preserve">
+    <value>Rotieren ab (MB):</value>
+  </data>
+  <data name="Editor_Lbl_ServiceName" xml:space="preserve">
+    <value>Dienstname:</value>
+  </data>
+  <data name="Editor_Lbl_Startup" xml:space="preserve">
+    <value>Starttyp:</value>
+  </data>
+  <data name="Editor_Lbl_StartupDelay" xml:space="preserve">
+    <value>Startverzögerung (ms):</value>
+  </data>
+  <data name="Editor_Lbl_Stderr" xml:space="preserve">
+    <value>Fehler (stderr):</value>
+  </data>
+  <data name="Editor_Lbl_Stdout" xml:space="preserve">
+    <value>Ausgabe (stdout):</value>
+  </data>
+  <data name="Editor_Lbl_Throttle" xml:space="preserve">
+    <value>Throttle-Fenster (ms):</value>
+  </data>
+  <data name="Editor_Lbl_WaitMs" xml:space="preserve">
+    <value>Wartezeit (ms):</value>
+  </data>
+  <data name="Editor_Lbl_WarnCpu" xml:space="preserve">
+    <value>CPU in % - Warnung:</value>
+  </data>
+  <data name="Editor_Lbl_WarnMemory" xml:space="preserve">
+    <value>Arbeitsspeicher MB - Warnung:</value>
+  </data>
+  <data name="Editor_Lbl_WarnRestarts" xml:space="preserve">
+    <value>Neustarts/Stunde - Warnung:</value>
+  </data>
+  <data name="Editor_Logon_Account" xml:space="preserve">
+    <value>Dieses Konto</value>
+  </data>
+  <data name="Editor_Logon_LocalService" xml:space="preserve">
+    <value>Lokaler Dienst</value>
+  </data>
+  <data name="Editor_Logon_LocalSystem" xml:space="preserve">
+    <value>Lokales Systemkonto</value>
+  </data>
+  <data name="Editor_Logon_NetworkService" xml:space="preserve">
+    <value>Netzwerkdienst</value>
+  </data>
+  <data name="Editor_Picker_Filter" xml:space="preserve">
+    <value>Filtern...</value>
+  </data>
+  <data name="Editor_Picker_Title" xml:space="preserve">
+    <value>Abhängigkeiten auswählen</value>
+  </data>
+  <data name="Editor_Prio_AboveNormal" xml:space="preserve">
+    <value>Über normal</value>
+  </data>
+  <data name="Editor_Prio_BelowNormal" xml:space="preserve">
+    <value>Unter normal</value>
+  </data>
+  <data name="Editor_Prio_High" xml:space="preserve">
+    <value>Hoch</value>
+  </data>
+  <data name="Editor_Prio_Idle" xml:space="preserve">
+    <value>Niedrig</value>
+  </data>
+  <data name="Editor_Prio_Normal" xml:space="preserve">
+    <value>Normal</value>
+  </data>
+  <data name="Editor_Prio_Realtime" xml:space="preserve">
+    <value>Echtzeit</value>
+  </data>
+  <data name="Editor_Startup_AutoDelayed" xml:space="preserve">
+    <value>Automatisch (verzögerter Start)</value>
+  </data>
+  <data name="Editor_Tab_Application" xml:space="preserve">
+    <value>Anwendung</value>
+  </data>
+  <data name="Editor_Tab_Dependencies" xml:space="preserve">
+    <value>Abhängigkeiten</value>
+  </data>
+  <data name="Editor_Tab_Details" xml:space="preserve">
+    <value>Details</value>
+  </data>
+  <data name="Editor_Tab_Environment" xml:space="preserve">
+    <value>Umgebung</value>
+  </data>
+  <data name="Editor_Tab_Exit" xml:space="preserve">
+    <value>Beenden-Aktionen</value>
+  </data>
+  <data name="Editor_Tab_LogOn" xml:space="preserve">
+    <value>Anmelden</value>
+  </data>
+  <data name="Editor_Tab_Logging" xml:space="preserve">
+    <value>Protokollierung</value>
+  </data>
+  <data name="Editor_Tab_Monitoring" xml:space="preserve">
+    <value>Überwachung</value>
+  </data>
+  <data name="Editor_Tab_Shutdown" xml:space="preserve">
+    <value>Herunterfahren</value>
+  </data>
+  <data name="Editor_Title_Edit" xml:space="preserve">
+    <value>Dienst bearbeiten - {0}</value>
+  </data>
+  <data name="Editor_Title_New" xml:space="preserve">
+    <value>Neuen Dienst anlegen</value>
+  </data>
+  <data name="Evt_ApplicationExited" xml:space="preserve">
+    <value>Anwendung beendet</value>
+  </data>
+  <data name="Evt_ApplicationRestarting" xml:space="preserve">
+    <value>Anwendung wird neu gestartet</value>
+  </data>
+  <data name="Evt_ApplicationStartFailed" xml:space="preserve">
+    <value>Start fehlgeschlagen</value>
+  </data>
+  <data name="Evt_ApplicationStarted" xml:space="preserve">
+    <value>Anwendung gestartet</value>
+  </data>
+  <data name="Evt_ApplicationTerminated" xml:space="preserve">
+    <value>Anwendung hart beendet</value>
+  </data>
+  <data name="Evt_ConfigurationProblem" xml:space="preserve">
+    <value>Konfigurationsproblem</value>
+  </data>
+  <data name="Evt_LoggingProblem" xml:space="preserve">
+    <value>Protokollierungsproblem</value>
+  </data>
+  <data name="Evt_RestartThrottled" xml:space="preserve">
+    <value>Neustart gedrosselt</value>
+  </data>
+  <data name="Evt_ServiceStopping" xml:space="preserve">
+    <value>Dienst wird beendet</value>
+  </data>
+  <data name="Evt_StoppedByExitPolicy" xml:space="preserve">
+    <value>Durch Beenden-Aktion gestoppt</value>
+  </data>
+  <data name="Evt_SupervisorStarted" xml:space="preserve">
+    <value>Überwachung gestartet</value>
+  </data>
+  <data name="Host_ConfigReadFailed" xml:space="preserve">
+    <value>Die Konfiguration konnte nicht gelesen werden: {0}</value>
+  </data>
+  <data name="Host_Crashed" xml:space="preserve">
+    <value>Der Dienst wurde durch einen Fehler beendet: {0}</value>
+  </data>
+  <data name="Host_DispatcherFailed" xml:space="preserve">
+    <value>StartServiceCtrlDispatcher ist fehlgeschlagen ({0}). "easyservice.exe run &lt;Dienst&gt;" ist nur für den Start durch den Dienst-Manager gedacht.</value>
+  </data>
+  <data name="Host_NoConfig" xml:space="preserve">
+    <value>Für diesen Dienst ist keine EasyService-Konfiguration hinterlegt (HKLM\SYSTEM\CurrentControlSet\Services\{0}\Parameters).</value>
+  </data>
+  <data name="Host_StopFailed" xml:space="preserve">
+    <value>Fehler beim Beenden: {0}</value>
+  </data>
+  <data name="Host_Unexpected" xml:space="preserve">
+    <value>Unerwarteter Fehler: {0}</value>
+  </data>
+  <data name="Log_Btn_Clear" xml:space="preserve">
+    <value>Leeren</value>
+  </data>
+  <data name="Log_Btn_EventViewer" xml:space="preserve">
+    <value>Ereignisanzeige öffnen</value>
+  </data>
+  <data name="Log_Btn_Follow" xml:space="preserve">
+    <value>Folgen</value>
+  </data>
+  <data name="Log_Btn_OpenFolder" xml:space="preserve">
+    <value>Ordner öffnen</value>
+  </data>
+  <data name="Log_Btn_RefreshEvents" xml:space="preserve">
+    <value>Aktualisieren</value>
+  </data>
+  <data name="Log_Btn_Reload" xml:space="preserve">
+    <value>Neu laden</value>
+  </data>
+  <data name="Log_Btn_SaveAs" xml:space="preserve">
+    <value>Speichern unter...</value>
+  </data>
+  <data name="Log_Clear_Failed" xml:space="preserve">
+    <value>Leeren fehlgeschlagen</value>
+  </data>
+  <data name="Log_Clear_Locked" xml:space="preserve">
+    <value>Die Datei ist gesperrt. Bitte den Dienst beenden und erneut versuchen.
+
+{0}</value>
+  </data>
+  <data name="Log_Clear_Text" xml:space="preserve">
+    <value>Der Inhalt von
+
+{0}
+
+wird gelöscht. Fortfahren?</value>
+  </data>
+  <data name="Log_Clear_Title" xml:space="preserve">
+    <value>Protokoll leeren</value>
+  </data>
+  <data name="Log_Col_Event" xml:space="preserve">
+    <value>Ereignis</value>
+  </data>
+  <data name="Log_Col_Id" xml:space="preserve">
+    <value>ID</value>
+  </data>
+  <data name="Log_Col_Message" xml:space="preserve">
+    <value>Meldung</value>
+  </data>
+  <data name="Log_Col_Time" xml:space="preserve">
+    <value>Zeitpunkt</value>
+  </data>
+  <data name="Log_Col_Type" xml:space="preserve">
+    <value>Typ</value>
+  </data>
+  <data name="Log_Current" xml:space="preserve">
+    <value>{0} (aktuell)</value>
+  </data>
+  <data name="Log_Entry" xml:space="preserve">
+    <value>{0}: {1}</value>
+  </data>
+  <data name="Log_EventViewer" xml:space="preserve">
+    <value>Ereignisanzeige</value>
+  </data>
+  <data name="Log_Lbl_File" xml:space="preserve">
+    <value>Datei:</value>
+  </data>
+  <data name="Log_Lbl_Filter" xml:space="preserve">
+    <value>  Filter:</value>
+  </data>
+  <data name="Log_NoEvents" xml:space="preserve">
+    <value>Keine Einträge von EasyService im Anwendungsprotokoll gefunden.</value>
+  </data>
+  <data name="Log_NoFiles" xml:space="preserve">
+    <value>Für diesen Dienst wurden noch keine Protokolldateien angelegt.</value>
+  </data>
+  <data name="Log_NotFound" xml:space="preserve">
+    <value>Datei nicht gefunden: {0}</value>
+  </data>
+  <data name="Log_SaveFailed" xml:space="preserve">
+    <value>Speichern fehlgeschlagen</value>
+  </data>
+  <data name="Log_Saved" xml:space="preserve">
+    <value>Gespeichert: {0}</value>
+  </data>
+  <data name="Log_Size" xml:space="preserve">
+    <value> - {0} KB</value>
+  </data>
+  <data name="Log_Status_Filtered" xml:space="preserve">
+    <value>{0} von {1} Zeilen (gefiltert){2} - {3}</value>
+  </data>
+  <data name="Log_Status_Plain" xml:space="preserve">
+    <value>{0} Zeilen{1} - {2}</value>
+  </data>
+  <data name="Log_Tab_Events" xml:space="preserve">
+    <value>Windows-Ereignisse</value>
+  </data>
+  <data name="Log_Tab_File" xml:space="preserve">
+    <value>Protokolldatei</value>
+  </data>
+  <data name="Log_Tip_Follow" xml:space="preserve">
+    <value>Neue Zeilen automatisch anzeigen</value>
+  </data>
+  <data name="Log_Title" xml:space="preserve">
+    <value>Protokolle - {0}</value>
+  </data>
+  <data name="Main_Btn_Add" xml:space="preserve">
+    <value>Dienst hinzufügen...</value>
+  </data>
+  <data name="Main_Btn_Edit" xml:space="preserve">
+    <value>Bearbeiten...</value>
+  </data>
+  <data name="Main_Btn_Logs" xml:space="preserve">
+    <value>Protokolle...</value>
+  </data>
+  <data name="Main_Btn_OnlyManaged" xml:space="preserve">
+    <value>Nur EasyService</value>
+  </data>
+  <data name="Main_Btn_Refresh" xml:space="preserve">
+    <value>Aktualisieren</value>
+  </data>
+  <data name="Main_Btn_Remove" xml:space="preserve">
+    <value>Entfernen</value>
+  </data>
+  <data name="Main_Btn_Restart" xml:space="preserve">
+    <value>Neu starten</value>
+  </data>
+  <data name="Main_Btn_Start" xml:space="preserve">
+    <value>Starten</value>
+  </data>
+  <data name="Main_Btn_Stop" xml:space="preserve">
+    <value>Beenden</value>
+  </data>
+  <data name="Main_Col_Account" xml:space="preserve">
+    <value>Konto</value>
+  </data>
+  <data name="Main_Col_Application" xml:space="preserve">
+    <value>Anwendung</value>
+  </data>
+  <data name="Main_Col_Cpu" xml:space="preserve">
+    <value>CPU</value>
+  </data>
+  <data name="Main_Col_DisplayName" xml:space="preserve">
+    <value>Anzeigename</value>
+  </data>
+  <data name="Main_Col_Name" xml:space="preserve">
+    <value>Name</value>
+  </data>
+  <data name="Main_Col_Pid" xml:space="preserve">
+    <value>PID</value>
+  </data>
+  <data name="Main_Col_Program" xml:space="preserve">
+    <value>Programm</value>
+  </data>
+  <data name="Main_Col_Ram" xml:space="preserve">
+    <value>RAM</value>
+  </data>
+  <data name="Main_Col_Restarts" xml:space="preserve">
+    <value>Neust./h</value>
+  </data>
+  <data name="Main_Col_Startup" xml:space="preserve">
+    <value>Starttyp</value>
+  </data>
+  <data name="Main_Col_Status" xml:space="preserve">
+    <value>Status</value>
+  </data>
+  <data name="Main_Col_Uptime" xml:space="preserve">
+    <value>Laufzeit</value>
+  </data>
+  <data name="Main_Ctx_OpenFolder" xml:space="preserve">
+    <value>Programmordner öffnen</value>
+  </data>
+  <data name="Main_Ctx_ServicesMsc" xml:space="preserve">
+    <value>In services.msc anzeigen</value>
+  </data>
+  <data name="Main_Err_ListFailed" xml:space="preserve">
+    <value>Dienste konnten nicht gelesen werden</value>
+  </data>
+  <data name="Main_Language_Restart" xml:space="preserve">
+    <value>Die Sprache wird beim nächsten Start von EasyService übernommen.</value>
+  </data>
+  <data name="Main_Lbl_Filter" xml:space="preserve">
+    <value>  Filter:</value>
+  </data>
+  <data name="Main_Menu_Language" xml:space="preserve">
+    <value>Sprache</value>
+  </data>
+  <data name="Main_Menu_LanguageAuto" xml:space="preserve">
+    <value>Automatisch (System)</value>
+  </data>
+  <data name="Main_MissingConfig_Text" xml:space="preserve">
+    <value>Für "{0}" ist keine EasyService-Konfiguration hinterlegt.</value>
+  </data>
+  <data name="Main_MissingConfig_Title" xml:space="preserve">
+    <value>Konfiguration fehlt</value>
+  </data>
+  <data name="Main_NoLogs_Title" xml:space="preserve">
+    <value>Keine Protokolle</value>
+  </data>
+  <data name="Main_NotEditable_Text" xml:space="preserve">
+    <value>"{0}" wurde nicht mit EasyService angelegt und kann hier nicht bearbeitet werden.
+
+EasyService bearbeitet nur Dienste, die es selbst verwaltet, damit fremde Dienste nicht beschädigt werden.</value>
+  </data>
+  <data name="Main_NotEditable_Title" xml:space="preserve">
+    <value>Nicht bearbeitbar</value>
+  </data>
+  <data name="Main_Remove_Foreign" xml:space="preserve">
+    <value>ACHTUNG: "{0}" wurde NICHT mit EasyService angelegt.
+
+Das Entfernen eines fremden Systemdienstes kann Windows oder installierte Software unbrauchbar machen.
+
+Wirklich entfernen?</value>
+  </data>
+  <data name="Main_Remove_Managed" xml:space="preserve">
+    <value>Der Dienst "{0}" wird beendet und dauerhaft entfernt.
+
+Die Protokolldateien bleiben erhalten.</value>
+  </data>
+  <data name="Main_Remove_Title" xml:space="preserve">
+    <value>Dienst entfernen</value>
+  </data>
+  <data name="Main_Restart_Text" xml:space="preserve">
+    <value>Die Änderungen an "{0}" werden erst nach einem Neustart des Dienstes wirksam.
+
+Jetzt neu starten?</value>
+  </data>
+  <data name="Main_Restart_Title" xml:space="preserve">
+    <value>Neu starten?</value>
+  </data>
+  <data name="Main_StartFailed_Text" xml:space="preserve">
+    <value>Der Dienst "{0}" wurde angelegt, ließ sich aber nicht starten.
+
+Die Ursache steht meist im Protokoll. Jetzt öffnen?</value>
+  </data>
+  <data name="Main_StartFailed_Title" xml:space="preserve">
+    <value>Start fehlgeschlagen</value>
+  </data>
+  <data name="Main_Status_AllFine" xml:space="preserve">
+    <value> - alle unauffällig</value>
+  </data>
+  <data name="Main_Status_Error" xml:space="preserve">
+    <value>Fehler: {0}</value>
+  </data>
+  <data name="Main_Status_Health" xml:space="preserve">
+    <value> - {0} kritisch, {1} Warnung</value>
+  </data>
+  <data name="Main_Status_Loading" xml:space="preserve">
+    <value>Dienste werden gelesen...</value>
+  </data>
+  <data name="Main_Status_Summary" xml:space="preserve">
+    <value>{0} von {1} Diensten angezeigt - {2} von EasyService verwaltet{3}</value>
+  </data>
+  <data name="Main_Task_Done" xml:space="preserve">
+    <value>{0} - fertig.</value>
+  </data>
+  <data name="Main_Task_Failed" xml:space="preserve">
+    <value>{0} - fehlgeschlagen.</value>
+  </data>
+  <data name="Main_Task_Install" xml:space="preserve">
+    <value>Dienst "{0}" wird angelegt</value>
+  </data>
+  <data name="Main_Task_Remove" xml:space="preserve">
+    <value>Dienst "{0}" wird entfernt</value>
+  </data>
+  <data name="Main_Task_Restart" xml:space="preserve">
+    <value>Dienst "{0}" wird neu gestartet</value>
+  </data>
+  <data name="Main_Task_Running" xml:space="preserve">
+    <value>{0}...</value>
+  </data>
+  <data name="Main_Task_Start" xml:space="preserve">
+    <value>Dienst "{0}" wird gestartet</value>
+  </data>
+  <data name="Main_Task_Stop" xml:space="preserve">
+    <value>Dienst "{0}" wird beendet</value>
+  </data>
+  <data name="Main_Task_Update" xml:space="preserve">
+    <value>Dienst "{0}" wird aktualisiert</value>
+  </data>
+  <data name="Main_Tip_Add" xml:space="preserve">
+    <value>Schnell einrichten: Programm wählen, Rest wird vorbelegt (oder eine .exe ins Fenster ziehen)</value>
+  </data>
+  <data name="Main_Tip_Edit" xml:space="preserve">
+    <value>Konfiguration des markierten Dienstes ändern</value>
+  </data>
+  <data name="Main_Tip_Logs" xml:space="preserve">
+    <value>Live-Ansicht der stdout/stderr-Protokolle</value>
+  </data>
+  <data name="Main_Tip_OnlyManaged" xml:space="preserve">
+    <value>Nur Dienste anzeigen, die mit EasyService angelegt wurden</value>
+  </data>
+  <data name="Main_Tip_Refresh" xml:space="preserve">
+    <value>Liste neu einlesen (F5)</value>
+  </data>
+  <data name="Main_Tip_Remove" xml:space="preserve">
+    <value>Dienst beenden und löschen</value>
+  </data>
+  <data name="Main_Title" xml:space="preserve">
+    <value>EasyService - Windows-Dienste verwalten</value>
+  </data>
+  <data name="Mon_Cpu" xml:space="preserve">
+    <value>CPU {0} %</value>
+  </data>
+  <data name="Mon_CpuCrit" xml:space="preserve">
+    <value>CPU {0} % (kritisch ab {1} %)</value>
+  </data>
+  <data name="Mon_CpuWarn" xml:space="preserve">
+    <value>CPU {0} % (Warnung ab {1} %)</value>
+  </data>
+  <data name="Mon_Disabled" xml:space="preserve">
+    <value>Der Dienst ist deaktiviert.</value>
+  </data>
+  <data name="Mon_Failed" xml:space="preserve">
+    <value>Die Anwendung konnte nicht gestartet werden: {0}</value>
+  </data>
+  <data name="Mon_Ignored" xml:space="preserve">
+    <value>Die Anwendung hat sich beendet (Exit-Code {0}) und wird laut Konfiguration nicht neu gestartet. Der Dienst läuft ohne Anwendung.</value>
+  </data>
+  <data name="Mon_MemCrit" xml:space="preserve">
+    <value>RAM {0} MB (kritisch ab {1} MB)</value>
+  </data>
+  <data name="Mon_MemWarn" xml:space="preserve">
+    <value>RAM {0} MB (Warnung ab {1} MB)</value>
+  </data>
+  <data name="Mon_NoConfig" xml:space="preserve">
+    <value>Für diesen Dienst ist keine EasyService-Konfiguration hinterlegt.</value>
+  </data>
+  <data name="Mon_NoService" xml:space="preserve">
+    <value>Der Dienst existiert nicht (mehr).</value>
+  </data>
+  <data name="Mon_NoState" xml:space="preserve">
+    <value>Der Dienst läuft, meldet aber noch keinen Zustand. Läuft er mit einer älteren EasyService-Version?</value>
+  </data>
+  <data name="Mon_Pid" xml:space="preserve">
+    <value>PID {0}</value>
+  </data>
+  <data name="Mon_Processes" xml:space="preserve">
+    <value>{0} Prozesse</value>
+  </data>
+  <data name="Mon_Ram" xml:space="preserve">
+    <value>RAM {0}</value>
+  </data>
+  <data name="Mon_Restarting" xml:space="preserve">
+    <value>Die Anwendung wird gerade neu gestartet.</value>
+  </data>
+  <data name="Mon_RestartsCrit" xml:space="preserve">
+    <value>{0} Neustarts in der letzten Stunde (kritisch ab {1})</value>
+  </data>
+  <data name="Mon_RestartsPerHour" xml:space="preserve">
+    <value>{0} Neustarts/h</value>
+  </data>
+  <data name="Mon_RestartsTotal" xml:space="preserve">
+    <value>{0} Neustarts gesamt</value>
+  </data>
+  <data name="Mon_RestartsWarn" xml:space="preserve">
+    <value>{0} Neustarts in der letzten Stunde (Warnung ab {1})</value>
+  </data>
+  <data name="Mon_RunningNoApp" xml:space="preserve">
+    <value>Der Dienst läuft, die Anwendung ist aber nicht aktiv.</value>
+  </data>
+  <data name="Mon_RunningPlain" xml:space="preserve">
+    <value>Läuft</value>
+  </data>
+  <data name="Mon_RunningSince" xml:space="preserve">
+    <value>Läuft seit {0}</value>
+  </data>
+  <data name="Mon_Stale" xml:space="preserve">
+    <value>Die letzte Statusmeldung ist {0} alt - der überwachende Prozess reagiert möglicherweise nicht mehr.</value>
+  </data>
+  <data name="Mon_Starting" xml:space="preserve">
+    <value>Der Dienst startet.</value>
+  </data>
+  <data name="Mon_Status_Critical" xml:space="preserve">
+    <value>KRITISCH</value>
+  </data>
+  <data name="Mon_Status_Ok" xml:space="preserve">
+    <value>OK</value>
+  </data>
+  <data name="Mon_Status_Unknown" xml:space="preserve">
+    <value>UNBEKANNT</value>
+  </data>
+  <data name="Mon_Status_Warning" xml:space="preserve">
+    <value>WARNUNG</value>
+  </data>
+  <data name="Mon_StoppedButAuto" xml:space="preserve">
+    <value>Der Dienst ist {0}, obwohl der Starttyp "{1}" ist.</value>
+  </data>
+  <data name="Mon_StoppedOk" xml:space="preserve">
+    <value>Der Dienst ist beendet (Starttyp {0}).</value>
+  </data>
+  <data name="Mon_Throttled" xml:space="preserve">
+    <value>Die Anwendung startet ständig neu und wird gedrosselt. {0} Neustarts in der letzten Stunde, zuletzt Exit-Code {1}.</value>
+  </data>
+  <data name="Mon_UnknownError" xml:space="preserve">
+    <value>unbekannter Fehler</value>
+  </data>
+  <data name="Quick_Btn_Advanced" xml:space="preserve">
+    <value>Erweiterte Einstellungen...</value>
+  </data>
+  <data name="Quick_Btn_Create" xml:space="preserve">
+    <value>Dienst anlegen</value>
+  </data>
+  <data name="Quick_Chk_Remember" xml:space="preserve">
+    <value>Zugangsdaten für weitere Dienste merken</value>
+  </data>
+  <data name="Quick_Chk_StartNow" xml:space="preserve">
+    <value>Dienst sofort starten</value>
+  </data>
+  <data name="Quick_Err_Intro" xml:space="preserve">
+    <value>Bitte folgende Punkte korrigieren:</value>
+  </data>
+  <data name="Quick_Err_Title" xml:space="preserve">
+    <value>Eingaben prüfen</value>
+  </data>
+  <data name="Quick_Group_Auto" xml:space="preserve">
+    <value>Wird automatisch eingerichtet</value>
+  </data>
+  <data name="Quick_Group_Logon" xml:space="preserve">
+    <value>Anmeldung und Start</value>
+  </data>
+  <data name="Quick_Hint_Drop" xml:space="preserve">
+    <value>Programm auswählen oder hierher ziehen - alles Weitere wird sinnvoll vorbelegt.</value>
+  </data>
+  <data name="Quick_Hint_Remember" xml:space="preserve">
+    <value>Gemerkt wird nur für Ihr Windows-Konto auf diesem Rechner (verschlüsselt per DPAPI). Ohne Häkchen bleibt das Kennwort nur bis zum Schließen von EasyService im Speicher.</value>
+  </data>
+  <data name="Quick_Lbl_Account" xml:space="preserve">
+    <value>Konto:</value>
+  </data>
+  <data name="Quick_Lbl_Arguments" xml:space="preserve">
+    <value>Argumente:</value>
+  </data>
+  <data name="Quick_Lbl_LogonAs" xml:space="preserve">
+    <value>Anmelden als:</value>
+  </data>
+  <data name="Quick_Lbl_Password" xml:space="preserve">
+    <value>Kennwort:</value>
+  </data>
+  <data name="Quick_Lbl_Program" xml:space="preserve">
+    <value>Programm:</value>
+  </data>
+  <data name="Quick_Lbl_ServiceName" xml:space="preserve">
+    <value>Dienstname:</value>
+  </data>
+  <data name="Quick_Lbl_Startup" xml:space="preserve">
+    <value>Starttyp:</value>
+  </data>
+  <data name="Quick_Logon_LocalSystem" xml:space="preserve">
+    <value>Lokales Systemkonto (empfohlen)</value>
+  </data>
+  <data name="Quick_Sum_Logs" xml:space="preserve">
+    <value>Protokolle:  {0}</value>
+  </data>
+  <data name="Quick_Sum_Monitoring" xml:space="preserve">
+    <value>Überwachung:  aktiv - Warnung ab 3, kritisch ab 10 Neustarts pro Stunde;</value>
+  </data>
+  <data name="Quick_Sum_MonitoringHow" xml:space="preserve">
+    <value>abrufbar über checkmk, prometheus, check und json.</value>
+  </data>
+  <data name="Quick_Sum_Restart" xml:space="preserve">
+    <value>Neustart:  nach einem Absturz, 1 s Verzögerung, Drosselung bei Dauerabstürzen.</value>
+  </data>
+  <data name="Quick_Sum_Rotation" xml:space="preserve">
+    <value>Rotation ab 10 MB, die letzten 10 Dateien bleiben erhalten.</value>
+  </data>
+  <data name="Quick_Title" xml:space="preserve">
+    <value>Dienst schnell einrichten</value>
+  </data>
+  <data name="State_Failed" xml:space="preserve">
+    <value>Start fehlgeschlagen</value>
+  </data>
+  <data name="State_Ignored" xml:space="preserve">
+    <value>Anwendung beendet (kein Neustart)</value>
+  </data>
+  <data name="State_Restarting" xml:space="preserve">
+    <value>Startet neu</value>
+  </data>
+  <data name="State_Running" xml:space="preserve">
+    <value>Läuft</value>
+  </data>
+  <data name="State_Starting" xml:space="preserve">
+    <value>Startet</value>
+  </data>
+  <data name="State_Stopped" xml:space="preserve">
+    <value>Beendet</value>
+  </data>
+  <data name="State_Throttled" xml:space="preserve">
+    <value>Neustart gedrosselt</value>
+  </data>
+  <data name="Sup_Action_Ignore" xml:space="preserve">
+    <value>Ignorieren</value>
+  </data>
+  <data name="Sup_Action_Restart" xml:space="preserve">
+    <value>Neu starten</value>
+  </data>
+  <data name="Sup_Action_Stop" xml:space="preserve">
+    <value>Dienst beenden</value>
+  </data>
+  <data name="Sup_AppExited" xml:space="preserve">
+    <value>Anwendung beendet mit Code {0} nach {1}s. Aktion: {2}.</value>
+  </data>
+  <data name="Sup_AppExitedStopping" xml:space="preserve">
+    <value>Anwendung beendet (Code {0}), Dienst wird gestoppt.</value>
+  </data>
+  <data name="Sup_AppNotFound" xml:space="preserve">
+    <value>Das Programm wurde nicht gefunden: {0}</value>
+  </data>
+  <data name="Sup_AppStarted" xml:space="preserve">
+    <value>Anwendung gestartet (PID {0}).</value>
+  </data>
+  <data name="Sup_EventLogOpenFailed" xml:space="preserve">
+    <value>Das EasyService-Ereignisprotokoll konnte nicht geöffnet werden: {0}</value>
+  </data>
+  <data name="Sup_KillProcess" xml:space="preserve">
+    <value>Die Anwendung hat nicht reagiert; der Prozess wird beendet.</value>
+  </data>
+  <data name="Sup_KillTree" xml:space="preserve">
+    <value>Die Anwendung hat nicht reagiert; der Prozessbaum wird beendet.</value>
+  </data>
+  <data name="Sup_LogOpenFailed" xml:space="preserve">
+    <value>Die {0}-Protokolldatei konnte nicht geöffnet werden ({1}): {2}</value>
+  </data>
+  <data name="Sup_NextAttempt" xml:space="preserve">
+    <value>Nächster Startversuch in {0} ms.</value>
+  </data>
+  <data name="Sup_NoJobObject" xml:space="preserve">
+    <value>Hinweis: Der Prozess konnte keinem Job-Objekt zugeordnet werden; Kindprozesse werden beim Beenden eventuell nicht mit beendet und die Ressourcenmessung erfasst nur den Hauptprozess.</value>
+  </data>
+  <data name="Sup_NoRestart" xml:space="preserve">
+    <value>Die Anwendung wird nicht neu gestartet; der Dienst bleibt aktiv.</value>
+  </data>
+  <data name="Sup_NoTerminate" xml:space="preserve">
+    <value>Die Anwendung reagiert nicht und darf laut Konfiguration nicht hart beendet werden.</value>
+  </data>
+  <data name="Sup_OpFailed" xml:space="preserve">
+    <value>{0} fehlgeschlagen: {1}</value>
+  </data>
+  <data name="Sup_Op_Start" xml:space="preserve">
+    <value>Start von {0}</value>
+  </data>
+  <data name="Sup_Op_StderrPipe" xml:space="preserve">
+    <value>stderr-Pipe</value>
+  </data>
+  <data name="Sup_Op_StdinPipe" xml:space="preserve">
+    <value>stdin-Pipe</value>
+  </data>
+  <data name="Sup_Op_StdoutPipe" xml:space="preserve">
+    <value>stdout-Pipe</value>
+  </data>
+  <data name="Sup_ReaderStopped" xml:space="preserve">
+    <value>Der {0}-Leser wurde beendet: {1}</value>
+  </data>
+  <data name="Sup_SampleFailed" xml:space="preserve">
+    <value>Ressourcen konnten nicht gemessen werden: {0}</value>
+  </data>
+  <data name="Sup_SentCtrlC" xml:space="preserve">
+    <value>Strg+C an die Anwendung gesendet.</value>
+  </data>
+  <data name="Sup_SentWmClose" xml:space="preserve">
+    <value>WM_CLOSE an die Fenster der Anwendung gesendet.</value>
+  </data>
+  <data name="Sup_SentWmQuit" xml:space="preserve">
+    <value>WM_QUIT an die Threads der Anwendung gesendet.</value>
+  </data>
+  <data name="Sup_ServiceStopping" xml:space="preserve">
+    <value>Der Dienst wird beendet.</value>
+  </data>
+  <data name="Sup_StartFailed" xml:space="preserve">
+    <value>Die Anwendung konnte nicht gestartet werden: {0}</value>
+  </data>
+  <data name="Sup_StoppedByPolicy" xml:space="preserve">
+    <value>Der Dienst wird gemäß Beenden-Aktion gestoppt (Exit-Code {0}).</value>
+  </data>
+  <data name="Sup_Supervising" xml:space="preserve">
+    <value>EasyService übernimmt die Überwachung von "{0}".</value>
+  </data>
+  <data name="Sup_Throttled" xml:space="preserve">
+    <value>Die Anwendung lief kürzer als das Throttle-Fenster ({0} ms); nächster Versuch in {1} ms. Neustarts in der letzten Stunde: {2}.</value>
+  </data>
+  <data name="Svc_Err_ChangeConfig" xml:space="preserve">
+    <value>Die Dienstkonfiguration konnte nicht geändert werden</value>
+  </data>
+  <data name="Svc_Err_Continue" xml:space="preserve">
+    <value>Der Dienst konnte nicht fortgesetzt werden</value>
+  </data>
+  <data name="Svc_Err_Create" xml:space="preserve">
+    <value>Der Dienst konnte nicht angelegt werden: {0}</value>
+  </data>
+  <data name="Svc_Err_Delete" xml:space="preserve">
+    <value>Der Dienst konnte nicht entfernt werden: {0}</value>
+  </data>
+  <data name="Svc_Err_DiedOnStart" xml:space="preserve">
+    <value>Der Dienst wurde sofort wieder beendet (Fehlercode {0}). Details stehen im EasyService-Log des Dienstes.</value>
+  </data>
+  <data name="Svc_Err_Enumerate" xml:space="preserve">
+    <value>Die Dienste konnten nicht aufgelistet werden</value>
+  </data>
+  <data name="Svc_Err_Exists" xml:space="preserve">
+    <value>Ein Dienst mit dem Namen "{0}" existiert bereits.</value>
+  </data>
+  <data name="Svc_Err_MarkedForDelete" xml:space="preserve">
+    <value>Der Dienst "{0}" ist zum Löschen vorgemerkt. Bitte neu starten und erneut versuchen.</value>
+  </data>
+  <data name="Svc_Err_OpenScm" xml:space="preserve">
+    <value>Der Dienst-Manager konnte nicht geöffnet werden</value>
+  </data>
+  <data name="Svc_Err_OpenService" xml:space="preserve">
+    <value>Der Dienst "{0}" konnte nicht geöffnet werden</value>
+  </data>
+  <data name="Svc_Err_Pause" xml:space="preserve">
+    <value>Der Dienst konnte nicht angehalten werden</value>
+  </data>
+  <data name="Svc_Err_QueryStatus" xml:space="preserve">
+    <value>Der Dienststatus konnte nicht abgefragt werden</value>
+  </data>
+  <data name="Svc_Err_RegistryOpen" xml:space="preserve">
+    <value>Der Registry-Schlüssel für {0} konnte nicht geöffnet werden.</value>
+  </data>
+  <data name="Svc_Err_Start" xml:space="preserve">
+    <value>Der Dienst konnte nicht gestartet werden: {0}</value>
+  </data>
+  <data name="Svc_Err_Stop" xml:space="preserve">
+    <value>Der Dienst konnte nicht beendet werden: {0}</value>
+  </data>
+  <data name="Svc_Err_Timeout" xml:space="preserve">
+    <value>Zeitüberschreitung beim Warten auf den Zielzustand des Dienstes.</value>
+  </data>
+  <data name="Svc_Startup_Automatic" xml:space="preserve">
+    <value>Automatisch</value>
+  </data>
+  <data name="Svc_Startup_AutomaticDelayed" xml:space="preserve">
+    <value>Automatisch (verzögert)</value>
+  </data>
+  <data name="Svc_Startup_Disabled" xml:space="preserve">
+    <value>Deaktiviert</value>
+  </data>
+  <data name="Svc_Startup_Manual" xml:space="preserve">
+    <value>Manuell</value>
+  </data>
+  <data name="Svc_State_ContinuePending" xml:space="preserve">
+    <value>Fortsetzen...</value>
+  </data>
+  <data name="Svc_State_PausePending" xml:space="preserve">
+    <value>Anhalten...</value>
+  </data>
+  <data name="Svc_State_Paused" xml:space="preserve">
+    <value>Angehalten</value>
+  </data>
+  <data name="Svc_State_Running" xml:space="preserve">
+    <value>Wird ausgeführt</value>
+  </data>
+  <data name="Svc_State_StartPending" xml:space="preserve">
+    <value>Startet...</value>
+  </data>
+  <data name="Svc_State_StopPending" xml:space="preserve">
+    <value>Beendet...</value>
+  </data>
+  <data name="Svc_State_Stopped" xml:space="preserve">
+    <value>Beendet</value>
+  </data>
+  <data name="Svc_State_Unknown" xml:space="preserve">
+    <value>Unbekannt</value>
+  </data>
+</root>

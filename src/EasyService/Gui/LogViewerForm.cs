@@ -1,6 +1,8 @@
 using System.Text;
 using EasyService.Core;
 
+using EasyService.Resources;
+
 namespace EasyService.Gui;
 
 /// <summary>
@@ -24,12 +26,12 @@ public sealed class LogViewerForm : Form
         BorderStyle = BorderStyle.None,
     };
     private readonly ToolStripTextBox _filter = new() { Width = 200 };
-    private readonly ToolStripButton _follow = new("Folgen")
+    private readonly ToolStripButton _follow = new(S.Log_Btn_Follow)
     {
         CheckOnClick = true,
         Checked = true,
         DisplayStyle = ToolStripItemDisplayStyle.Text,
-        ToolTipText = "Neue Zeilen automatisch anzeigen",
+        ToolTipText = S.Log_Tip_Follow,
     };
     private readonly ToolStripStatusLabel _status = new() { Spring = true, TextAlign = ContentAlignment.MiddleLeft };
     private readonly System.Windows.Forms.Timer _timer = new() { Interval = 750 };
@@ -54,7 +56,7 @@ public sealed class LogViewerForm : Form
     {
         _config = config;
 
-        Text = $"Protokolle - {config.ServiceName}";
+        Text = S.Log_Title(config.ServiceName);
         Icon = Ui.AppIcon;
         Size = new Size(1060, 660);
         MinimumSize = new Size(720, 400);
@@ -63,33 +65,33 @@ public sealed class LogViewerForm : Form
         _view.Font = Ui.MonoFont;
 
         var toolbar = new ToolStrip { GripStyle = ToolStripGripStyle.Hidden, Padding = new Padding(6, 2, 6, 2) };
-        toolbar.Items.Add(new ToolStripLabel("Datei:"));
+        toolbar.Items.Add(new ToolStripLabel(S.Log_Lbl_File));
         toolbar.Items.Add(new ToolStripControlHost(_fileSelector));
         toolbar.Items.Add(new ToolStripSeparator());
         toolbar.Items.Add(_follow);
-        toolbar.Items.Add(new ToolStripLabel("  Filter:"));
+        toolbar.Items.Add(new ToolStripLabel(S.Log_Lbl_Filter));
         toolbar.Items.Add(_filter);
         toolbar.Items.Add(new ToolStripSeparator());
-        toolbar.Items.Add(Button("Ordner öffnen", (_, _) => Ui.OpenInExplorer(_currentPath ?? _config.StdoutPath)));
-        toolbar.Items.Add(Button("Speichern unter...", (_, _) => SaveAs()));
-        toolbar.Items.Add(Button("Leeren", (_, _) => TruncateCurrent()));
-        toolbar.Items.Add(Button("Neu laden", (_, _) => OpenSelected(force: true)));
+        toolbar.Items.Add(Button(S.Log_Btn_OpenFolder, (_, _) => Ui.OpenInExplorer(_currentPath ?? _config.StdoutPath)));
+        toolbar.Items.Add(Button(S.Log_Btn_SaveAs, (_, _) => SaveAs()));
+        toolbar.Items.Add(Button(S.Log_Btn_Clear, (_, _) => TruncateCurrent()));
+        toolbar.Items.Add(Button(S.Log_Btn_Reload, (_, _) => OpenSelected(force: true)));
 
-        var logPage = new TabPage("Protokolldatei");
+        var logPage = new TabPage(S.Log_Tab_File);
         logPage.Controls.Add(_view);
 
-        _events.Columns.Add("Zeitpunkt", 150);
-        _events.Columns.Add("Typ", 90);
-        _events.Columns.Add("ID", 55, HorizontalAlignment.Right);
-        _events.Columns.Add("Ereignis", 200);
-        _events.Columns.Add("Meldung", 620);
-        var eventsPage = new TabPage("Windows-Ereignisse");
+        _events.Columns.Add(S.Log_Col_Time, 150);
+        _events.Columns.Add(S.Log_Col_Type, 90);
+        _events.Columns.Add(S.Log_Col_Id, 55, HorizontalAlignment.Right);
+        _events.Columns.Add(S.Log_Col_Event, 200);
+        _events.Columns.Add(S.Log_Col_Message, 620);
+        var eventsPage = new TabPage(S.Log_Tab_Events);
         var eventsToolbar = new ToolStrip { GripStyle = ToolStripGripStyle.Hidden };
-        eventsToolbar.Items.Add(Button("Aktualisieren", (_, _) => LoadEvents()));
-        eventsToolbar.Items.Add(Button("Ereignisanzeige öffnen", (_, _) =>
+        eventsToolbar.Items.Add(Button(S.Log_Btn_RefreshEvents, (_, _) => LoadEvents()));
+        eventsToolbar.Items.Add(Button(S.Log_Btn_EventViewer, (_, _) =>
         {
             try { System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo("eventvwr.msc") { UseShellExecute = true }); }
-            catch (Exception e) { Ui.ShowError(this, "Ereignisanzeige", e); }
+            catch (Exception e) { Ui.ShowError(this, S.Log_EventViewer, e); }
         }));
         eventsPage.Controls.Add(_events);
         eventsPage.Controls.Add(eventsToolbar);
@@ -148,7 +150,9 @@ public sealed class LogViewerForm : Form
             if (string.IsNullOrWhiteSpace(path)) return;
             var files = LogWriter.FindLogFiles(path);
             for (var i = 0; i < files.Count; i++)
-                entries.Add(new LogFile(i == 0 && IsCurrent(files[i], path) ? $"{label} (aktuell)" : $"{label}: {Path.GetFileName(files[i])}", files[i]));
+                entries.Add(new LogFile(i == 0 && IsCurrent(files[i], path)
+                    ? S.Log_Current(label)
+                    : S.Log_Entry(label, Path.GetFileName(files[i])), files[i]));
         }
 
         AddGroup("stdout", _config.StdoutPath);
@@ -163,7 +167,7 @@ public sealed class LogViewerForm : Form
 
         if (entries.Count == 0)
         {
-            _status.Text = "Für diesen Dienst wurden noch keine Protokolldateien angelegt.";
+            _status.Text = S.Log_NoFiles;
             return;
         }
 
@@ -205,12 +209,12 @@ public sealed class LogViewerForm : Form
         }
         catch (FileNotFoundException)
         {
-            _status.Text = $"Datei nicht gefunden: {file.Path}";
+            _status.Text = S.Log_NotFound(file.Path);
             return;
         }
         catch (Exception e)
         {
-            _status.Text = "Fehler: " + e.Message;
+            _status.Text = S.Main_Status_Error(e.Message);
             return;
         }
 
@@ -302,13 +306,13 @@ public sealed class LogViewerForm : Form
         try
         {
             if (_currentPath is not null && File.Exists(_currentPath))
-                size = $" - {new FileInfo(_currentPath).Length / 1024.0:N1} KB";
+                size = S.Log_Size($"{new FileInfo(_currentPath).Length / 1024.0:N1}");
         }
         catch (IOException) { }
 
         _status.Text = filter.Length > 0
-            ? $"{shownCount} von {_lines.Count} Zeilen (gefiltert){size} - {_currentPath}"
-            : $"{_lines.Count} Zeilen{size} - {_currentPath}";
+            ? S.Log_Status_Filtered(shownCount, _lines.Count, size, _currentPath)
+            : S.Log_Status_Plain(_lines.Count, size, _currentPath);
     }
 
     private void ScrollToEnd()
@@ -325,25 +329,24 @@ public sealed class LogViewerForm : Form
         using var dlg = new SaveFileDialog
         {
             FileName = Path.GetFileName(_currentPath),
-            Filter = "Protokolldatei (*.log)|*.log|Textdatei (*.txt)|*.txt|Alle Dateien (*.*)|*.*",
+            Filter = S.Common_FilterSaveLog,
         };
         if (dlg.ShowDialog(this) != DialogResult.OK) return;
         try
         {
             File.WriteAllText(dlg.FileName, _view.Text);
-            _status.Text = "Gespeichert: " + dlg.FileName;
+            _status.Text = S.Log_Saved(dlg.FileName);
         }
         catch (Exception e)
         {
-            Ui.ShowError(this, "Speichern fehlgeschlagen", e);
+            Ui.ShowError(this, S.Log_SaveFailed, e);
         }
     }
 
     private void TruncateCurrent()
     {
         if (_currentPath is null) return;
-        if (!Ui.Confirm(this, "Protokoll leeren",
-                $"Der Inhalt von\n\n{_currentPath}\n\nwird gelöscht. Fortfahren?"))
+        if (!Ui.Confirm(this, S.Log_Clear_Title, S.Log_Clear_Text(_currentPath)))
             return;
 
         try
@@ -356,10 +359,8 @@ public sealed class LogViewerForm : Form
         }
         catch (Exception e)
         {
-            Ui.ShowError(this, "Leeren fehlgeschlagen",
-                e is IOException
-                    ? "Die Datei ist gesperrt. Bitte den Dienst beenden und erneut versuchen.\n\n" + e.Message
-                    : e.Message);
+            Ui.ShowError(this, S.Log_Clear_Failed,
+                e is IOException ? S.Log_Clear_Locked(e.Message) : e.Message);
             OpenSelected(force: true);
         }
     }
@@ -388,7 +389,6 @@ public sealed class LogViewerForm : Form
         }
         _events.EndUpdate();
         if (_events.Items.Count == 0)
-            _events.Items.Add(new ListViewItem(new[]
-                { "", "", "", "", "Keine Einträge von EasyService im Anwendungsprotokoll gefunden." }));
+            _events.Items.Add(new ListViewItem(new[] { "", "", "", "", S.Log_NoEvents }));
     }
 }

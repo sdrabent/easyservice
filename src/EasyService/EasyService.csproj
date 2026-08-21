@@ -13,14 +13,16 @@
     <ApplicationIcon>..\..\assets\easyservice.ico</ApplicationIcon>
     <ApplicationHighDpiMode>PerMonitorV2</ApplicationHighDpiMode>
     <PlatformTarget>x64</PlatformTarget>
-    <SatelliteResourceLanguages>en</SatelliteResourceLanguages>
     <EnableWindowsTargeting>true</EnableWindowsTargeting>
     <Version>1.0.0</Version>
     <Product>EasyService</Product>
     <Company>EasyService Contributors</Company>
     <Copyright>Copyright (c) EasyService Contributors</Copyright>
     <Description>GUI service manager and process supervisor for Windows</Description>
-    <InvariantGlobalization>true</InvariantGlobalization>
+    <!-- Volle Kulturdaten: ohne sie liefert CultureInfo("de") die invariante Kultur
+         zurueck und die Uebersetzung wuerde nie greifen. Maschinenlesbare Ausgaben
+         (Perfdata, Prometheus, JSON) formatieren deshalb explizit invariant. -->
+    <InvariantGlobalization>false</InvariantGlobalization>
     <DebugType>embedded</DebugType>
     <!-- Application.SetColorMode ist in .NET 9 noch als experimentell markiert. -->
     <NoWarn>$(NoWarn);WFO5001</NoWarn>

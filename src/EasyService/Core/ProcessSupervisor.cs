@@ -2,6 +2,8 @@ using System.Diagnostics;
 using System.Runtime.InteropServices;
 using System.Text;
 
+using EasyService.Resources;
+
 namespace EasyService.Core;
 
 /// <summary>
@@ -71,7 +73,7 @@ public sealed class ProcessSupervisor : IDisposable
             catch (Exception e)
             {
                 EventLogSink.Warn(cfg.ServiceName, EasyServiceEvent.LoggingProblem,
-                    "Das EasyService-Ereignisprotokoll konnte nicht geöffnet werden: " + e.Message);
+                    S.Sup_EventLogOpenFailed(e.Message));
             }
         }
 
@@ -114,7 +116,7 @@ public sealed class ProcessSupervisor : IDisposable
         }
         catch (Exception e)
         {
-            LogQuiet("Ressourcen konnten nicht gemessen werden: " + e.Message);
+            LogQuiet(S.Sup_SampleFailed(e.Message));
         }
     }
 
@@ -129,8 +131,7 @@ public sealed class ProcessSupervisor : IDisposable
     /// <summary>Blocks until the service is asked to stop or the exit policy ends it.</summary>
     public void Run()
     {
-        Log(EasyServiceEvent.SupervisorStarted,
-            $"EasyService übernimmt die Überwachung von \"{Expand(_cfg.Application)}\".");
+        Log(EasyServiceEvent.SupervisorStarted, S.Sup_Supervising(Expand(_cfg.Application)));
 
         OpenOutputLogs();
 
@@ -153,14 +154,13 @@ public sealed class ProcessSupervisor : IDisposable
                 _sampler.Reset();
                 SetState(SupervisorState.Running);
 
-                Log(EasyServiceEvent.ApplicationStarted, $"Anwendung gestartet (PID {_pid}).");
+                Log(EasyServiceEvent.ApplicationStarted, S.Sup_AppStarted(_pid));
             }
             catch (Exception e)
             {
                 _state.LastError = e.Message;
                 SetState(SupervisorState.Failed);
-                Log(EasyServiceEvent.ApplicationStartFailed,
-                    "Die Anwendung konnte nicht gestartet werden: " + e.Message, EventLogEntryType.Error);
+                Log(EasyServiceEvent.ApplicationStartFailed, S.Sup_StartFailed(e.Message), EventLogEntryType.Error);
 
                 if (_cfg.DefaultExitAction != ExitAction.Restart)
                 {
@@ -179,7 +179,7 @@ public sealed class ProcessSupervisor : IDisposable
 
             if (_stopRequested.IsSet)
             {
-                LogQuiet($"Anwendung beendet (Code {exitCode}), Dienst wird gestoppt.");
+                LogQuiet(S.Sup_AppExitedStopping(exitCode));
                 return;
             }
 
@@ -187,7 +187,7 @@ public sealed class ProcessSupervisor : IDisposable
             var action = _cfg.ExitActions.TryGetValue(exitCode, out var specific) ? specific : _cfg.DefaultExitAction;
 
             Log(EasyServiceEvent.ApplicationExited,
-                $"Anwendung beendet mit Code {exitCode} nach {ranFor.TotalSeconds:F1}s. Aktion: {Describe(action)}.",
+                S.Sup_AppExited(exitCode, ranFor.TotalSeconds.ToString("F1"), Describe(action)),
                 exitCode == 0 ? EventLogEntryType.Information : EventLogEntryType.Warning);
 
             CleanUpChild();
@@ -196,15 +196,13 @@ public sealed class ProcessSupervisor : IDisposable
             {
                 case ExitAction.Stop:
                     SetState(SupervisorState.Stopped);
-                    Log(EasyServiceEvent.StoppedByExitPolicy,
-                        $"Der Dienst wird gemäß Beenden-Aktion gestoppt (Exit-Code {exitCode}).");
+                    Log(EasyServiceEvent.StoppedByExitPolicy, S.Sup_StoppedByPolicy(exitCode));
                     StopServiceRequested?.Invoke(exitCode);
                     return;
 
                 case ExitAction.Ignore:
                     SetState(SupervisorState.Ignored);
-                    Log(EasyServiceEvent.ApplicationExited,
-                        "Die Anwendung wird nicht neu gestartet; der Dienst bleibt aktiv.");
+                    Log(EasyServiceEvent.ApplicationExited, S.Sup_NoRestart);
                     _stopRequested.Wait();
                     return;
 
@@ -224,9 +222,9 @@ public sealed class ProcessSupervisor : IDisposable
 
     private static string Describe(ExitAction a) => a switch
     {
-        ExitAction.Restart => "Neu starten",
-        ExitAction.Ignore => "Ignorieren",
-        ExitAction.Stop => "Dienst beenden",
+        ExitAction.Restart => S.Sup_Action_Restart,
+        ExitAction.Ignore => S.Sup_Action_Ignore,
+        ExitAction.Stop => S.Sup_Action_Stop,
         _ => a.ToString(),
     };
 
@@ -238,14 +236,13 @@ public sealed class ProcessSupervisor : IDisposable
         {
             delay = Math.Max(delay, backoff);
             Log(EasyServiceEvent.RestartThrottled,
-                $"Die Anwendung lief kürzer als das Throttle-Fenster ({_cfg.ThrottleMs} ms); " +
-                $"nächster Versuch in {delay} ms. Neustarts in der letzten Stunde: {_state.RestartsLastHour}.",
+                S.Sup_Throttled(_cfg.ThrottleMs, delay, _state.RestartsLastHour),
                 EventLogEntryType.Warning);
             backoff = Math.Min(Math.Max(1000, backoff * 2), 60_000);
         }
         else
         {
-            LogQuiet($"Nächster Startversuch in {delay} ms.");
+            LogQuiet(S.Sup_NextAttempt(delay));
         }
 
         return delay <= 0 || !_stopRequested.Wait(delay);
@@ -273,8 +270,7 @@ public sealed class ProcessSupervisor : IDisposable
         }
         catch (Exception e)
         {
-            Log(EasyServiceEvent.LoggingProblem,
-                $"Die {which}-Protokolldatei konnte nicht geöffnet werden ({path}): {e.Message}",
+            Log(EasyServiceEvent.LoggingProblem, S.Sup_LogOpenFailed(which, path, e.Message),
                 EventLogEntryType.Warning);
             return null;
         }
@@ -284,7 +280,7 @@ public sealed class ProcessSupervisor : IDisposable
     {
         var app = Expand(_cfg.Application);
         if (!File.Exists(app))
-            throw new FileNotFoundException($"Das Programm wurde nicht gefunden: {app}", app);
+            throw new FileNotFoundException(S.Sup_AppNotFound(app), app);
 
         var workDir = Expand(_cfg.AppDirectory);
         if (string.IsNullOrWhiteSpace(workDir) || !Directory.Exists(workDir))
@@ -309,9 +305,9 @@ public sealed class ProcessSupervisor : IDisposable
 
         try
         {
-            if (!Native.CreatePipe(out outRead, out outWrite, ref sa, 0)) throw LastError("stdout-Pipe");
-            if (!Native.CreatePipe(out errRead, out errWrite, ref sa, 0)) throw LastError("stderr-Pipe");
-            if (!Native.CreatePipe(out inRead, out inWrite, ref sa, 0)) throw LastError("stdin-Pipe");
+            if (!Native.CreatePipe(out outRead, out outWrite, ref sa, 0)) throw LastError(S.Sup_Op_StdoutPipe);
+            if (!Native.CreatePipe(out errRead, out errWrite, ref sa, 0)) throw LastError(S.Sup_Op_StderrPipe);
+            if (!Native.CreatePipe(out inRead, out inWrite, ref sa, 0)) throw LastError(S.Sup_Op_StdinPipe);
 
             // Our read ends must not leak into the child, otherwise EOF never arrives.
             Native.SetHandleInformation(outRead, Native.HANDLE_FLAG_INHERIT, 0);
@@ -334,7 +330,7 @@ public sealed class ProcessSupervisor : IDisposable
 
             if (!Native.CreateProcessW(null, commandLine, IntPtr.Zero, IntPtr.Zero, true,
                     flags, envBlock, workDir, ref si, out var pi))
-                throw LastError($"Start von {app}");
+                throw LastError(S.Sup_Op_Start(app));
 
             lock (_childLock)
             {
@@ -375,7 +371,7 @@ public sealed class ProcessSupervisor : IDisposable
     {
         var err = Marshal.GetLastWin32Error();
         return new System.ComponentModel.Win32Exception(err,
-            $"{what} fehlgeschlagen: {new System.ComponentModel.Win32Exception(err).Message}");
+            S.Sup_OpFailed(what, new System.ComponentModel.Win32Exception(err).Message));
     }
 
     private IntPtr CreateJob(IntPtr process)
@@ -398,9 +394,7 @@ public sealed class ProcessSupervisor : IDisposable
 
         if (!Native.AssignProcessToJobObject(job, process))
         {
-            LogQuiet("Hinweis: Der Prozess konnte keinem Job-Objekt zugeordnet werden; " +
-                     "Kindprozesse werden beim Beenden eventuell nicht mit beendet und die " +
-                     "Ressourcenmessung erfasst nur den Hauptprozess.");
+            LogQuiet(S.Sup_NoJobObject);
             Native.CloseHandle(job);
             return IntPtr.Zero;
         }
@@ -468,7 +462,7 @@ public sealed class ProcessSupervisor : IDisposable
             }
             catch (Exception e)
             {
-                LogQuiet($"Der {name}-Leser wurde beendet: {e.Message}");
+                LogQuiet(S.Sup_ReaderStopped(name, e.Message));
             }
             finally
             {
@@ -511,7 +505,7 @@ public sealed class ProcessSupervisor : IDisposable
     public void RequestStop()
     {
         if (!_stopRequested.IsSet)
-            Log(EasyServiceEvent.ServiceStopping, "Der Dienst wird beendet.");
+            Log(EasyServiceEvent.ServiceStopping, S.Sup_ServiceStopping);
         _stopRequested.Set();
         StopChild();
     }
@@ -547,19 +541,19 @@ public sealed class ProcessSupervisor : IDisposable
 
         if (_cfg.StopUseConsole && TrySendCtrlC(pid))
         {
-            LogQuiet("Strg+C an die Anwendung gesendet.");
+            LogQuiet(S.Sup_SentCtrlC);
             if (WaitExit(process, _cfg.StopConsoleMs)) return;
         }
 
         if (_cfg.StopUseWindow && PostToWindows(pid))
         {
-            LogQuiet("WM_CLOSE an die Fenster der Anwendung gesendet.");
+            LogQuiet(S.Sup_SentWmClose);
             if (WaitExit(process, _cfg.StopWindowMs)) return;
         }
 
         if (_cfg.StopUseThreads && PostToThreads(pid))
         {
-            LogQuiet("WM_QUIT an die Threads der Anwendung gesendet.");
+            LogQuiet(S.Sup_SentWmQuit);
             if (WaitExit(process, _cfg.StopThreadsMs)) return;
         }
 
@@ -567,23 +561,19 @@ public sealed class ProcessSupervisor : IDisposable
         {
             if (_cfg.KillProcessTree && job != IntPtr.Zero)
             {
-                Log(EasyServiceEvent.ApplicationTerminated,
-                    "Die Anwendung hat nicht reagiert; der Prozessbaum wird beendet.", EventLogEntryType.Warning);
+                Log(EasyServiceEvent.ApplicationTerminated, S.Sup_KillTree, EventLogEntryType.Warning);
                 Native.TerminateJobObject(job, 0);
             }
             else
             {
-                Log(EasyServiceEvent.ApplicationTerminated,
-                    "Die Anwendung hat nicht reagiert; der Prozess wird beendet.", EventLogEntryType.Warning);
+                Log(EasyServiceEvent.ApplicationTerminated, S.Sup_KillProcess, EventLogEntryType.Warning);
                 Native.TerminateProcess(process, 0);
             }
             WaitExit(process, 5000);
         }
         else
         {
-            Log(EasyServiceEvent.ApplicationTerminated,
-                "Die Anwendung reagiert nicht und darf laut Konfiguration nicht hart beendet werden.",
-                EventLogEntryType.Error);
+            Log(EasyServiceEvent.ApplicationTerminated, S.Sup_NoTerminate, EventLogEntryType.Error);
         }
     }
 

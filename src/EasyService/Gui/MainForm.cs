@@ -1,5 +1,7 @@
 using EasyService.Core;
 
+using EasyService.Resources;
+
 namespace EasyService.Gui;
 
 public sealed class MainForm : Form
@@ -27,7 +29,7 @@ public sealed class MainForm : Form
         _initialSelection = selectService;
         _openQuickAdd = openQuickAdd;
 
-        Text = "EasyService - Windows-Dienste verwalten";
+        Text = S.Main_Title;
         Icon = Ui.AppIcon;
         MinimumSize = new Size(900, 480);
         Size = new Size(1320, 700);
@@ -44,53 +46,53 @@ public sealed class MainForm : Form
             MultiSelect = false,
             UseCompatibleStateImageBehavior = false,
         };
-        _list.Columns.Add("Name", 190);
-        _list.Columns.Add("Status", 110);
-        _list.Columns.Add("Anwendung", 140);
-        _list.Columns.Add("CPU", 60, HorizontalAlignment.Right);
-        _list.Columns.Add("RAM", 75, HorizontalAlignment.Right);
-        _list.Columns.Add("Neust./h", 65, HorizontalAlignment.Right);
-        _list.Columns.Add("Laufzeit", 85, HorizontalAlignment.Right);
-        _list.Columns.Add("Starttyp", 145);
-        _list.Columns.Add("PID", 60, HorizontalAlignment.Right);
-        _list.Columns.Add("Anzeigename", 200);
-        _list.Columns.Add("Konto", 140);
-        _list.Columns.Add("Programm", 260);
+        _list.Columns.Add(S.Main_Col_Name, 190);
+        _list.Columns.Add(S.Main_Col_Status, 110);
+        _list.Columns.Add(S.Main_Col_Application, 140);
+        _list.Columns.Add(S.Main_Col_Cpu, 60, HorizontalAlignment.Right);
+        _list.Columns.Add(S.Main_Col_Ram, 75, HorizontalAlignment.Right);
+        _list.Columns.Add(S.Main_Col_Restarts, 65, HorizontalAlignment.Right);
+        _list.Columns.Add(S.Main_Col_Uptime, 85, HorizontalAlignment.Right);
+        _list.Columns.Add(S.Main_Col_Startup, 145);
+        _list.Columns.Add(S.Main_Col_Pid, 60, HorizontalAlignment.Right);
+        _list.Columns.Add(S.Main_Col_DisplayName, 200);
+        _list.Columns.Add(S.Main_Col_Account, 140);
+        _list.Columns.Add(S.Main_Col_Program, 260);
         _list.SelectedIndexChanged += (_, _) => UpdateButtons();
         _list.DoubleClick += (_, _) => EditSelected();
         _list.ColumnClick += OnColumnClick;
         _list.KeyDown += OnListKeyDown;
 
         _toolbar = new ToolStrip { GripStyle = ToolStripGripStyle.Hidden, Padding = new Padding(6, 2, 6, 2) };
-        _toolbar.Items.Add(Button("Dienst hinzufügen...", (_, _) => CreateNew(),
-            "Schnell einrichten: Programm wählen, Rest wird vorbelegt (oder eine .exe ins Fenster ziehen)"));
-        _btnEdit = Button("Bearbeiten...", (_, _) => EditSelected(), "Konfiguration des markierten Dienstes ändern");
+        _toolbar.Items.Add(Button(S.Main_Btn_Add, (_, _) => CreateNew(), S.Main_Tip_Add));
+        _btnEdit = Button(S.Main_Btn_Edit, (_, _) => EditSelected(), S.Main_Tip_Edit);
         _toolbar.Items.Add(_btnEdit);
         _toolbar.Items.Add(new ToolStripSeparator());
-        _btnStart = Button("Starten", (_, _) => Control(ServiceAction.Start), null);
-        _btnStop = Button("Beenden", (_, _) => Control(ServiceAction.Stop), null);
-        _btnRestart = Button("Neu starten", (_, _) => Control(ServiceAction.Restart), null);
+        _btnStart = Button(S.Main_Btn_Start, (_, _) => Control(ServiceAction.Start), null);
+        _btnStop = Button(S.Main_Btn_Stop, (_, _) => Control(ServiceAction.Stop), null);
+        _btnRestart = Button(S.Main_Btn_Restart, (_, _) => Control(ServiceAction.Restart), null);
         _toolbar.Items.AddRange(new ToolStripItem[] { _btnStart, _btnStop, _btnRestart });
         _toolbar.Items.Add(new ToolStripSeparator());
-        _btnLogs = Button("Protokolle...", (_, _) => ShowLogs(), "Live-Ansicht der stdout/stderr-Protokolle");
+        _btnLogs = Button(S.Main_Btn_Logs, (_, _) => ShowLogs(), S.Main_Tip_Logs);
         _toolbar.Items.Add(_btnLogs);
-        _btnRemove = Button("Entfernen", (_, _) => RemoveSelected(), "Dienst beenden und löschen");
+        _btnRemove = Button(S.Main_Btn_Remove, (_, _) => RemoveSelected(), S.Main_Tip_Remove);
         _toolbar.Items.Add(_btnRemove);
         _toolbar.Items.Add(new ToolStripSeparator());
-        _toolbar.Items.Add(Button("Aktualisieren", (_, _) => Reload(), "Liste neu einlesen (F5)"));
+        _toolbar.Items.Add(Button(S.Main_Btn_Refresh, (_, _) => Reload(), S.Main_Tip_Refresh));
+        _toolbar.Items.Add(BuildLanguageMenu());
 
         _toolbar.Items.Add(new ToolStripSeparator());
-        _onlyManaged = new ToolStripButton("Nur EasyService")
+        _onlyManaged = new ToolStripButton(S.Main_Btn_OnlyManaged)
         {
             CheckOnClick = true,
             Checked = true,
             DisplayStyle = ToolStripItemDisplayStyle.Text,
-            ToolTipText = "Nur Dienste anzeigen, die mit EasyService angelegt wurden",
+            ToolTipText = S.Main_Tip_OnlyManaged,
         };
         _onlyManaged.CheckedChanged += (_, _) => ApplyFilter();
         _toolbar.Items.Add(_onlyManaged);
 
-        _toolbar.Items.Add(new ToolStripLabel("  Filter:"));
+        _toolbar.Items.Add(new ToolStripLabel(S.Main_Lbl_Filter));
         _filterBox = new ToolStripTextBox { Width = 190 };
         _filterBox.TextChanged += (_, _) => ApplyFilter();
         _toolbar.Items.Add(_filterBox);
@@ -181,27 +183,60 @@ public sealed class MainForm : Form
         return b;
     }
 
+    /// <summary>
+    /// Language picker. The choice is stored per user and applied on the next start -
+    /// rebuilding every open window at runtime buys little for a setting changed once.
+    /// </summary>
+    private ToolStripDropDownButton BuildLanguageMenu()
+    {
+        var button = new ToolStripDropDownButton(S.Main_Menu_Language)
+        {
+            DisplayStyle = ToolStripItemDisplayStyle.Text,
+        };
+
+        foreach (var language in Localization.Supported)
+        {
+            var caption = language.Code.Length == 0 ? S.Main_Menu_LanguageAuto : language.DisplayName;
+            var item = new ToolStripMenuItem(caption)
+            {
+                Checked = string.Equals(Localization.UserChoice, language.Code, StringComparison.OrdinalIgnoreCase),
+                CheckOnClick = false,
+            };
+            var code = language.Code;
+            item.Click += (_, _) =>
+            {
+                Localization.UserChoice = code;
+                foreach (ToolStripMenuItem other in button.DropDownItems)
+                    other.Checked = ReferenceEquals(other, item);
+                Ui.ShowInfo(this, S.Main_Menu_Language, S.Main_Language_Restart);
+            };
+            button.DropDownItems.Add(item);
+        }
+
+        return button;
+    }
+
     private ContextMenuStrip BuildContextMenu()
     {
         var menu = new ContextMenuStrip();
-        menu.Items.Add("Bearbeiten...", null, (_, _) => EditSelected());
-        menu.Items.Add("Protokolle...", null, (_, _) => ShowLogs());
+        menu.Items.Add(S.Main_Btn_Edit, null, (_, _) => EditSelected());
+        menu.Items.Add(S.Main_Btn_Logs, null, (_, _) => ShowLogs());
         menu.Items.Add(new ToolStripSeparator());
-        menu.Items.Add("Starten", null, (_, _) => Control(ServiceAction.Start));
-        menu.Items.Add("Beenden", null, (_, _) => Control(ServiceAction.Stop));
-        menu.Items.Add("Neu starten", null, (_, _) => Control(ServiceAction.Restart));
+        menu.Items.Add(S.Main_Btn_Start, null, (_, _) => Control(ServiceAction.Start));
+        menu.Items.Add(S.Main_Btn_Stop, null, (_, _) => Control(ServiceAction.Stop));
+        menu.Items.Add(S.Main_Btn_Restart, null, (_, _) => Control(ServiceAction.Restart));
         menu.Items.Add(new ToolStripSeparator());
-        menu.Items.Add("Programmordner öffnen", null, (_, _) =>
+        menu.Items.Add(S.Main_Ctx_OpenFolder, null, (_, _) =>
         {
             if (Selected is { } s && ServiceConfig.Load(s.Name) is { } c) Ui.OpenInExplorer(c.Application);
         });
-        menu.Items.Add("In services.msc anzeigen", null, (_, _) =>
+        menu.Items.Add(S.Main_Ctx_ServicesMsc, null, (_, _) =>
         {
             try { System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo("services.msc") { UseShellExecute = true }); }
             catch (Exception e) { Ui.ShowError(this, "services.msc", e); }
         });
         menu.Items.Add(new ToolStripSeparator());
-        menu.Items.Add("Entfernen", null, (_, _) => RemoveSelected());
+        menu.Items.Add(S.Main_Btn_Remove, null, (_, _) => RemoveSelected());
         menu.Opening += (_, e) =>
         {
             if (Selected is null) e.Cancel = true;
@@ -218,7 +253,7 @@ public sealed class MainForm : Form
     {
         if (_loading) return;
         _loading = true;
-        if (!silent) _status.Text = "Dienste werden gelesen...";
+        if (!silent) _status.Text = S.Main_Status_Loading;
 
         Task.Run(() =>
         {
@@ -241,8 +276,8 @@ public sealed class MainForm : Form
                 {
                     _loading = false;
                     _refreshTimer.Stop();
-                    Ui.ShowError(this, "Dienste konnten nicht gelesen werden", e);
-                    _status.Text = "Fehler: " + e.Message;
+                    Ui.ShowError(this, S.Main_Err_ListFailed, e);
+                    _status.Text = S.Main_Status_Error(e.Message);
                 });
             }
         });
@@ -346,10 +381,9 @@ public sealed class MainForm : Form
         var critical = _checks.Values.Count(c => c.Status == CheckStatus.Critical);
         var warning = _checks.Values.Count(c => c.Status == CheckStatus.Warning);
         var health = critical > 0 || warning > 0
-            ? $" - {critical} kritisch, {warning} Warnung"
-            : managed > 0 ? " - alle unauffällig" : "";
-        _status.Text = $"{visible.Count} von {_services.Count} Diensten angezeigt - " +
-                       $"{managed} von EasyService verwaltet{health}";
+            ? S.Main_Status_Health(critical, warning)
+            : managed > 0 ? S.Main_Status_AllFine : "";
+        _status.Text = S.Main_Status_Summary(visible.Count, _services.Count, managed, health);
         UpdateButtons();
     }
 
@@ -413,22 +447,19 @@ public sealed class MainForm : Form
         if (dlg.ShowDialog(this) != DialogResult.OK) return;
 
         var config = dlg.Config;
-        if (!Run($"Dienst \"{config.ServiceName}\" wird angelegt", () => ServiceRegistry.Install(config)))
+        if (!Run(S.Main_Task_Install(config.ServiceName), () => ServiceRegistry.Install(config)))
         {
             Reload();
             return;
         }
 
         if (dlg.StartAfterCreate &&
-            !Run($"Dienst \"{config.ServiceName}\" wird gestartet",
+            !Run(S.Main_Task_Start(config.ServiceName),
                  () => ServiceRegistry.Start(config.ServiceName, TimeSpan.FromSeconds(60))))
         {
             // Ein fehlgeschlagener erster Start ist fast immer ein falscher Pfad oder ein
             // falsches Argument - das steht im Protokoll, also direkt dorthin anbieten.
-            if (Ui.Confirm(this, "Start fehlgeschlagen",
-                    $"Der Dienst \"{config.ServiceName}\" wurde angelegt, ließ sich aber nicht starten." +
-                    System.Environment.NewLine + System.Environment.NewLine +
-                    "Die Ursache steht meist im Protokoll. Jetzt öffnen?"))
+            if (Ui.Confirm(this, S.Main_StartFailed_Title, S.Main_StartFailed_Text(config.ServiceName)))
                 new LogViewerForm(config).Show(this);
         }
 
@@ -440,16 +471,14 @@ public sealed class MainForm : Form
         if (Selected is not { } s) return;
         if (!s.ManagedByEasyService)
         {
-            Ui.ShowInfo(this, "Nicht bearbeitbar",
-                $"\"{s.Name}\" wurde nicht mit EasyService angelegt und kann hier nicht bearbeitet werden.\n\n" +
-                "EasyService bearbeitet nur Dienste, die es selbst verwaltet, damit fremde Dienste nicht beschädigt werden.");
+            Ui.ShowInfo(this, S.Main_NotEditable_Title, S.Main_NotEditable_Text(s.Name));
             return;
         }
 
         var config = ServiceConfig.Load(s.Name);
         if (config is null)
         {
-            Ui.ShowError(this, "Konfiguration fehlt", $"Für \"{s.Name}\" ist keine EasyService-Konfiguration hinterlegt.");
+            Ui.ShowError(this, S.Main_MissingConfig_Title, S.Main_MissingConfig_Text(s.Name));
             return;
         }
 
@@ -463,12 +492,10 @@ public sealed class MainForm : Form
         if (dlg.ShowDialog(this) != DialogResult.OK) return;
 
         var wasRunning = s.IsRunning;
-        Run($"Dienst \"{s.Name}\" wird aktualisiert", () => ServiceRegistry.Update(dlg.Config));
+        Run(S.Main_Task_Update(s.Name), () => ServiceRegistry.Update(dlg.Config));
 
-        if (wasRunning && Ui.Confirm(this, "Neu starten?",
-                $"Die Änderungen an \"{s.Name}\" werden erst nach einem Neustart des Dienstes wirksam.\n\nJetzt neu starten?"))
-            Run($"Dienst \"{s.Name}\" wird neu gestartet",
-                () => ServiceRegistry.Restart(s.Name, TimeSpan.FromSeconds(60)));
+        if (wasRunning && Ui.Confirm(this, S.Main_Restart_Title, S.Main_Restart_Text(s.Name)))
+            Run(S.Main_Task_Restart(s.Name), () => ServiceRegistry.Restart(s.Name, TimeSpan.FromSeconds(60)));
 
         Reload();
     }
@@ -498,13 +525,13 @@ public sealed class MainForm : Form
         switch (action)
         {
             case ServiceAction.Start:
-                Run($"Dienst \"{s.Name}\" wird gestartet", () => ServiceRegistry.Start(s.Name, timeout));
+                Run(S.Main_Task_Start(s.Name), () => ServiceRegistry.Start(s.Name, timeout));
                 break;
             case ServiceAction.Stop:
-                Run($"Dienst \"{s.Name}\" wird beendet", () => ServiceRegistry.Stop(s.Name, timeout));
+                Run(S.Main_Task_Stop(s.Name), () => ServiceRegistry.Stop(s.Name, timeout));
                 break;
             case ServiceAction.Restart:
-                Run($"Dienst \"{s.Name}\" wird neu gestartet", () => ServiceRegistry.Restart(s.Name, timeout));
+                Run(S.Main_Task_Restart(s.Name), () => ServiceRegistry.Restart(s.Name, timeout));
                 break;
         }
         Reload();
@@ -515,12 +542,10 @@ public sealed class MainForm : Form
         if (Selected is not { } s) return;
 
         var warning = s.ManagedByEasyService
-            ? $"Der Dienst \"{s.Name}\" wird beendet und dauerhaft entfernt.\n\nDie Protokolldateien bleiben erhalten."
-            : $"ACHTUNG: \"{s.Name}\" wurde NICHT mit EasyService angelegt.\n\n" +
-              "Das Entfernen eines fremden Systemdienstes kann Windows oder installierte Software unbrauchbar machen.\n\n" +
-              "Wirklich entfernen?";
+            ? S.Main_Remove_Managed(s.Name)
+            : S.Main_Remove_Foreign(s.Name);
 
-        if (!Ui.Confirm(this, "Dienst entfernen", warning)) return;
+        if (!Ui.Confirm(this, S.Main_Remove_Title, warning)) return;
 
         if (!s.ManagedByEasyService)
         {
@@ -528,7 +553,7 @@ public sealed class MainForm : Form
             if (confirm.ShowDialog(this) != DialogResult.OK) return;
         }
 
-        Run($"Dienst \"{s.Name}\" wird entfernt", () => ServiceRegistry.Remove(s.Name));
+        Run(S.Main_Task_Remove(s.Name), () => ServiceRegistry.Remove(s.Name));
         Reload();
     }
 
@@ -538,7 +563,7 @@ public sealed class MainForm : Form
         var config = ServiceConfig.Load(s.Name);
         if (config is null)
         {
-            Ui.ShowInfo(this, "Keine Protokolle", $"Für \"{s.Name}\" ist keine EasyService-Konfiguration hinterlegt.");
+            Ui.ShowInfo(this, S.Main_NoLogs_Title, S.Main_MissingConfig_Text(s.Name));
             return;
         }
         new LogViewerForm(config).Show(this);
@@ -553,18 +578,18 @@ public sealed class MainForm : Form
         _refreshTimer.Stop();
         var previousCursor = Cursor;
         Cursor = Cursors.WaitCursor;
-        _status.Text = what + "...";
+        _status.Text = S.Main_Task_Running(what);
         Application.DoEvents();
         try
         {
             action();
-            _status.Text = what + " - fertig.";
+            _status.Text = S.Main_Task_Done(what);
             return true;
         }
         catch (Exception e)
         {
             Ui.ShowError(this, what, e);
-            _status.Text = what + " - fehlgeschlagen.";
+            _status.Text = S.Main_Task_Failed(what);
             return false;
         }
         finally
@@ -580,7 +605,7 @@ internal sealed class TextConfirmDialog : Form
 {
     public TextConfirmDialog(string expected)
     {
-        Text = "Löschen bestätigen";
+        Text = S.Confirm_Title;
         FormBorderStyle = FormBorderStyle.FixedDialog;
         StartPosition = FormStartPosition.CenterParent;
         MinimizeBox = MaximizeBox = false;
@@ -588,13 +613,13 @@ internal sealed class TextConfirmDialog : Form
 
         var label = new Label
         {
-            Text = $"Zum Bestätigen bitte den Dienstnamen eingeben:\n\n{expected}",
+            Text = S.Confirm_Text(expected),
             AutoSize = false,
             Bounds = new Rectangle(14, 14, 400, 60),
         };
         var box = new TextBox { Bounds = new Rectangle(14, 78, 400, 24) };
-        var ok = new Button { Text = "Entfernen", DialogResult = DialogResult.OK, Bounds = new Rectangle(228, 112, 90, 28), Enabled = false };
-        var cancel = new Button { Text = "Abbrechen", DialogResult = DialogResult.Cancel, Bounds = new Rectangle(324, 112, 90, 28) };
+        var ok = new Button { Text = S.Common_Remove, DialogResult = DialogResult.OK, Bounds = new Rectangle(228, 112, 90, 28), Enabled = false };
+        var cancel = new Button { Text = S.Common_Cancel, DialogResult = DialogResult.Cancel, Bounds = new Rectangle(324, 112, 90, 28) };
 
         box.TextChanged += (_, _) => ok.Enabled = string.Equals(box.Text.Trim(), expected, StringComparison.Ordinal);
 

@@ -1,5 +1,7 @@
 using EasyService.Core;
 
+using EasyService.Resources;
+
 namespace EasyService;
 
 /// <summary>
@@ -20,9 +22,9 @@ internal static class Cli
                 "list" => List(args),
                 "install" => Install(args),
                 "remove" or "uninstall" => Remove(args),
-                "start" => Simple(args, n => ServiceRegistry.Start(n, TimeSpan.FromSeconds(60)), "gestartet"),
-                "stop" => Simple(args, n => ServiceRegistry.Stop(n, TimeSpan.FromSeconds(60)), "beendet"),
-                "restart" => Simple(args, n => ServiceRegistry.Restart(n, TimeSpan.FromSeconds(60)), "neu gestartet"),
+                "start" => Simple(args, n => ServiceRegistry.Start(n, TimeSpan.FromSeconds(60)), S.Cli_Started),
+                "stop" => Simple(args, n => ServiceRegistry.Stop(n, TimeSpan.FromSeconds(60)), S.Cli_Stopped),
+                "restart" => Simple(args, n => ServiceRegistry.Restart(n, TimeSpan.FromSeconds(60)), S.Cli_Restarted),
                 "status" => Status(args),
 
                 // monitoring integrations
@@ -34,12 +36,12 @@ internal static class Cli
 
                 "-h" or "--help" or "/?" or "help" => Usage(0),
                 "-v" or "--version" or "version" => Version(),
-                _ => Usage(2, $"Unbekannter Befehl: {args[0]}"),
+                _ => Usage(2, S.Cli_UnknownCommand(args[0])),
             };
         }
         catch (Exception e)
         {
-            Console.Error.WriteLine("Fehler: " + e.Message);
+            Console.Error.WriteLine(S.Cli_Err(e.Message));
             return 1;
         }
     }
@@ -53,44 +55,7 @@ internal static class Cli
     private static int Usage(int code, string? message = null)
     {
         if (message is not null) Console.Error.WriteLine(message);
-        Console.WriteLine("""
-            easyservice - Windows-Dienste per GUI verwalten (Alternative zu nssm.exe)
-
-            Ohne Argumente startet die grafische Oberfläche.
-
-            VERWALTEN
-              easyservice list [--json]
-                  Zeigt alle Dienste an; von EasyService verwaltete sind markiert.
-
-              easyservice install <Name> <Programm> [Argumente...]
-                  Legt einen neuen Dienst an (Autostart, Logging unter %ProgramData%\EasyService\logs).
-
-              easyservice remove <Name>
-                  Beendet und entfernt den Dienst.
-
-              easyservice start|stop|restart|status <Name>
-                  Steuert einen vorhandenen Dienst. status kennt zusätzlich --json.
-
-            ÜBERWACHUNG
-              easyservice checkmk
-                  Checkmk-Local-Check: eine Zeile je überwachtem Dienst, mit Perfdata.
-
-              easyservice prometheus [--output <Datei>]
-                  Prometheus-Exposition. Mit --output für den Textfile-Collector
-                  des node_exporter (die Datei wird atomar ersetzt).
-
-              easyservice check <Name>
-                  Nagios/Icinga-Plugin für einen Dienst.
-                  Exit-Code 0 = OK, 1 = Warnung, 2 = kritisch, 3 = unbekannt.
-
-              easyservice json
-                  Vollständiger Zustand aller überwachten Dienste als JSON.
-
-              easyservice zabbix-discovery
-                  Low-Level-Discovery-Liste für Zabbix-Templates.
-
-            Verwalten benötigt Administratorrechte; die Überwachungsbefehle lesen nur.
-            """);
+        Console.WriteLine(S.Cli_Usage);
         return code;
     }
 
@@ -103,7 +68,7 @@ internal static class Cli
         var services = ServiceRegistry.EnumerateServices()
                                       .OrderByDescending(s => s.ManagedByEasyService)
                                       .ThenBy(s => s.Name, StringComparer.OrdinalIgnoreCase);
-        Console.WriteLine($"{"",-3}{"NAME",-36}{"STATUS",-18}{"START",-24}ANZEIGENAME");
+        Console.WriteLine($"{"",-3}{S.Cli_Hdr_Name,-36}{S.Cli_Hdr_Status,-18}{S.Cli_Hdr_Startup,-24}{S.Cli_Hdr_DisplayName}");
         foreach (var s in services)
             Console.WriteLine($"{(s.ManagedByEasyService ? "ES" : ""),-3}{Trim(s.Name, 35),-36}{s.StateText,-18}{s.StartupText,-24}{s.DisplayName}");
         return 0;
@@ -113,7 +78,7 @@ internal static class Cli
 
     private static int Install(string[] args)
     {
-        if (args.Length < 3) return Usage(2, "install benötigt <Name> und <Programm>.");
+        if (args.Length < 3) return Usage(2, S.Cli_InstallNeedsArgs);
 
         var config = new ServiceConfig
         {
@@ -128,13 +93,13 @@ internal static class Cli
         var problems = config.Validate(isNew: true).ToList();
         if (problems.Count > 0)
         {
-            foreach (var p in problems) Console.Error.WriteLine("Fehler: " + p);
+            foreach (var p in problems) Console.Error.WriteLine(S.Cli_Err(p));
             return 2;
         }
 
         ServiceRegistry.Install(config);
-        Console.WriteLine($"Dienst \"{config.ServiceName}\" wurde angelegt.");
-        Console.WriteLine($"Protokolle: {config.StdoutPath}");
+        Console.WriteLine(S.Cli_Installed(config.ServiceName));
+        Console.WriteLine(S.Cli_Logs(config.StdoutPath));
         return 0;
     }
 
@@ -142,29 +107,29 @@ internal static class Cli
 
     private static int Remove(string[] args)
     {
-        if (args.Length < 2) return Usage(2, "remove benötigt <Name>.");
+        if (args.Length < 2) return Usage(2, S.Cli_NeedsName("remove"));
         var name = args[1];
         if (!ServiceRegistry.Exists(name))
         {
-            Console.Error.WriteLine($"Fehler: Der Dienst \"{name}\" existiert nicht.");
+            Console.Error.WriteLine(S.Cli_NotExists(name));
             return 2;
         }
         ServiceRegistry.Remove(name);
-        Console.WriteLine($"Dienst \"{name}\" wurde entfernt.");
+        Console.WriteLine(S.Cli_Removed(name));
         return 0;
     }
 
-    private static int Simple(string[] args, Action<string> action, string pastTense)
+    private static int Simple(string[] args, Action<string> action, Func<object?, string> message)
     {
-        if (args.Length < 2) return Usage(2, $"{args[0]} benötigt <Name>.");
+        if (args.Length < 2) return Usage(2, S.Cli_NeedsName(args[0]));
         action(args[1]);
-        Console.WriteLine($"Dienst \"{args[1]}\" wurde {pastTense}.");
+        Console.WriteLine(message(args[1]));
         return 0;
     }
 
     private static int Status(string[] args)
     {
-        if (args.Length < 2) return Usage(2, "status benötigt <Name>.");
+        if (args.Length < 2) return Usage(2, S.Cli_NeedsName("status"));
         var name = args[1];
 
         if (args.Contains("--json"))
@@ -177,39 +142,39 @@ internal static class Cli
         var info = ServiceRegistry.Query(name);
         if (info is null)
         {
-            Console.Error.WriteLine($"Fehler: Der Dienst \"{name}\" existiert nicht.");
+            Console.Error.WriteLine(S.Cli_NotExists(name));
             return 2;
         }
 
-        Console.WriteLine($"Name        : {info.Name}");
-        Console.WriteLine($"Anzeigename : {info.DisplayName}");
-        Console.WriteLine($"Status      : {info.StateText}");
-        Console.WriteLine($"Starttyp    : {info.StartupText}");
-        Console.WriteLine($"Konto       : {info.Account}");
-        Console.WriteLine($"Verwaltet   : {(info.ManagedByEasyService ? "ja (EasyService)" : "nein")}");
+        Console.WriteLine(S.Cli_St_Name(info.Name));
+        Console.WriteLine(S.Cli_St_DisplayName(info.DisplayName));
+        Console.WriteLine(S.Cli_St_Status(info.StateText));
+        Console.WriteLine(S.Cli_St_Startup(info.StartupText));
+        Console.WriteLine(S.Cli_St_Account(info.Account));
+        Console.WriteLine(S.Cli_St_Managed(info.ManagedByEasyService ? S.Cli_St_Yes : S.Cli_St_No));
 
         if (info.ManagedByEasyService && ServiceConfig.Load(info.Name) is { } c)
         {
-            Console.WriteLine($"Programm    : {c.Application} {c.AppParameters}".TrimEnd());
-            Console.WriteLine($"stdout      : {c.StdoutPath}");
-            Console.WriteLine($"stderr      : {c.StderrPath}");
+            Console.WriteLine(S.Cli_St_Program($"{c.Application} {c.AppParameters}".TrimEnd()));
+            Console.WriteLine(S.Cli_St_Stdout(c.StdoutPath));
+            Console.WriteLine(S.Cli_St_Stderr(c.StderrPath));
 
             if (ServiceState.Load(info.Name) is { } state)
             {
                 Console.WriteLine();
-                Console.WriteLine($"Anwendung   : {ServiceState.Describe(state.State)}"
-                                  + (state.ApplicationPid > 0 ? $" (PID {state.ApplicationPid})" : ""));
+                Console.WriteLine(S.Cli_St_Application(ServiceState.Describe(state.State)
+                    + (state.ApplicationPid > 0 ? $" ({S.Mon_Pid(state.ApplicationPid)})" : "")));
                 if (state.Uptime is { } up)
-                    Console.WriteLine($"Laufzeit    : {ServiceState.FormatDuration(up)}");
-                Console.WriteLine($"CPU / RAM   : {state.CpuPercent:0.##} % / {ServiceState.FormatBytes(state.WorkingSetBytes)}"
-                                  + (state.ProcessCount > 0 ? $" ({state.ProcessCount} Prozesse)" : ""));
-                Console.WriteLine($"Neustarts   : {state.RestartsLastHour} in der letzten Stunde, "
-                                  + $"{state.RestartsLastDay} an 24 h, {state.RestartCount} gesamt");
+                    Console.WriteLine(S.Cli_St_Uptime(ServiceState.FormatDuration(up)));
+                Console.WriteLine(S.Cli_St_CpuRam($"{state.CpuPercent:0.##}",
+                    ServiceState.FormatBytes(state.WorkingSetBytes))
+                    + (state.ProcessCount > 0 ? S.Cli_St_Processes(state.ProcessCount) : ""));
+                Console.WriteLine(S.Cli_St_Restarts(state.RestartsLastHour, state.RestartsLastDay, state.RestartCount));
                 if (state.LastExitCode is { } code)
-                    Console.WriteLine($"Letzter Exit: Code {code}"
-                                      + (state.LastExitUtc is { } t ? $" am {t.ToLocalTime():yyyy-MM-dd HH:mm:ss}" : ""));
+                    Console.WriteLine(S.Cli_St_LastExit(code)
+                        + (state.LastExitUtc is { } t ? S.Cli_St_LastExitAt($"{t.ToLocalTime():yyyy-MM-dd HH:mm:ss}") : ""));
                 if (!string.IsNullOrWhiteSpace(state.LastError))
-                    Console.WriteLine($"Letzter Fehler: {state.LastError}");
+                    Console.WriteLine(S.Cli_St_LastError(state.LastError));
             }
         }
         return info.IsRunning ? 0 : 3;
@@ -234,7 +199,7 @@ internal static class Cli
             return 0;
         }
 
-        if (index + 1 >= args.Length) return Usage(2, "--output benötigt einen Dateinamen.");
+        if (index + 1 >= args.Length) return Usage(2, S.Cli_OutputNeedsFile);
 
         // node_exporter may read the file at any moment, so replace it atomically.
         var path = args[index + 1];
@@ -243,18 +208,18 @@ internal static class Cli
         if (!string.IsNullOrEmpty(directory)) Directory.CreateDirectory(directory);
         File.WriteAllText(temp, text);
         File.Move(temp, path, overwrite: true);
-        Console.WriteLine($"{Monitoring.CheckAll().Count} Dienste nach {path} geschrieben.");
+        Console.WriteLine(S.Cli_MetricsWritten(Monitoring.CheckAll().Count, path));
         return 0;
     }
 
     private static int Check(string[] args)
     {
-        if (args.Length < 2) return Usage(2, "check benötigt <Name>.");
+        if (args.Length < 2) return Usage(2, S.Cli_NeedsName("check"));
 
         var result = Monitoring.Check(args[1]);
         if (result is null)
         {
-            Console.WriteLine($"EASYSERVICE UNBEKANNT - Für \"{args[1]}\" ist die Überwachung deaktiviert.");
+            Console.WriteLine(S.Cli_MonitoringOff(args[1]));
             return (int)CheckStatus.Unknown;
         }
 

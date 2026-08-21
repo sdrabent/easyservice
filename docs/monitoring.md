@@ -82,9 +82,12 @@ Datei `C:\ProgramData\checkmk\agent\local\easyservice.bat`:
 Ergebnis (eine Zeile je Dienst):
 
 ```
-0 EasyService_MeinDaemon uptime=86400s;;;0;|restarts_1h=0;3;10;0|cpu=2.5%;80;95;0;100|mem=140509184B;;;0|procs=2 Läuft seit 1d 0h, PID 1234, CPU 2.5 %, RAM 134 MB, 0 Neustarts/h
-2 EasyService_Importer uptime=3s;;;0;|restarts_1h=37;3;10;0|cpu=0%;80;95;0;100|mem=8192000B;;;0|procs=1 37 Neustarts in der letzten Stunde (kritisch ab 10) - Läuft seit 3s, PID 9876
+0 EasyService_MeinDaemon uptime=86400s;;;0;|restarts_1h=0;3;10;0|cpu=2.5%;80;95;0;100|mem=140509184B;;;0|procs=2 Running for 1d 0h, PID 1234, CPU 2.5 %, RAM 134 MB, 0 restarts/h
+2 EasyService_Importer uptime=3s;;;0;|restarts_1h=37;3;10;0|cpu=0%;80;95;0;100|mem=8192000B;;;0|procs=1 37 restarts in the last hour (critical from 10) - Running for 3s, PID 9876
 ```
+
+Der Meldungstext folgt der eingestellten Sprache (siehe unten); Statuscode, Item-Name und
+Perfdaten sind sprachunabhängig.
 
 Danach `cmk -II <host>` und `cmk -O` auf dem Checkmk-Server, und jeder Dienst erscheint
 als eigener Service mit Graphen für CPU, Speicher und Neustarts.
@@ -107,17 +110,27 @@ C:\ProgramData\EasyService\logs\*-stderr.log
  C ERROR
  W WARN
  I .*
-
-C:\ProgramData\EasyService\logs\*-easyservice.log
- C Start fehlgeschlagen
- C hart beendet
- W gedrosselt
- W Neustart
- I .*
 ```
 
-Die zweite Gruppe überwacht das Diagnoseprotokoll von EasyService selbst — damit meldet
-sich ein drosselnder Dienst auch dann, wenn seine Anwendung stumm abstürzt.
+Für das Diagnoseprotokoll von EasyService selbst (`*-easyservice.log`) gilt eine
+Einschränkung: dessen Meldungstexte folgen der eingestellten Sprache, Textmuster wären
+also nicht portabel. **Nutze dafür lieber die Ereignis-IDs** (siehe unten) — die sind
+sprachunabhängig und genau dafür da. Wer trotzdem die Datei überwachen will, sollte die
+Sprache maschinenweit auf Englisch festnageln:
+
+```cmd
+reg add HKLM\SOFTWARE\EasyService /v Language /t REG_SZ /d en /f
+```
+
+und dann auf den englischen Text matchen:
+
+```
+C:\ProgramData\EasyService\logs\*-easyservice.log
+ C could not be started
+ C terminating the process
+ W throttle window
+ I .*
+```
 
 Pfade und Plugin-Verzeichnis unterscheiden sich je nach Agent-Version; im Zweifel die
 [Checkmk-Dokumentation zur Logdatei-Überwachung](https://docs.checkmk.com/latest/en/monitoring_logfiles.html)
@@ -153,7 +166,7 @@ schtasks /create /tn "EasyService Metrics" /sc minute /mo 1 /ru SYSTEM ^
 Ausgabe:
 
 ```
-# HELP easyservice_restarts_1h Neustarts in der letzten Stunde
+# HELP easyservice_restarts_1h Restarts in the last hour
 # TYPE easyservice_restarts_1h gauge
 easyservice_restarts_1h{service="MeinDaemon"} 0
 easyservice_restarts_1h{service="Importer"} 37
@@ -217,7 +230,7 @@ etwa `$[?(@.service=='MeinDaemon')].restartsLastHour`.
 ```
 
 ```
-EASYSERVICE KRITISCH - 37 Neustarts in der letzten Stunde (kritisch ab 10) - Läuft seit 3s, PID 9876 | uptime=3s;;;0 restarts_1h=37;3;10;0 cpu=0%;80;95;0;100
+EASYSERVICE CRITICAL - 37 restarts in the last hour (critical from 10) - Running for 3s, PID 9876 | uptime=3s;;;0 restarts_1h=37;3;10;0 cpu=0%;80;95;0;100
 ```
 
 Exit-Code: `0` OK, `1` Warnung, `2` kritisch, `3` unbekannt — die übliche Plugin-Konvention,
@@ -267,7 +280,7 @@ Get-WinEvent -FilterHashtable @{ LogName='Application'; ProviderName='EasyServic
     "service": "MeinDaemon",
     "status": 0,
     "statusText": "OK",
-    "summary": "Läuft seit 1d 0h, PID 1234, CPU 2.5 %, RAM 134 MB, 0 Neustarts/h",
+    "summary": "Running for 1d 0h, PID 1234, CPU 2.5 %, RAM 134 MB, 0 restarts/h",
     "serviceRunning": true,
     "applicationState": "Running",
     "applicationPid": 1234,
@@ -286,6 +299,31 @@ Alle Zahlen nutzen den Punkt als Dezimaltrenner, unabhängig von der Systemsprac
 ein deutsches „2,5" würde jeden Parser zerlegen. Das ist durch einen Test abgesichert.
 
 Für einen einzelnen Dienst: `easyservice status <Name> --json`.
+
+---
+
+## Sprache der Ausgabe
+
+EasyService spricht Englisch und Deutsch. Welche Sprache eine Ausgabe verwendet, ergibt
+sich in dieser Reihenfolge:
+
+1. `HKCU\Software\EasyService\Language` — die Wahl im Menü **Sprache** der Oberfläche
+2. `HKLM\SOFTWARE\EasyService\Language` — maschinenweite Vorgabe
+3. die Sprache, in der Windows läuft
+
+Gültige Werte sind `en`, `de` und ein leerer Wert für „wie Windows".
+
+Für das Monitoring ist Punkt 2 der wichtige: die Checks laufen unter dem Konto des Agenten,
+nicht unter dem des Administrators, der sie eingerichtet hat. Wer englische Ausgaben auf
+einem deutschen Server will, setzt
+
+```cmd
+reg add HKLM\SOFTWARE\EasyService /v Language /t REG_SZ /d en /f
+```
+
+**Sprachunabhängig sind in jedem Fall:** Statuscodes (0/1/2/3), Item-Namen, Metriknamen,
+Perfdaten, JSON-Feldnamen und die Ereignis-IDs. Nur die Meldungstexte übersetzen sich.
+Alarme sollten deshalb auf Codes und IDs aufsetzen, nicht auf Text.
 
 ---
 

@@ -27,6 +27,7 @@ gleichermaßen „Wird ausgeführt" melden.*
 |---|---|---|---|
 | Beliebige Programme als Dienst | ✗ | ✓ | ✓ |
 | Grafische Oberfläche | ✗ | teilweise | **✓ vollständig** |
+| Englisch **und** Deutsch | ✗ | nur Englisch | **✓ beides** |
 | **Schnelleinrichtung mit Vorbelegung** | ✗ | ✗ | **✓** |
 | Dark Mode | ✗ | ✗ | ✓ |
 | stdout/stderr in Dateien | ✗ | ✓ | ✓ |
@@ -118,6 +119,23 @@ ein eigenes Zeitlimit:
 2. `WM_CLOSE` an alle Fenster der Anwendung
 3. `WM_QUIT` an alle Threads der Anwendung
 4. Harter Abbruch – wahlweise samt aller Kindprozesse
+
+### Sprache
+
+Die Oberfläche gibt es auf **Englisch und Deutsch**. Ohne Zutun folgt EasyService der
+Sprache, in der Windows läuft; über das Menü **Sprache** lässt sie sich fest einstellen.
+
+Für Server, auf denen das Monitoring unter einem anderen Konto läuft als der einrichtende
+Administrator, gibt es eine maschinenweite Vorgabe:
+
+```cmd
+reg add HKLM\SOFTWARE\EasyService /v Language /t REG_SZ /d en /f
+```
+
+Statuscodes, Metriknamen, Perfdaten, JSON-Felder und Ereignis-IDs sind immer
+sprachunabhängig — nur die Meldungstexte übersetzen sich. Übersetzungen liegen als
+`.resx` unter `src/EasyService/Resources/` und lassen sich mit jedem gängigen
+Übersetzungswerkzeug bearbeiten; weitere Sprachen sind willkommen.
 
 ### Live-Protokollansicht
 
@@ -281,6 +299,10 @@ P/Invoke (`advapi32`, `kernel32`, `user32`).
 dotnet run --project tests/EasyService.Tests -c Release
 ```
 
+Die Tests prüfen unter anderem, dass jeder Text in beiden Sprachen existiert und dabei
+seine Platzhalter behält — eine verlorene `{0}` wäre sonst erst zur Laufzeit als
+FormatException aufgefallen.
+
 Die Tests steuern den Supervisor direkt an und brauchen weder Administratorrechte noch
 einen installierten Dienst. Geprüft werden Ausgabeumleitung, Neustart-Richtlinie,
 Exit-Code-Aktionen, Rotation samt Archivbegrenzung, das Beenden laufender Anwendungen,
@@ -351,5 +373,12 @@ terminate), job-object based process-tree cleanup, service accounts with automat
 `SeServiceLogonRight` assignment, dependencies, environment variables, priority and CPU
 affinity — plus a command line for scripted deployments.
 
-The user interface and log messages are in German. No NuGet dependencies; everything talks
-to Windows directly through P/Invoke. Licensed under MIT.
+The interface speaks **English and German** and follows the language Windows runs in;
+the **Language** menu pins it, and `HKLM\SOFTWARE\EasyService\Language` sets a
+machine-wide default for monitoring output. Status codes, metric names, perfdata, JSON
+fields and event IDs never translate — only the human-readable messages do, so alerts
+keep working across languages. Translations live as `.resx` files under
+`src/EasyService/Resources/`; further languages are welcome.
+
+No NuGet dependencies; everything talks to Windows directly through P/Invoke.
+Licensed under MIT.

@@ -1,5 +1,7 @@
 using System.Diagnostics;
 
+using EasyService.Resources;
+
 namespace EasyService.Core;
 
 /// <summary>
@@ -105,17 +107,17 @@ public static class EventLogSink
 
     public static string Describe(int eventId) => eventId switch
     {
-        (int)EasyServiceEvent.SupervisorStarted => "Überwachung gestartet",
-        (int)EasyServiceEvent.ApplicationStarted => "Anwendung gestartet",
-        (int)EasyServiceEvent.ApplicationExited => "Anwendung beendet",
-        (int)EasyServiceEvent.ApplicationRestarting => "Anwendung wird neu gestartet",
-        (int)EasyServiceEvent.RestartThrottled => "Neustart gedrosselt",
-        (int)EasyServiceEvent.ApplicationStartFailed => "Start fehlgeschlagen",
-        (int)EasyServiceEvent.ServiceStopping => "Dienst wird beendet",
-        (int)EasyServiceEvent.StoppedByExitPolicy => "Durch Beenden-Aktion gestoppt",
-        (int)EasyServiceEvent.ApplicationTerminated => "Anwendung hart beendet",
-        (int)EasyServiceEvent.ConfigurationProblem => "Konfigurationsproblem",
-        (int)EasyServiceEvent.LoggingProblem => "Protokollierungsproblem",
+        (int)EasyServiceEvent.SupervisorStarted => S.Evt_SupervisorStarted,
+        (int)EasyServiceEvent.ApplicationStarted => S.Evt_ApplicationStarted,
+        (int)EasyServiceEvent.ApplicationExited => S.Evt_ApplicationExited,
+        (int)EasyServiceEvent.ApplicationRestarting => S.Evt_ApplicationRestarting,
+        (int)EasyServiceEvent.RestartThrottled => S.Evt_RestartThrottled,
+        (int)EasyServiceEvent.ApplicationStartFailed => S.Evt_ApplicationStartFailed,
+        (int)EasyServiceEvent.ServiceStopping => S.Evt_ServiceStopping,
+        (int)EasyServiceEvent.StoppedByExitPolicy => S.Evt_StoppedByExitPolicy,
+        (int)EasyServiceEvent.ApplicationTerminated => S.Evt_ApplicationTerminated,
+        (int)EasyServiceEvent.ConfigurationProblem => S.Evt_ConfigurationProblem,
+        (int)EasyServiceEvent.LoggingProblem => S.Evt_LoggingProblem,
         _ => "",
     };
 }

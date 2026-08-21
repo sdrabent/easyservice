@@ -1,5 +1,7 @@
 using Microsoft.Win32;
 
+using EasyService.Resources;
+
 namespace EasyService.Core;
 
 public enum StartupType
@@ -148,33 +150,33 @@ public sealed class ServiceConfig
     public IEnumerable<string> Validate(bool isNew)
     {
         if (string.IsNullOrWhiteSpace(ServiceName))
-            yield return "Der Dienstname darf nicht leer sein.";
+            yield return S.Cfg_Err_NameEmpty;
         else if (ServiceName.IndexOfAny(new[] { '/', '\\' }) >= 0)
-            yield return @"Der Dienstname darf keine / oder \ enthalten.";
+            yield return S.Cfg_Err_NameSlash;
         else if (ServiceName.Length > 256)
-            yield return "Der Dienstname ist zu lang (max. 256 Zeichen).";
+            yield return S.Cfg_Err_NameTooLong;
 
         if (string.IsNullOrWhiteSpace(Application))
-            yield return "Es wurde kein Programm (Pfad) angegeben.";
+            yield return S.Cfg_Err_NoApplication;
         else if (!File.Exists(System.Environment.ExpandEnvironmentVariables(Application)))
-            yield return $"Programm nicht gefunden: {Application}";
+            yield return S.Cfg_Err_AppNotFound(Application);
 
         if (!string.IsNullOrWhiteSpace(AppDirectory) &&
             !Directory.Exists(System.Environment.ExpandEnvironmentVariables(AppDirectory)))
-            yield return $"Startverzeichnis nicht gefunden: {AppDirectory}";
+            yield return S.Cfg_Err_DirNotFound(AppDirectory);
 
         if (Logon == LogonType.Account && string.IsNullOrWhiteSpace(AccountName))
-            yield return "Für die Anmeldung als Konto muss ein Kontoname angegeben werden.";
+            yield return S.Cfg_Err_AccountRequired;
 
         foreach (var e in Environment)
         {
             if (string.IsNullOrWhiteSpace(e)) continue;
             if (!e.Contains('='))
-                yield return $"Ungültige Umgebungsvariable (erwartet NAME=WERT): {e}";
+                yield return S.Cfg_Err_BadEnvironment(e);
         }
 
         if (isNew && ServiceRegistry.Exists(ServiceName))
-            yield return $"Ein Dienst mit dem Namen \"{ServiceName}\" existiert bereits.";
+            yield return S.Svc_Err_Exists(ServiceName);
     }
 
     // ------------------------------------------------------------- persistence
@@ -182,7 +184,7 @@ public sealed class ServiceConfig
     public void Save()
     {
         using var key = Registry.LocalMachine.CreateSubKey($@"{ServicesKey}\{ServiceName}{ParametersKeySuffix}", true)
-                        ?? throw new IOException($"Registry-Schlüssel für {ServiceName} konnte nicht geöffnet werden.");
+                        ?? throw new IOException(S.Svc_Err_RegistryOpen(ServiceName));
 
         key.SetValue("Application", Application, RegistryValueKind.ExpandString);
         key.SetValue("AppDirectory", AppDirectory, RegistryValueKind.ExpandString);

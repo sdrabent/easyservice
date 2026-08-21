@@ -1,5 +1,7 @@
 using EasyService.Core;
 
+using EasyService.Resources;
+
 namespace EasyService.Gui;
 
 /// <summary>
@@ -22,54 +24,56 @@ public sealed class ServiceEditorForm : Form
     // Details
     private readonly TextBox _displayName = new();
     private readonly TextBox _description = new();
-    private readonly ComboBox _startup = Ui.Combo("Automatisch", "Automatisch (verzögerter Start)", "Manuell", "Deaktiviert");
-    private readonly ComboBox _priority = Ui.Combo("Echtzeit", "Hoch", "Über normal", "Normal", "Unter normal", "Niedrig");
+    private readonly ComboBox _startup = Ui.Combo(S.Svc_Startup_Automatic, S.Editor_Startup_AutoDelayed, S.Svc_Startup_Manual, S.Svc_Startup_Disabled);
+    private readonly ComboBox _priority = Ui.Combo(S.Editor_Prio_Realtime, S.Editor_Prio_High, S.Editor_Prio_AboveNormal,
+                                                  S.Editor_Prio_Normal, S.Editor_Prio_BelowNormal, S.Editor_Prio_Idle);
     private readonly CheckedListBox _affinity = new() { CheckOnClick = true, Height = 120, ColumnWidth = 90, MultiColumn = true };
-    private readonly CheckBox _allProcessors = new() { Text = "Alle Prozessoren verwenden", Checked = true, AutoSize = true };
+    private readonly CheckBox _allProcessors = new() { Text = S.Editor_Chk_AllProcessors, Checked = true, AutoSize = true };
     private readonly NumericUpDown _startupDelay = Ui.Spin(0, 600_000, 0, 500);
 
     // Anmelden
-    private readonly ComboBox _logon = Ui.Combo("Lokales Systemkonto", "Lokaler Dienst", "Netzwerkdienst", "Dieses Konto");
+    private readonly ComboBox _logon = Ui.Combo(S.Editor_Logon_LocalSystem, S.Editor_Logon_LocalService,
+                                               S.Editor_Logon_NetworkService, S.Editor_Logon_Account);
     private readonly TextBox _account = new();
     private readonly TextBox _password = new() { UseSystemPasswordChar = true };
-    private readonly CheckBox _interact = new() { Text = "Datenaustausch zwischen Dienst und Desktop zulassen", AutoSize = true };
+    private readonly CheckBox _interact = new() { Text = S.Editor_Chk_Interact, AutoSize = true };
 
     // Abhängigkeiten / Umgebung
     private readonly TextBox _dependencies = new() { Multiline = true, ScrollBars = ScrollBars.Vertical, Height = 150 };
     private readonly TextBox _environment = new() { Multiline = true, ScrollBars = ScrollBars.Vertical, Height = 150 };
-    private readonly CheckBox _replaceEnvironment = new() { Text = "Vorhandene Umgebung vollständig ersetzen", AutoSize = true };
+    private readonly CheckBox _replaceEnvironment = new() { Text = S.Editor_Chk_ReplaceEnvironment, AutoSize = true };
 
     // Protokollierung
     private readonly TextBox _stdout;
     private readonly TextBox _stderr;
-    private readonly CheckBox _append = new() { Text = "An vorhandene Dateien anhängen (statt beim Start zu leeren)", AutoSize = true };
-    private readonly CheckBox _timestamp = new() { Text = "Jede Zeile mit Zeitstempel versehen", AutoSize = true };
-    private readonly CheckBox _rotate = new() { Text = "Protokolle automatisch rotieren", AutoSize = true };
+    private readonly CheckBox _append = new() { Text = S.Editor_Chk_Append, AutoSize = true };
+    private readonly CheckBox _timestamp = new() { Text = S.Editor_Chk_Timestamp, AutoSize = true };
+    private readonly CheckBox _rotate = new() { Text = S.Editor_Chk_Rotate, AutoSize = true };
     private readonly NumericUpDown _rotateMb = Ui.Spin(1, 10_240, 10);
     private readonly NumericUpDown _rotateHours = Ui.Spin(0, 8760, 0);
     private readonly NumericUpDown _rotateKeep = Ui.Spin(0, 999, 10);
-    private readonly CheckBox _logEvents = new() { Text = "Ereignisse von EasyService protokollieren (Start, Absturz, Neustart)", AutoSize = true, Checked = true };
+    private readonly CheckBox _logEvents = new() { Text = S.Editor_Chk_LogEvents, AutoSize = true, Checked = true };
 
     // Beenden-Aktionen
-    private readonly ComboBox _defaultExit = Ui.Combo("Anwendung neu starten", "Nichts tun (Dienst bleibt aktiv)", "Dienst beenden");
+    private readonly ComboBox _defaultExit = Ui.Combo(S.Editor_Exit_Restart, S.Editor_Exit_Ignore, S.Editor_Exit_Stop);
     private readonly NumericUpDown _restartDelay = Ui.Spin(0, 3_600_000, 1000, 500);
     private readonly NumericUpDown _throttle = Ui.Spin(0, 3_600_000, 5000, 500);
     private readonly ListBox _exitCodes = new() { Height = 130 };
     private readonly NumericUpDown _exitCode = Ui.Spin(0, int.MaxValue, 0);
-    private readonly ComboBox _exitAction = Ui.Combo("Neu starten", "Nichts tun", "Dienst beenden");
+    private readonly ComboBox _exitAction = Ui.Combo(S.Editor_ExitShort_Restart, S.Editor_ExitShort_Ignore, S.Editor_ExitShort_Stop);
 
     // Herunterfahren
-    private readonly CheckBox _stopConsole = new() { Text = "Strg+C senden (Konsolenanwendungen)", AutoSize = true, Checked = true };
+    private readonly CheckBox _stopConsole = new() { Text = S.Editor_Chk_StopConsole, AutoSize = true, Checked = true };
     private readonly NumericUpDown _stopConsoleMs = Ui.Spin(0, 600_000, 1500, 250);
-    private readonly CheckBox _stopWindow = new() { Text = "WM_CLOSE an Fenster senden", AutoSize = true, Checked = true };
+    private readonly CheckBox _stopWindow = new() { Text = S.Editor_Chk_StopWindow, AutoSize = true, Checked = true };
     private readonly NumericUpDown _stopWindowMs = Ui.Spin(0, 600_000, 1500, 250);
-    private readonly CheckBox _stopThreads = new() { Text = "WM_QUIT an Threads senden", AutoSize = true, Checked = true };
+    private readonly CheckBox _stopThreads = new() { Text = S.Editor_Chk_StopThreads, AutoSize = true, Checked = true };
     private readonly NumericUpDown _stopThreadsMs = Ui.Spin(0, 600_000, 1500, 250);
-    private readonly CheckBox _stopTerminate = new() { Text = "Prozess notfalls hart beenden", AutoSize = true, Checked = true };
-    private readonly CheckBox _killTree = new() { Text = "Auch alle Kindprozesse beenden (Prozessbaum)", AutoSize = true, Checked = true };
+    private readonly CheckBox _stopTerminate = new() { Text = S.Editor_Chk_StopTerminate, AutoSize = true, Checked = true };
+    private readonly CheckBox _killTree = new() { Text = S.Editor_Chk_KillTree, AutoSize = true, Checked = true };
 
     // Überwachung
-    private readonly CheckBox _monEnabled = new() { Text = "Diesen Dienst an das Monitoring melden", AutoSize = true, Checked = true };
+    private readonly CheckBox _monEnabled = new() { Text = S.Editor_Chk_MonitoringEnabled, AutoSize = true, Checked = true };
     private readonly NumericUpDown _warnRestarts = Ui.Spin(0, 10_000, 3);
     private readonly NumericUpDown _critRestarts = Ui.Spin(0, 10_000, 10);
     private readonly NumericUpDown _warnCpu = Ui.Spin(0, 100, 0);
@@ -85,14 +89,14 @@ public sealed class ServiceEditorForm : Form
         BackColor = SystemColors.Window,
     };
 
-    private readonly CheckBox _startAfterSave = new() { Text = "Dienst nach dem Anlegen starten", AutoSize = true, Checked = true };
+    private readonly CheckBox _startAfterSave = new() { Text = S.Editor_Chk_StartAfterSave, AutoSize = true, Checked = true };
 
     public ServiceEditorForm(ServiceConfig config, bool isNew)
     {
         Config = config;
         _isNew = isNew;
 
-        Text = isNew ? "Neuen Dienst anlegen" : $"Dienst bearbeiten - {config.ServiceName}";
+        Text = isNew ? S.Editor_Title_New : S.Editor_Title_Edit(config.ServiceName);
         Icon = Ui.AppIcon;
         StartPosition = FormStartPosition.CenterParent;
         MinimumSize = new Size(720, 620);
@@ -105,8 +109,8 @@ public sealed class ServiceEditorForm : Form
 
         (var appPanel, _application) = Ui.BrowseRow(folder: false);
         (var dirPanel, _appDirectory) = Ui.BrowseRow(folder: true);
-        (var outPanel, _stdout) = Ui.BrowseRow(folder: false, "Protokolldateien (*.log;*.txt)|*.log;*.txt|Alle Dateien (*.*)|*.*");
-        (var errPanel, _stderr) = Ui.BrowseRow(folder: false, "Protokolldateien (*.log;*.txt)|*.log;*.txt|Alle Dateien (*.*)|*.*");
+        (var outPanel, _stdout) = Ui.BrowseRow(folder: false, S.Common_FilterLog);
+        (var errPanel, _stderr) = Ui.BrowseRow(folder: false, S.Common_FilterLog);
 
         var tabs = new TabControl { Dock = DockStyle.Fill, Padding = new Point(12, 6) };
         tabs.TabPages.Add(BuildApplicationTab(appPanel, dirPanel));
@@ -119,8 +123,8 @@ public sealed class ServiceEditorForm : Form
         tabs.TabPages.Add(BuildMonitoringTab());
         tabs.TabPages.Add(BuildShutdownTab());
 
-        var ok = new Button { Text = isNew ? "Dienst anlegen" : "Speichern", Width = 130, Height = 30, DialogResult = DialogResult.None };
-        var cancel = new Button { Text = "Abbrechen", Width = 100, Height = 30, DialogResult = DialogResult.Cancel };
+        var ok = new Button { Text = isNew ? S.Editor_Btn_Create : S.Common_Save, Width = 130, Height = 30, DialogResult = DialogResult.None };
+        var cancel = new Button { Text = S.Common_Cancel, Width = 100, Height = 30, DialogResult = DialogResult.Cancel };
         ok.Click += (_, _) => OnSave();
 
         var buttons = new FlowLayoutPanel
@@ -151,16 +155,15 @@ public sealed class ServiceEditorForm : Form
 
     private TabPage BuildApplicationTab(Control appPanel, Control dirPanel)
     {
-        var page = new TabPage("Anwendung");
+        var page = new TabPage(S.Editor_Tab_Application);
         var p = Ui.FormPanel();
 
-        Ui.AddRow(p, "Dienstname:", _serviceName);
-        Ui.AddFullRow(p, Ui.Hint("Interner Name, unter dem Windows den Dienst führt. Nach dem Anlegen nicht mehr änderbar."));
-        Ui.AddRow(p, "Programm:", appPanel);
-        Ui.AddRow(p, "Startverzeichnis:", dirPanel);
-        Ui.AddRow(p, "Argumente:", _appParameters);
-        Ui.AddFullRow(p, Ui.Hint("Argumente werden unverändert an das Programm übergeben. " +
-                                 "Pfade mit Leerzeichen bitte in Anführungszeichen setzen."));
+        Ui.AddRow(p, S.Editor_Lbl_ServiceName, _serviceName);
+        Ui.AddFullRow(p, Ui.Hint(S.Editor_Hint_ServiceName));
+        Ui.AddRow(p, S.Editor_Lbl_Program, appPanel);
+        Ui.AddRow(p, S.Editor_Lbl_Directory, dirPanel);
+        Ui.AddRow(p, S.Editor_Lbl_Arguments, _appParameters);
+        Ui.AddFullRow(p, Ui.Hint(S.Editor_Hint_Arguments));
 
         _application.TextChanged += (_, _) =>
         {
@@ -181,22 +184,22 @@ public sealed class ServiceEditorForm : Form
 
     private TabPage BuildDetailsTab()
     {
-        var page = new TabPage("Details");
+        var page = new TabPage(S.Editor_Tab_Details);
         var p = Ui.FormPanel();
 
-        Ui.AddRow(p, "Anzeigename:", _displayName);
-        Ui.AddRow(p, "Beschreibung:", _description);
-        Ui.AddRow(p, "Starttyp:", _startup);
-        Ui.AddRow(p, "Startverzögerung (ms):", _startupDelay);
-        Ui.AddFullRow(p, Ui.Hint("Wartezeit, bevor die Anwendung nach dem Dienststart erstmals gestartet wird."));
+        Ui.AddRow(p, S.Editor_Lbl_DisplayName, _displayName);
+        Ui.AddRow(p, S.Editor_Lbl_Description, _description);
+        Ui.AddRow(p, S.Editor_Lbl_Startup, _startup);
+        Ui.AddRow(p, S.Editor_Lbl_StartupDelay, _startupDelay);
+        Ui.AddFullRow(p, Ui.Hint(S.Editor_Hint_StartupDelay));
 
-        Ui.AddSpacer(p, "Prozess");
-        Ui.AddRow(p, "Priorität:", _priority);
+        Ui.AddSpacer(p, S.Editor_Group_Process);
+        Ui.AddRow(p, S.Editor_Lbl_Priority, _priority);
         Ui.AddFullRow(p, _allProcessors);
-        Ui.AddRow(p, "Prozessoren:", _affinity);
+        Ui.AddRow(p, S.Editor_Lbl_Processors, _affinity);
 
         for (var i = 0; i < System.Environment.ProcessorCount && i < 64; i++)
-            _affinity.Items.Add($"CPU {i}", true);
+            _affinity.Items.Add(S.Editor_Cpu(i), true);
         _allProcessors.CheckedChanged += (_, _) => _affinity.Enabled = !_allProcessors.Checked;
 
         page.Controls.Add(p);
@@ -205,20 +208,18 @@ public sealed class ServiceEditorForm : Form
 
     private TabPage BuildLogonTab()
     {
-        var page = new TabPage("Anmelden");
+        var page = new TabPage(S.Editor_Tab_LogOn);
         var p = Ui.FormPanel();
 
-        Ui.AddRow(p, "Anmelden als:", _logon);
-        Ui.AddRow(p, "Konto:", _account);
-        Ui.AddFullRow(p, Ui.Hint(@"Format: DOMÄNE\Benutzer oder .\Benutzer für lokale Konten. " +
-                                 "EasyService vergibt dem Konto automatisch das Recht \"Als Dienst anmelden\"."));
-        Ui.AddRow(p, "Kennwort:", _password);
+        Ui.AddRow(p, S.Editor_Lbl_LogonAs, _logon);
+        Ui.AddRow(p, S.Editor_Lbl_Account, _account);
+        Ui.AddFullRow(p, Ui.Hint(S.Editor_Hint_Account));
+        Ui.AddRow(p, S.Editor_Lbl_Password, _password);
         if (!_isNew)
-            Ui.AddFullRow(p, Ui.Hint("Leer lassen, um das gespeicherte Kennwort beizubehalten."));
+            Ui.AddFullRow(p, Ui.Hint(S.Editor_Hint_KeepPassword));
         Ui.AddSpacer(p);
         Ui.AddFullRow(p, _interact);
-        Ui.AddFullRow(p, Ui.Hint("Nur mit dem lokalen Systemkonto möglich. Moderne Windows-Versionen isolieren " +
-                                 "Dienste in Sitzung 0; Fenster der Anwendung sind für angemeldete Benutzer nicht sichtbar."));
+        Ui.AddFullRow(p, Ui.Hint(S.Editor_Hint_Interact));
 
         page.Controls.Add(p);
         return page;
@@ -226,14 +227,13 @@ public sealed class ServiceEditorForm : Form
 
     private TabPage BuildDependenciesTab()
     {
-        var page = new TabPage("Abhängigkeiten");
+        var page = new TabPage(S.Editor_Tab_Dependencies);
         var p = Ui.FormPanel();
 
-        Ui.AddFullRow(p, Ui.Hint("Dienste, die vor diesem Dienst laufen müssen - ein Name pro Zeile. " +
-                                 "Windows startet den Dienst erst, wenn alle genannten Dienste laufen."));
+        Ui.AddFullRow(p, Ui.Hint(S.Editor_Hint_Dependencies));
         Ui.AddFullRow(p, _dependencies);
 
-        var pick = new Button { Text = "Dienste auswählen...", AutoSize = true };
+        var pick = new Button { Text = S.Editor_Btn_PickServices, AutoSize = true };
         pick.Click += (_, _) =>
         {
             using var dlg = new ServicePickerDialog(_dependencies.Lines);
@@ -248,15 +248,13 @@ public sealed class ServiceEditorForm : Form
 
     private TabPage BuildEnvironmentTab()
     {
-        var page = new TabPage("Umgebung");
+        var page = new TabPage(S.Editor_Tab_Environment);
         var p = Ui.FormPanel();
 
-        Ui.AddFullRow(p, Ui.Hint("Zusätzliche Umgebungsvariablen für die Anwendung - eine pro Zeile im Format NAME=WERT. " +
-                                 "Bereits vorhandene Variablen wie %PATH% können darin verwendet werden."));
+        Ui.AddFullRow(p, Ui.Hint(S.Editor_Hint_Environment));
         Ui.AddFullRow(p, _environment);
         Ui.AddFullRow(p, _replaceEnvironment);
-        Ui.AddFullRow(p, Ui.Hint("Achtung: Beim Ersetzen erhält die Anwendung ausschließlich die oben genannten Variablen. " +
-                                 "Ohne PATH und SystemRoot starten viele Programme nicht."));
+        Ui.AddFullRow(p, Ui.Hint(S.Editor_Hint_ReplaceEnvironment));
 
         page.Controls.Add(p);
         return page;
@@ -264,25 +262,24 @@ public sealed class ServiceEditorForm : Form
 
     private TabPage BuildLoggingTab(Control outPanel, Control errPanel)
     {
-        var page = new TabPage("Protokollierung");
+        var page = new TabPage(S.Editor_Tab_Logging);
         var p = Ui.FormPanel();
 
-        Ui.AddFullRow(p, Ui.Hint("Alles, was die Anwendung auf stdout und stderr schreibt, landet in diesen Dateien. " +
-                                 "Zeigen beide Felder auf dieselbe Datei, werden die Ströme zusammengeführt."));
-        Ui.AddRow(p, "Ausgabe (stdout):", outPanel);
-        Ui.AddRow(p, "Fehler (stderr):", errPanel);
+        Ui.AddFullRow(p, Ui.Hint(S.Editor_Hint_Logging));
+        Ui.AddRow(p, S.Editor_Lbl_Stdout, outPanel);
+        Ui.AddRow(p, S.Editor_Lbl_Stderr, errPanel);
         Ui.AddFullRow(p, _append);
         Ui.AddFullRow(p, _timestamp);
 
-        Ui.AddSpacer(p, "Rotation");
+        Ui.AddSpacer(p, S.Editor_Group_Rotation);
         Ui.AddFullRow(p, _rotate);
-        Ui.AddRow(p, "Rotieren ab (MB):", _rotateMb);
-        Ui.AddRow(p, "Rotieren alle (Stunden):", _rotateHours);
-        Ui.AddFullRow(p, Ui.Hint("0 Stunden = nur nach Größe rotieren."));
-        Ui.AddRow(p, "Archive behalten:", _rotateKeep);
-        Ui.AddFullRow(p, Ui.Hint("0 = alte Protokolle nie löschen."));
+        Ui.AddRow(p, S.Editor_Lbl_RotateMb, _rotateMb);
+        Ui.AddRow(p, S.Editor_Lbl_RotateHours, _rotateHours);
+        Ui.AddFullRow(p, Ui.Hint(S.Editor_Hint_RotateHours));
+        Ui.AddRow(p, S.Editor_Lbl_RotateKeep, _rotateKeep);
+        Ui.AddFullRow(p, Ui.Hint(S.Editor_Hint_RotateKeep));
 
-        Ui.AddSpacer(p, "Diagnose");
+        Ui.AddSpacer(p, S.Editor_Group_Diagnostics);
         Ui.AddFullRow(p, _logEvents);
 
         _rotate.CheckedChanged += (_, _) =>
@@ -294,33 +291,30 @@ public sealed class ServiceEditorForm : Form
 
     private TabPage BuildExitTab()
     {
-        var page = new TabPage("Beenden-Aktionen");
+        var page = new TabPage(S.Editor_Tab_Exit);
         var p = Ui.FormPanel();
 
-        Ui.AddFullRow(p, Ui.Hint("Was soll passieren, wenn sich die Anwendung von selbst beendet?"));
-        Ui.AddRow(p, "Standardaktion:", _defaultExit);
-        Ui.AddRow(p, "Verzögerung (ms):", _restartDelay);
-        Ui.AddRow(p, "Throttle-Fenster (ms):", _throttle);
-        Ui.AddFullRow(p, Ui.Hint("Beendet sich die Anwendung schneller als das Throttle-Fenster, verdoppelt EasyService " +
-                                 "die Wartezeit vor jedem weiteren Versuch (maximal 60 s). Das verhindert Neustart-Schleifen " +
-                                 "bei einer dauerhaft fehlerhaften Konfiguration."));
+        Ui.AddFullRow(p, Ui.Hint(S.Editor_Hint_Exit));
+        Ui.AddRow(p, S.Editor_Lbl_DefaultExit, _defaultExit);
+        Ui.AddRow(p, S.Editor_Lbl_RestartDelay, _restartDelay);
+        Ui.AddRow(p, S.Editor_Lbl_Throttle, _throttle);
+        Ui.AddFullRow(p, Ui.Hint(S.Editor_Hint_Throttle));
 
-        Ui.AddSpacer(p, "Aktionen für einzelne Exit-Codes");
+        Ui.AddSpacer(p, S.Editor_Group_ExitCodes);
         Ui.AddFullRow(p, _exitCodes);
 
         var row = new FlowLayoutPanel { Height = 34, AutoSize = true, FlowDirection = FlowDirection.LeftToRight, WrapContents = false };
         _exitCode.Width = 110;
         _exitAction.Width = 160;
-        var add = new Button { Text = "Hinzufügen", AutoSize = true };
-        var del = new Button { Text = "Entfernen", AutoSize = true };
-        row.Controls.Add(new Label { Text = "Exit-Code:", AutoSize = true, Margin = new Padding(0, 8, 4, 0) });
+        var add = new Button { Text = S.Editor_Btn_Add, AutoSize = true };
+        var del = new Button { Text = S.Editor_Btn_RemoveEntry, AutoSize = true };
+        row.Controls.Add(new Label { Text = S.Editor_Lbl_ExitCode, AutoSize = true, Margin = new Padding(0, 8, 4, 0) });
         row.Controls.Add(_exitCode);
         row.Controls.Add(_exitAction);
         row.Controls.Add(add);
         row.Controls.Add(del);
         Ui.AddFullRow(p, row);
-        Ui.AddFullRow(p, Ui.Hint("Beispiel: Exit-Code 0 auf \"Dienst beenden\" setzen, damit ein sauber beendetes " +
-                                 "Programm nicht endlos neu gestartet wird."));
+        Ui.AddFullRow(p, Ui.Hint(S.Editor_Hint_ExitCodes));
 
         add.Click += (_, _) =>
         {
@@ -343,35 +337,32 @@ public sealed class ServiceEditorForm : Form
 
     private TabPage BuildMonitoringTab()
     {
-        var page = new TabPage("Überwachung");
+        var page = new TabPage(S.Editor_Tab_Monitoring);
         var p = Ui.FormPanel();
 
-        Ui.AddFullRow(p, Ui.Hint(
-            "Windows meldet einen Dienst als \"wird ausgeführt\", solange EasyService selbst läuft - auch " +
-            "wenn die Anwendung dahinter im Minutentakt abstürzt. Deshalb bewertet EasyService zusätzlich " +
-            "Neustarthäufigkeit, CPU und Speicher und gibt das Ergebnis an das Monitoring weiter."));
+        Ui.AddFullRow(p, Ui.Hint(S.Editor_Hint_Monitoring));
         Ui.AddFullRow(p, _monEnabled);
 
-        Ui.AddSpacer(p, "Schwellwerte");
-        Ui.AddFullRow(p, Ui.Hint("0 bedeutet: diesen Wert nicht prüfen."));
-        Ui.AddRow(p, "Neustarts/Stunde - Warnung:", _warnRestarts);
-        Ui.AddRow(p, "Neustarts/Stunde - Kritisch:", _critRestarts);
-        Ui.AddRow(p, "CPU in % - Warnung:", _warnCpu);
-        Ui.AddRow(p, "CPU in % - Kritisch:", _critCpu);
-        Ui.AddFullRow(p, Ui.Hint("100 % bedeutet: alle Kerne der Maschine voll ausgelastet."));
-        Ui.AddRow(p, "Arbeitsspeicher MB - Warnung:", _warnMemory);
-        Ui.AddRow(p, "Arbeitsspeicher MB - Kritisch:", _critMemory);
-        Ui.AddFullRow(p, Ui.Hint("Gemessen wird der gesamte Prozessbaum, nicht nur der Hauptprozess."));
+        Ui.AddSpacer(p, S.Editor_Group_Thresholds);
+        Ui.AddFullRow(p, Ui.Hint(S.Editor_Hint_ZeroOff));
+        Ui.AddRow(p, S.Editor_Lbl_WarnRestarts, _warnRestarts);
+        Ui.AddRow(p, S.Editor_Lbl_CritRestarts, _critRestarts);
+        Ui.AddRow(p, S.Editor_Lbl_WarnCpu, _warnCpu);
+        Ui.AddRow(p, S.Editor_Lbl_CritCpu, _critCpu);
+        Ui.AddFullRow(p, Ui.Hint(S.Editor_Hint_Cpu100));
+        Ui.AddRow(p, S.Editor_Lbl_WarnMemory, _warnMemory);
+        Ui.AddRow(p, S.Editor_Lbl_CritMemory, _critMemory);
+        Ui.AddFullRow(p, Ui.Hint(S.Editor_Hint_Memory));
 
-        Ui.AddSpacer(p, "Anbindung an das Monitoring");
+        Ui.AddSpacer(p, S.Editor_Group_Integration);
         Ui.AddFullRow(p, _integration);
         _integration.Font = Ui.MonoFont;
 
-        var copy = new Button { Text = "In die Zwischenablage kopieren", AutoSize = true };
+        var copy = new Button { Text = S.Editor_Btn_Copy, AutoSize = true };
         copy.Click += (_, _) =>
         {
             try { Clipboard.SetText(_integration.Text); }
-            catch (Exception e) { Ui.ShowError(this, "Zwischenablage", e); }
+            catch (Exception e) { Ui.ShowError(this, S.Common_Clipboard, e); }
         };
         Ui.AddFullRow(p, copy);
 
@@ -385,48 +376,47 @@ public sealed class ServiceEditorForm : Form
     private void RefreshIntegrationText()
     {
         var exe = Core.ServiceRegistry.ExecutablePath;
-        var name = _serviceName.Text.Trim().Length > 0 ? _serviceName.Text.Trim() : "<Dienstname>";
+        var name = _serviceName.Text.Trim().Length > 0 ? _serviceName.Text.Trim() : S.Editor_Lbl_ServiceName;
         var nl = System.Environment.NewLine;
 
         _integration.Text = string.Join(nl, new[]
         {
-            "Checkmk - alle überwachten Dienste in einem Local Check:",
-            @"  Datei: C:\ProgramData\checkmk\agent\local\easyservice.bat",
-            $"  Inhalt: @\"{exe}\" checkmk",
+            S.Editor_Integration_Checkmk,
+            S.Editor_Integration_File(@"C:\ProgramData\checkmk\agent\local\easyservice.bat"),
+            S.Editor_Integration_Content($"@\"{exe}\" checkmk"),
             "",
-            "Prometheus - Textfile-Collector des node_exporter, z. B. minütlich per Aufgabenplanung:",
+            S.Editor_Integration_Prometheus,
             $"  \"{exe}\" prometheus --output C:\\ProgramData\\node_exporter\\textfile\\easyservice.prom",
             "",
-            "Nagios / Icinga - ein Dienst, Exit-Code 0/1/2/3:",
+            S.Editor_Integration_Nagios,
             $"  \"{exe}\" check \"{name}\"",
             "",
-            "Zabbix - in zabbix_agentd.conf:",
+            S.Editor_Integration_Zabbix,
             $"  UserParameter=easyservice.discovery,\"{exe}\" zabbix-discovery",
             $"  UserParameter=easyservice.check[*],\"{exe}\" check \"$1\"",
             "",
-            "Beliebiges Tool - vollständiger Zustand als JSON:",
+            S.Editor_Integration_Json,
             $"  \"{exe}\" json",
         });
     }
 
     private TabPage BuildShutdownTab()
     {
-        var page = new TabPage("Herunterfahren");
+        var page = new TabPage(S.Editor_Tab_Shutdown);
         var p = Ui.FormPanel();
 
-        Ui.AddFullRow(p, Ui.Hint("Beim Beenden des Dienstes versucht EasyService die Anwendung stufenweise sauber zu " +
-                                 "schließen. Jede aktivierte Stufe wartet die angegebene Zeit, bevor die nächste folgt."));
+        Ui.AddFullRow(p, Ui.Hint(S.Editor_Hint_Shutdown));
 
         Ui.AddFullRow(p, _stopConsole);
-        Ui.AddRow(p, "Wartezeit (ms):", _stopConsoleMs);
+        Ui.AddRow(p, S.Editor_Lbl_WaitMs, _stopConsoleMs);
         Ui.AddFullRow(p, _stopWindow);
-        Ui.AddRow(p, "Wartezeit (ms):", _stopWindowMs);
+        Ui.AddRow(p, S.Editor_Lbl_WaitMs, _stopWindowMs);
         Ui.AddFullRow(p, _stopThreads);
-        Ui.AddRow(p, "Wartezeit (ms):", _stopThreadsMs);
+        Ui.AddRow(p, S.Editor_Lbl_WaitMs, _stopThreadsMs);
         Ui.AddSpacer(p);
         Ui.AddFullRow(p, _stopTerminate);
         Ui.AddFullRow(p, _killTree);
-        Ui.AddFullRow(p, Ui.Hint("Ohne hartes Beenden kann ein hängender Prozess das Herunterfahren von Windows blockieren."));
+        Ui.AddFullRow(p, Ui.Hint(S.Editor_Hint_NoTerminate));
 
         page.Controls.Add(p);
         return page;
@@ -436,12 +426,12 @@ public sealed class ServiceEditorForm : Form
 
     private sealed record ExitCodeEntry(uint Code, ExitAction Action)
     {
-        public override string ToString() => $"Exit-Code {Code}  ->  {Action switch
+        public override string ToString() => S.Editor_ExitCodeEntry(Code, Action switch
         {
-            ExitAction.Restart => "Neu starten",
-            ExitAction.Ignore => "Nichts tun",
-            _ => "Dienst beenden",
-        }}";
+            ExitAction.Restart => S.Editor_ExitShort_Restart,
+            ExitAction.Ignore => S.Editor_ExitShort_Ignore,
+            _ => S.Editor_ExitShort_Stop,
+        });
     }
 
     private void RefreshExitCodes()
@@ -621,14 +611,14 @@ public sealed class ServiceEditorForm : Form
 
         var problems = Config.Validate(_isNew).ToList();
         if (!_allProcessors.Checked && Config.AffinityMask == 0)
-            problems.Add("Es muss mindestens ein Prozessor ausgewählt sein.");
+            problems.Add(S.Editor_Err_NoProcessor);
         if (!_stopTerminate.Checked && !_stopConsole.Checked && !_stopWindow.Checked && !_stopThreads.Checked)
-            problems.Add("Es muss mindestens eine Methode zum Beenden der Anwendung aktiviert sein.");
+            problems.Add(S.Editor_Err_NoStopMethod);
 
         if (problems.Count > 0)
         {
-            Ui.ShowError(this, "Eingaben prüfen", string.Join(System.Environment.NewLine + "- ",
-                problems.Prepend("Bitte folgende Punkte korrigieren:" + System.Environment.NewLine)));
+            Ui.ShowError(this, S.Quick_Err_Title, string.Join(System.Environment.NewLine + "- ",
+                problems.Prepend(S.Quick_Err_Intro + System.Environment.NewLine)));
             return;
         }
 
@@ -641,7 +631,7 @@ public sealed class ServiceEditorForm : Form
 internal sealed class ServicePickerDialog : Form
 {
     private readonly CheckedListBox _list = new() { Dock = DockStyle.Fill, CheckOnClick = true, IntegralHeight = false };
-    private readonly TextBox _filter = new() { Dock = DockStyle.Top, PlaceholderText = "Filtern..." };
+    private readonly TextBox _filter = new() { Dock = DockStyle.Top, PlaceholderText = S.Editor_Picker_Filter };
     private List<ServiceInfo> _all = new();
     private readonly HashSet<string> _selected;
 
@@ -652,7 +642,7 @@ internal sealed class ServicePickerDialog : Form
         _selected = new HashSet<string>(preselected.Where(s => s.Trim().Length > 0).Select(s => s.Trim()),
                                         StringComparer.OrdinalIgnoreCase);
 
-        Text = "Abhängigkeiten auswählen";
+        Text = S.Editor_Picker_Title;
         Icon = Ui.AppIcon;
         StartPosition = FormStartPosition.CenterParent;
         ClientSize = new Size(460, 520);
@@ -660,7 +650,7 @@ internal sealed class ServicePickerDialog : Form
         ShowInTaskbar = false;
 
         var ok = new Button { Text = "OK", DialogResult = DialogResult.OK, Width = 90, Height = 28 };
-        var cancel = new Button { Text = "Abbrechen", DialogResult = DialogResult.Cancel, Width = 90, Height = 28 };
+        var cancel = new Button { Text = S.Common_Cancel, DialogResult = DialogResult.Cancel, Width = 90, Height = 28 };
         var buttons = new FlowLayoutPanel { Dock = DockStyle.Bottom, FlowDirection = FlowDirection.RightToLeft, Height = 44, Padding = new Padding(8) };
         buttons.Controls.Add(cancel);
         buttons.Controls.Add(ok);
@@ -682,7 +672,7 @@ internal sealed class ServicePickerDialog : Form
         Load += (_, _) =>
         {
             try { _all = ServiceRegistry.EnumerateServices(); }
-            catch (Exception e) { Ui.ShowError(this, "Dienste konnten nicht gelesen werden", e); }
+            catch (Exception e) { Ui.ShowError(this, S.Main_Err_ListFailed, e); }
             Populate();
         };
     }

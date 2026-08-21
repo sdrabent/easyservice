@@ -24,6 +24,8 @@ internal static class MonitoringTests
         yield return ("Schwellwerte lösen Warnung und kritisch aus", ThresholdsEscalate);
         yield return ("Veralteter Zustand gilt als unbekannt, nicht als gesund", StaleStateIsUnknown);
         yield return ("Gemerkte Zugangsdaten sind verschlüsselt und wiederherstellbar", CredentialRoundTrips);
+        yield return ("Oberflächentexte lassen sich zwischen Englisch und Deutsch umschalten", LanguagesSwitch);
+        yield return ("Jeder Text ist übersetzt und behält seine Platzhalter", TranslationsAreComplete);
     }
 
     // ----------------------------------------------------- supervisor produces ---
@@ -183,6 +185,80 @@ internal static class MonitoringTests
         Assert(warn == CheckStatus.Warning, $"4 Neustarts/h sollten warnen, waren: {warn}");
         Assert(crit == CheckStatus.Critical, $"12 Neustarts/h sollten kritisch sein, waren: {crit}");
         Assert(cpuCrit == CheckStatus.Critical, $"99 % CPU sollten kritisch sein, waren: {cpuCrit}");
+    }
+
+    private static void LanguagesSwitch()
+    {
+        var before = System.Globalization.CultureInfo.CurrentUICulture;
+        try
+        {
+            Localization.Apply("en");
+            Assert(EasyService.Resources.S.Common_Cancel == "Cancel",
+                $"Englisch greift nicht: \"{EasyService.Resources.S.Common_Cancel}\"");
+            Assert(EasyService.Resources.S.Cfg_Err_AppNotFound("x.exe") == "Program not found: x.exe",
+                "Platzhalter werden im Englischen nicht ersetzt");
+
+            Localization.Apply("de");
+            Assert(EasyService.Resources.S.Common_Cancel == "Abbrechen",
+                $"Deutsch greift nicht - Satellite-Assembly fehlt? Gelesen: \"{EasyService.Resources.S.Common_Cancel}\"");
+            Assert(EasyService.Resources.S.Cfg_Err_AppNotFound("x.exe") == "Programm nicht gefunden: x.exe",
+                "Platzhalter werden im Deutschen nicht ersetzt");
+
+            // Unbekannter Code darf nicht werfen, sondern still bei der bisherigen Sprache bleiben.
+            Localization.Apply("kl-KL-nonsense");
+        }
+        finally
+        {
+            System.Globalization.CultureInfo.CurrentUICulture = before;
+        }
+    }
+
+    /// <summary>
+    /// Findet die beiden Fehler, die bei Übersetzungen wirklich passieren: ein Schlüssel
+    /// wird nur in einer Sprache gepflegt, oder jemand verliert beim Übersetzen ein {0}.
+    /// Letzteres würde erst zur Laufzeit als FormatException auffallen.
+    /// </summary>
+    private static void TranslationsAreComplete()
+    {
+        var assembly = typeof(ServiceConfig).Assembly;
+        var manager = new System.Resources.ResourceManager("EasyService.Resources.Strings", assembly);
+
+        var neutral = manager.GetResourceSet(System.Globalization.CultureInfo.InvariantCulture, true, true);
+        Assert(neutral is not null, "die neutralen Ressourcen fehlen");
+
+        var german = manager.GetResourceSet(System.Globalization.CultureInfo.GetCultureInfo("de"), true, false);
+        Assert(german is not null, "die deutsche Satellite-Assembly fehlt");
+
+        var missing = new List<string>();
+        var mismatched = new List<string>();
+        var count = 0;
+
+        foreach (System.Collections.DictionaryEntry entry in neutral!)
+        {
+            var key = (string)entry.Key;
+            var english = entry.Value as string;
+            if (english is null) continue;
+            count++;
+
+            var translated = german!.GetString(key);
+            if (translated is null) { missing.Add(key); continue; }
+            if (Placeholders(english) != Placeholders(translated)) mismatched.Add(key);
+        }
+
+        Assert(count > 300, $"unerwartet wenige Schlüssel gefunden: {count}");
+        Assert(missing.Count == 0, $"ohne deutsche Übersetzung: {string.Join(", ", missing.Take(10))}");
+        Assert(mismatched.Count == 0,
+            $"abweichende Platzhalter zwischen den Sprachen: {string.Join(", ", mismatched.Take(10))}");
+    }
+
+    /// <summary>Höchster verwendeter Platzhalterindex + 1, also die nötige Argumentzahl.</summary>
+    private static int Placeholders(string text)
+    {
+        var highest = -1;
+        foreach (System.Text.RegularExpressions.Match m in
+                 System.Text.RegularExpressions.Regex.Matches(text, @"\{(\d+)[^}]*\}"))
+            highest = Math.Max(highest, int.Parse(m.Groups[1].Value));
+        return highest + 1;
     }
 
     private static void CredentialRoundTrips()
