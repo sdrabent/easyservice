@@ -232,29 +232,37 @@ internal static class MonitoringTests
         var neutral = manager.GetResourceSet(System.Globalization.CultureInfo.InvariantCulture, true, true);
         Assert(neutral is not null, "die neutralen Ressourcen fehlen");
 
-        var german = manager.GetResourceSet(System.Globalization.CultureInfo.GetCultureInfo("de"), true, false);
-        Assert(german is not null, "die deutsche Satellite-Assembly fehlt");
-
-        var missing = new List<string>();
-        var mismatched = new List<string>();
-        var count = 0;
-
+        var englishByKey = new Dictionary<string, string>();
         foreach (System.Collections.DictionaryEntry entry in neutral!)
+            if (entry.Value is string text) englishByKey[(string)entry.Key] = text;
+
+        Assert(englishByKey.Count > 300, $"unerwartet wenige Schlüssel gefunden: {englishByKey.Count}");
+
+        // Jede mitgelieferte Sprache muss vollständig sein - "en" ist die Neutralsprache
+        // und liegt bereits im Hauptassembly.
+        foreach (var language in Localization.Supported)
         {
-            var key = (string)entry.Key;
-            var english = entry.Value as string;
-            if (english is null) continue;
-            count++;
+            if (language.Code is "" or "en") continue;
 
-            var translated = german!.GetString(key);
-            if (translated is null) { missing.Add(key); continue; }
-            if (Placeholders(english) != Placeholders(translated)) mismatched.Add(key);
+            var set = manager.GetResourceSet(
+                System.Globalization.CultureInfo.GetCultureInfo(language.Code), true, false);
+            Assert(set is not null, $"die Satellite-Assembly für \"{language.Code}\" fehlt");
+
+            var missing = new List<string>();
+            var mismatched = new List<string>();
+
+            foreach (var (key, english) in englishByKey)
+            {
+                var translated = set!.GetString(key);
+                if (translated is null) { missing.Add(key); continue; }
+                if (Placeholders(english) != Placeholders(translated)) mismatched.Add(key);
+            }
+
+            Assert(missing.Count == 0,
+                $"{language.Code}: {missing.Count} ohne Übersetzung: {string.Join(", ", missing.Take(8))}");
+            Assert(mismatched.Count == 0,
+                $"{language.Code}: abweichende Platzhalter: {string.Join(", ", mismatched.Take(8))}");
         }
-
-        Assert(count > 300, $"unerwartet wenige Schlüssel gefunden: {count}");
-        Assert(missing.Count == 0, $"ohne deutsche Übersetzung: {string.Join(", ", missing.Take(10))}");
-        Assert(mismatched.Count == 0,
-            $"abweichende Platzhalter zwischen den Sprachen: {string.Join(", ", mismatched.Take(10))}");
     }
 
     /// <summary>Höchster verwendeter Platzhalterindex + 1, also die nötige Argumentzahl.</summary>

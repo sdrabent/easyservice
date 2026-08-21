@@ -16,12 +16,19 @@ public static class Localization
 {
     public sealed record Language(string Code, string DisplayName);
 
-    /// <summary>Empty code means "follow Windows".</summary>
+    /// <summary>
+    /// Languages that ship with EasyService. The empty code means "follow Windows".
+    /// Each entry names itself in its own language - that is what a speaker recognises
+    /// in a menu, regardless of which language the rest of the window is currently in.
+    /// </summary>
     public static readonly Language[] Supported =
     {
         new("", ""),
         new("en", "English"),
         new("de", "Deutsch"),
+        new("fr", "Français"),
+        new("es", "Español"),
+        new("it", "Italiano"),
     };
 
     private const string MachineKey = @"SOFTWARE\EasyService";
