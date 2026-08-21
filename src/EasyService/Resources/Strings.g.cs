@@ -329,6 +329,9 @@ internal static class S
     /// <summary>Example: set exit code 0 to "Stop the service" so a program that finished cleanly is not restarted forever.</summary>
     public static string Editor_Hint_ExitCodes => Get("Editor_Hint_ExitCodes");
 
+    /// <summary>0 = record no history. One row per minute, roughly 100 KB per service and month, stored as CSV under %ProgramData%\EasyService\history.</summary>
+    public static string Editor_Hint_HistoryDays => Get("Editor_Hint_HistoryDays");
+
     /// <summary>Only possible with the local system account. Modern Windows versions isolate services in session 0; windows of the application are not visible to logged-on u...</summary>
     public static string Editor_Hint_Interact => Get("Editor_Hint_Interact");
 
@@ -421,6 +424,9 @@ internal static class S
 
     /// <summary>Exit code:</summary>
     public static string Editor_Lbl_ExitCode => Get("Editor_Lbl_ExitCode");
+
+    /// <summary>Keep history (days):</summary>
+    public static string Editor_Lbl_HistoryDays => Get("Editor_Lbl_HistoryDays");
 
     /// <summary>Log on as:</summary>
     public static string Editor_Lbl_LogonAs => Get("Editor_Lbl_LogonAs");
@@ -584,6 +590,90 @@ internal static class S
     /// <summary>Supervision started</summary>
     public static string Evt_SupervisorStarted => Get("Evt_SupervisorStarted");
 
+    /// <summary>Export CSV...</summary>
+    public static string Hist_Btn_Export => Get("Hist_Btn_Export");
+
+    /// <summary>Open folder</summary>
+    public static string Hist_Btn_OpenFolder => Get("Hist_Btn_OpenFolder");
+
+    /// <summary>CPU load in % — line: average per minute, band: peak</summary>
+    public static string Hist_Chart_Cpu => Get("Hist_Chart_Cpu");
+
+    /// <summary>Memory — line: average per minute, band: peak</summary>
+    public static string Hist_Chart_Memory => Get("Hist_Chart_Memory");
+
+    /// <summary>Detail</summary>
+    public static string Hist_Col_Detail => Get("Hist_Col_Detail");
+
+    /// <summary>Event</summary>
+    public static string Hist_Col_Event => Get("Hist_Col_Event");
+
+    /// <summary>Exit code</summary>
+    public static string Hist_Col_ExitCode => Get("Hist_Col_ExitCode");
+
+    /// <summary>Time</summary>
+    public static string Hist_Col_Time => Get("Hist_Col_Time");
+
+    /// <summary>The history is switched off for this service (Monitoring tab).</summary>
+    public static string Hist_Disabled => Get("Hist_Disabled");
+
+    /// <summary>No measurements for this period yet.</summary>
+    public static string Hist_Empty => Get("Hist_Empty");
+
+    /// <summary>Export failed</summary>
+    public static string Hist_Export_Failed => Get("Hist_Export_Failed");
+
+    /// <summary>Exported: {0}</summary>
+    public static string Hist_Exported(object? p0) => Fmt("Hist_Exported", p0);
+
+    /// <summary>Events</summary>
+    public static string Hist_Group_Events => Get("Hist_Group_Events");
+
+    /// <summary>Period:</summary>
+    public static string Hist_Lbl_Range => Get("Hist_Lbl_Range");
+
+    /// <summary>Dotted vertical lines mark application starts.</summary>
+    public static string Hist_MarkerLegend => Get("Hist_MarkerLegend");
+
+    /// <summary>No events in this period.</summary>
+    public static string Hist_NoEvents => Get("Hist_NoEvents");
+
+    /// <summary>Last hour</summary>
+    public static string Hist_Range_1h => Get("Hist_Range_1h");
+
+    /// <summary>Last 24 hours</summary>
+    public static string Hist_Range_24h => Get("Hist_Range_24h");
+
+    /// <summary>Last 30 days</summary>
+    public static string Hist_Range_30d => Get("Hist_Range_30d");
+
+    /// <summary>Last 7 days</summary>
+    public static string Hist_Range_7d => Get("Hist_Range_7d");
+
+    /// <summary>Period covered</summary>
+    public static string Hist_Stat_Covered => Get("Hist_Stat_Covered");
+
+    /// <summary>CPU average</summary>
+    public static string Hist_Stat_CpuAvg => Get("Hist_Stat_CpuAvg");
+
+    /// <summary>CPU peak</summary>
+    public static string Hist_Stat_CpuPeak => Get("Hist_Stat_CpuPeak");
+
+    /// <summary>Memory average</summary>
+    public static string Hist_Stat_MemAvg => Get("Hist_Stat_MemAvg");
+
+    /// <summary>Memory peak</summary>
+    public static string Hist_Stat_MemPeak => Get("Hist_Stat_MemPeak");
+
+    /// <summary>Restarts</summary>
+    public static string Hist_Stat_Restarts => Get("Hist_Stat_Restarts");
+
+    /// <summary>{0} measurements, {1} events</summary>
+    public static string Hist_Status(object? p0, object? p1) => Fmt("Hist_Status", p0, p1);
+
+    /// <summary>History - {0}</summary>
+    public static string Hist_Title(object? p0) => Fmt("Hist_Title", p0);
+
     /// <summary>The configuration could not be read: {0}</summary>
     public static string Host_ConfigReadFailed(object? p0) => Fmt("Host_ConfigReadFailed", p0);
 
@@ -706,6 +796,9 @@ internal static class S
 
     /// <summary>Edit...</summary>
     public static string Main_Btn_Edit => Get("Main_Btn_Edit");
+
+    /// <summary>History...</summary>
+    public static string Main_Btn_History => Get("Main_Btn_History");
 
     /// <summary>Logs...</summary>
     public static string Main_Btn_Logs => Get("Main_Btn_Logs");
@@ -868,6 +961,9 @@ internal static class S
 
     /// <summary>Change the configuration of the selected service</summary>
     public static string Main_Tip_Edit => Get("Main_Tip_Edit");
+
+    /// <summary>Past CPU load, memory and restarts of the selected service</summary>
+    public static string Main_Tip_History => Get("Main_Tip_History");
 
     /// <summary>Live view of the stdout/stderr logs</summary>
     public static string Main_Tip_Logs => Get("Main_Tip_Logs");

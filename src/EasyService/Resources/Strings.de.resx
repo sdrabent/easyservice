@@ -359,6 +359,9 @@ Verwalten benötigt Administratorrechte; die Überwachungsbefehle lesen nur.</va
   <data name="Editor_Hint_ExitCodes" xml:space="preserve">
     <value>Beispiel: Exit-Code 0 auf "Dienst beenden" setzen, damit ein sauber beendetes Programm nicht endlos neu gestartet wird.</value>
   </data>
+  <data name="Editor_Hint_HistoryDays" xml:space="preserve">
+    <value>0 = keinen Verlauf aufzeichnen. Eine Zeile pro Minute, rund 100 KB je Dienst und Monat, als CSV unter %ProgramData%\EasyService\history.</value>
+  </data>
   <data name="Editor_Hint_Interact" xml:space="preserve">
     <value>Nur mit dem lokalen Systemkonto möglich. Moderne Windows-Versionen isolieren Dienste in Sitzung 0; Fenster der Anwendung sind für angemeldete Benutzer nicht sichtbar.</value>
   </data>
@@ -451,6 +454,9 @@ Verwalten benötigt Administratorrechte; die Überwachungsbefehle lesen nur.</va
   </data>
   <data name="Editor_Lbl_ExitCode" xml:space="preserve">
     <value>Exit-Code:</value>
+  </data>
+  <data name="Editor_Lbl_HistoryDays" xml:space="preserve">
+    <value>Verlauf aufbewahren (Tage):</value>
   </data>
   <data name="Editor_Lbl_LogonAs" xml:space="preserve">
     <value>Anmelden als:</value>
@@ -614,6 +620,90 @@ Verwalten benötigt Administratorrechte; die Überwachungsbefehle lesen nur.</va
   <data name="Evt_SupervisorStarted" xml:space="preserve">
     <value>Überwachung gestartet</value>
   </data>
+  <data name="Hist_Btn_Export" xml:space="preserve">
+    <value>CSV exportieren...</value>
+  </data>
+  <data name="Hist_Btn_OpenFolder" xml:space="preserve">
+    <value>Ordner öffnen</value>
+  </data>
+  <data name="Hist_Chart_Cpu" xml:space="preserve">
+    <value>CPU-Last in % — Linie: Mittel je Minute, Fläche: Spitze</value>
+  </data>
+  <data name="Hist_Chart_Memory" xml:space="preserve">
+    <value>Arbeitsspeicher — Linie: Mittel je Minute, Fläche: Spitze</value>
+  </data>
+  <data name="Hist_Col_Detail" xml:space="preserve">
+    <value>Detail</value>
+  </data>
+  <data name="Hist_Col_Event" xml:space="preserve">
+    <value>Ereignis</value>
+  </data>
+  <data name="Hist_Col_ExitCode" xml:space="preserve">
+    <value>Exit-Code</value>
+  </data>
+  <data name="Hist_Col_Time" xml:space="preserve">
+    <value>Zeitpunkt</value>
+  </data>
+  <data name="Hist_Disabled" xml:space="preserve">
+    <value>Der Verlauf ist für diesen Dienst abgeschaltet (Registerkarte Überwachung).</value>
+  </data>
+  <data name="Hist_Empty" xml:space="preserve">
+    <value>Für diesen Zeitraum liegen noch keine Messwerte vor.</value>
+  </data>
+  <data name="Hist_Export_Failed" xml:space="preserve">
+    <value>Export fehlgeschlagen</value>
+  </data>
+  <data name="Hist_Exported" xml:space="preserve">
+    <value>Exportiert: {0}</value>
+  </data>
+  <data name="Hist_Group_Events" xml:space="preserve">
+    <value>Ereignisse</value>
+  </data>
+  <data name="Hist_Lbl_Range" xml:space="preserve">
+    <value>Zeitraum:</value>
+  </data>
+  <data name="Hist_MarkerLegend" xml:space="preserve">
+    <value>Gepunktete senkrechte Linien markieren Starts der Anwendung.</value>
+  </data>
+  <data name="Hist_NoEvents" xml:space="preserve">
+    <value>In diesem Zeitraum gab es keine Ereignisse.</value>
+  </data>
+  <data name="Hist_Range_1h" xml:space="preserve">
+    <value>Letzte Stunde</value>
+  </data>
+  <data name="Hist_Range_24h" xml:space="preserve">
+    <value>Letzte 24 Stunden</value>
+  </data>
+  <data name="Hist_Range_30d" xml:space="preserve">
+    <value>Letzte 30 Tage</value>
+  </data>
+  <data name="Hist_Range_7d" xml:space="preserve">
+    <value>Letzte 7 Tage</value>
+  </data>
+  <data name="Hist_Stat_Covered" xml:space="preserve">
+    <value>Erfasster Zeitraum</value>
+  </data>
+  <data name="Hist_Stat_CpuAvg" xml:space="preserve">
+    <value>CPU im Mittel</value>
+  </data>
+  <data name="Hist_Stat_CpuPeak" xml:space="preserve">
+    <value>CPU Spitze</value>
+  </data>
+  <data name="Hist_Stat_MemAvg" xml:space="preserve">
+    <value>Speicher im Mittel</value>
+  </data>
+  <data name="Hist_Stat_MemPeak" xml:space="preserve">
+    <value>Speicher Spitze</value>
+  </data>
+  <data name="Hist_Stat_Restarts" xml:space="preserve">
+    <value>Neustarts</value>
+  </data>
+  <data name="Hist_Status" xml:space="preserve">
+    <value>{0} Messwerte, {1} Ereignisse</value>
+  </data>
+  <data name="Hist_Title" xml:space="preserve">
+    <value>Verlauf - {0}</value>
+  </data>
   <data name="Host_ConfigReadFailed" xml:space="preserve">
     <value>Die Konfiguration konnte nicht gelesen werden: {0}</value>
   </data>
@@ -742,6 +832,9 @@ wird gelöscht. Fortfahren?</value>
   </data>
   <data name="Main_Btn_Edit" xml:space="preserve">
     <value>Bearbeiten...</value>
+  </data>
+  <data name="Main_Btn_History" xml:space="preserve">
+    <value>Verlauf...</value>
   </data>
   <data name="Main_Btn_Logs" xml:space="preserve">
     <value>Protokolle...</value>
@@ -916,6 +1009,9 @@ Die Ursache steht meist im Protokoll. Jetzt öffnen?</value>
   </data>
   <data name="Main_Tip_Edit" xml:space="preserve">
     <value>Konfiguration des markierten Dienstes ändern</value>
+  </data>
+  <data name="Main_Tip_History" xml:space="preserve">
+    <value>Bisherige CPU-Last, Speicher und Neustarts des markierten Dienstes</value>
   </data>
   <data name="Main_Tip_Logs" xml:space="preserve">
     <value>Live-Ansicht der stdout/stderr-Protokolle</value>

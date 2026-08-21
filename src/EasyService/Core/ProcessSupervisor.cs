@@ -37,6 +37,15 @@ public sealed class ProcessSupervisor : IDisposable
     private IntPtr _job = IntPtr.Zero;
     private uint _pid;
 
+    // Verdichtung der 5-Sekunden-Messungen auf eine Zeile pro Minute.
+    private DateTime _bucketMinuteUtc = DateTime.MinValue;
+    private int _bucketCount;
+    private double _bucketCpuSum, _bucketCpuPeak;
+    private double _bucketMemSum;
+    private long _bucketMemPeak;
+    private int _bucketProcesses;
+    private DateTime _lastPruneUtc = DateTime.MinValue;
+
     private LogWriter? _stdout;
     private LogWriter? _stderr;
     private Thread? _outPump;
@@ -82,10 +91,16 @@ public sealed class ProcessSupervisor : IDisposable
 
     // ---------------------------------------------------------------- logging ---
 
-    private void Log(EasyServiceEvent id, string message, EventLogEntryType type = EventLogEntryType.Information)
+    private void Log(EasyServiceEvent id, string message,
+                     EventLogEntryType type = EventLogEntryType.Information, uint? exitCode = null)
     {
         _events?.WriteLine(message);
         EventLogSink.Write(_cfg.ServiceName, id, message, type);
+
+        // Dieselben Ereignisse landen in der Historie - dort mit Struktur statt als Text,
+        // damit die Oberflaeche sie auf der Zeitachse einzeichnen kann.
+        if (_cfg.HistoryDays > 0)
+            HistoryStore.AppendEvent(_cfg.ServiceName, new HistoryEvent(DateTime.UtcNow, (int)id, exitCode, message));
     }
 
     /// <summary>File-only note: useful for diagnosis, too chatty for the Windows event log.</summary>
@@ -113,6 +128,8 @@ public sealed class ProcessSupervisor : IDisposable
             _state.ProcessCount = sample.ProcessCount;
             _state.CpuSecondsTotal = sample.CpuSecondsTotal;
             _state.Save();
+
+            RecordHistory(sample);
         }
         catch (Exception e)
         {
@@ -126,11 +143,70 @@ public sealed class ProcessSupervisor : IDisposable
         _state.Save();
     }
 
+    /// <summary>
+    /// Collects the 5-second samples into one-minute buckets and writes a row whenever a
+    /// minute completes. Storing every raw sample would be 17280 rows per service per day
+    /// for a resolution nobody looks at a month later.
+    /// </summary>
+    private void RecordHistory(ResourceSample sample)
+    {
+        if (_cfg.HistoryDays <= 0) return;
+
+        var now = DateTime.UtcNow;
+        var minute = new DateTime(now.Year, now.Month, now.Day, now.Hour, now.Minute, 0, DateTimeKind.Utc);
+
+        if (_bucketMinuteUtc == DateTime.MinValue) _bucketMinuteUtc = minute;
+
+        if (minute != _bucketMinuteUtc)
+        {
+            FlushHistoryBucket();
+            _bucketMinuteUtc = minute;
+        }
+
+        _bucketCount++;
+        _bucketCpuSum += sample.CpuPercent;
+        _bucketCpuPeak = Math.Max(_bucketCpuPeak, sample.CpuPercent);
+        _bucketMemSum += sample.WorkingSetBytes;
+        _bucketMemPeak = Math.Max(_bucketMemPeak, sample.WorkingSetBytes);
+        _bucketProcesses = sample.ProcessCount;
+
+        if (now - _lastPruneUtc > TimeSpan.FromHours(24))
+        {
+            _lastPruneUtc = now;
+            HistoryStore.Prune(_cfg.ServiceName, TimeSpan.FromDays(_cfg.HistoryDays));
+        }
+    }
+
+    private void FlushHistoryBucket()
+    {
+        if (_bucketCount == 0) return;
+
+        HistoryStore.AppendMetrics(_cfg.ServiceName, new MetricSample(
+            _bucketMinuteUtc,
+            _bucketCpuSum / _bucketCount,
+            _bucketCpuPeak,
+            (long)(_bucketMemSum / _bucketCount),
+            _bucketMemPeak,
+            _bucketProcesses,
+            _state.RestartCount));
+
+        _bucketCount = 0;
+        _bucketCpuSum = _bucketCpuPeak = 0;
+        _bucketMemSum = 0;
+        _bucketMemPeak = 0;
+    }
+
     // ----------------------------------------------------------------- loop ---
 
     /// <summary>Blocks until the service is asked to stop or the exit policy ends it.</summary>
     public void Run()
     {
+        if (_cfg.HistoryDays > 0)
+        {
+            _lastPruneUtc = DateTime.UtcNow;
+            HistoryStore.Prune(_cfg.ServiceName, TimeSpan.FromDays(_cfg.HistoryDays));
+        }
+
         Log(EasyServiceEvent.SupervisorStarted, S.Sup_Supervising(Expand(_cfg.Application)));
 
         OpenOutputLogs();
@@ -188,7 +264,8 @@ public sealed class ProcessSupervisor : IDisposable
 
             Log(EasyServiceEvent.ApplicationExited,
                 S.Sup_AppExited(exitCode, ranFor.TotalSeconds.ToString("F1"), Describe(action)),
-                exitCode == 0 ? EventLogEntryType.Information : EventLogEntryType.Warning);
+                exitCode == 0 ? EventLogEntryType.Information : EventLogEntryType.Warning,
+                exitCode);
 
             CleanUpChild();
 
@@ -196,7 +273,8 @@ public sealed class ProcessSupervisor : IDisposable
             {
                 case ExitAction.Stop:
                     SetState(SupervisorState.Stopped);
-                    Log(EasyServiceEvent.StoppedByExitPolicy, S.Sup_StoppedByPolicy(exitCode));
+                    Log(EasyServiceEvent.StoppedByExitPolicy, S.Sup_StoppedByPolicy(exitCode),
+                        EventLogEntryType.Information, exitCode);
                     StopServiceRequested?.Invoke(exitCode);
                     return;
 
@@ -666,6 +744,7 @@ public sealed class ProcessSupervisor : IDisposable
     {
         RequestStop();
         _sampleTimer.Dispose();
+        FlushHistoryBucket();
         CleanUpChild();
 
         _state.ApplicationPid = 0;

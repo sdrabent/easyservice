@@ -478,6 +478,8 @@ public static class ServiceRegistry
 
         try { Registry.LocalMachine.DeleteSubKeyTree($@"{ServiceConfig.ServicesKey}\{name}", false); }
         catch { /* SCM removes the key once the last handle closes */ }
+
+        ServiceState.Delete(name);
     }
 
     // ---------------------------------------------------------- start / stop ---

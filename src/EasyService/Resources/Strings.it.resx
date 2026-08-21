@@ -359,6 +359,9 @@ La gestione richiede i diritti di amministratore; i comandi di monitoraggio si l
   <data name="Editor_Hint_ExitCodes" xml:space="preserve">
     <value>Esempio: assegnare al codice di uscita 0 l'azione «Arresta il servizio», così un programma terminato correttamente non viene riavviato all'infinito.</value>
   </data>
+  <data name="Editor_Hint_HistoryDays" xml:space="preserve">
+    <value>0 = non registrare la cronologia. Una riga al minuto, circa 100 KB per servizio al mese, in formato CSV in %ProgramData%\EasyService\history.</value>
+  </data>
   <data name="Editor_Hint_Interact" xml:space="preserve">
     <value>Possibile solo con l'account di sistema locale. Le versioni recenti di Windows isolano i servizi nella sessione 0; le finestre dell'applicazione non sono visibili agli utenti connessi.</value>
   </data>
@@ -451,6 +454,9 @@ La gestione richiede i diritti di amministratore; i comandi di monitoraggio si l
   </data>
   <data name="Editor_Lbl_ExitCode" xml:space="preserve">
     <value>Codice di uscita:</value>
+  </data>
+  <data name="Editor_Lbl_HistoryDays" xml:space="preserve">
+    <value>Conservare la cronologia (giorni):</value>
   </data>
   <data name="Editor_Lbl_LogonAs" xml:space="preserve">
     <value>Accedi come:</value>
@@ -614,6 +620,90 @@ La gestione richiede i diritti di amministratore; i comandi di monitoraggio si l
   <data name="Evt_SupervisorStarted" xml:space="preserve">
     <value>Monitoraggio avviato</value>
   </data>
+  <data name="Hist_Btn_Export" xml:space="preserve">
+    <value>Esporta CSV...</value>
+  </data>
+  <data name="Hist_Btn_OpenFolder" xml:space="preserve">
+    <value>Apri cartella</value>
+  </data>
+  <data name="Hist_Chart_Cpu" xml:space="preserve">
+    <value>Carico CPU in % — linea: media al minuto, banda: picco</value>
+  </data>
+  <data name="Hist_Chart_Memory" xml:space="preserve">
+    <value>Memoria — linea: media al minuto, banda: picco</value>
+  </data>
+  <data name="Hist_Col_Detail" xml:space="preserve">
+    <value>Dettaglio</value>
+  </data>
+  <data name="Hist_Col_Event" xml:space="preserve">
+    <value>Evento</value>
+  </data>
+  <data name="Hist_Col_ExitCode" xml:space="preserve">
+    <value>Codice di uscita</value>
+  </data>
+  <data name="Hist_Col_Time" xml:space="preserve">
+    <value>Momento</value>
+  </data>
+  <data name="Hist_Disabled" xml:space="preserve">
+    <value>La cronologia è disattivata per questo servizio (scheda Monitoraggio).</value>
+  </data>
+  <data name="Hist_Empty" xml:space="preserve">
+    <value>Non ci sono ancora misurazioni per questo periodo.</value>
+  </data>
+  <data name="Hist_Export_Failed" xml:space="preserve">
+    <value>Esportazione non riuscita</value>
+  </data>
+  <data name="Hist_Exported" xml:space="preserve">
+    <value>Esportato: {0}</value>
+  </data>
+  <data name="Hist_Group_Events" xml:space="preserve">
+    <value>Eventi</value>
+  </data>
+  <data name="Hist_Lbl_Range" xml:space="preserve">
+    <value>Periodo:</value>
+  </data>
+  <data name="Hist_MarkerLegend" xml:space="preserve">
+    <value>Le linee verticali punteggiate indicano gli avvii dell'applicazione.</value>
+  </data>
+  <data name="Hist_NoEvents" xml:space="preserve">
+    <value>Nessun evento in questo periodo.</value>
+  </data>
+  <data name="Hist_Range_1h" xml:space="preserve">
+    <value>Ultima ora</value>
+  </data>
+  <data name="Hist_Range_24h" xml:space="preserve">
+    <value>Ultime 24 ore</value>
+  </data>
+  <data name="Hist_Range_30d" xml:space="preserve">
+    <value>Ultimi 30 giorni</value>
+  </data>
+  <data name="Hist_Range_7d" xml:space="preserve">
+    <value>Ultimi 7 giorni</value>
+  </data>
+  <data name="Hist_Stat_Covered" xml:space="preserve">
+    <value>Periodo coperto</value>
+  </data>
+  <data name="Hist_Stat_CpuAvg" xml:space="preserve">
+    <value>CPU in media</value>
+  </data>
+  <data name="Hist_Stat_CpuPeak" xml:space="preserve">
+    <value>Picco CPU</value>
+  </data>
+  <data name="Hist_Stat_MemAvg" xml:space="preserve">
+    <value>Memoria in media</value>
+  </data>
+  <data name="Hist_Stat_MemPeak" xml:space="preserve">
+    <value>Picco memoria</value>
+  </data>
+  <data name="Hist_Stat_Restarts" xml:space="preserve">
+    <value>Riavvii</value>
+  </data>
+  <data name="Hist_Status" xml:space="preserve">
+    <value>{0} misurazioni, {1} eventi</value>
+  </data>
+  <data name="Hist_Title" xml:space="preserve">
+    <value>Cronologia - {0}</value>
+  </data>
   <data name="Host_ConfigReadFailed" xml:space="preserve">
     <value>Impossibile leggere la configurazione: {0}</value>
   </data>
@@ -742,6 +832,9 @@ verrà eliminato. Continuare?</value>
   </data>
   <data name="Main_Btn_Edit" xml:space="preserve">
     <value>Modifica...</value>
+  </data>
+  <data name="Main_Btn_History" xml:space="preserve">
+    <value>Cronologia...</value>
   </data>
   <data name="Main_Btn_Logs" xml:space="preserve">
     <value>Registri...</value>
@@ -916,6 +1009,9 @@ La causa si trova di solito nel registro. Aprirlo adesso?</value>
   </data>
   <data name="Main_Tip_Edit" xml:space="preserve">
     <value>Modificare la configurazione del servizio selezionato</value>
+  </data>
+  <data name="Main_Tip_History" xml:space="preserve">
+    <value>Carico CPU, memoria e riavvii passati del servizio selezionato</value>
   </data>
   <data name="Main_Tip_Logs" xml:space="preserve">
     <value>Vista in tempo reale dei registri stdout/stderr</value>

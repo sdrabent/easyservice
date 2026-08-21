@@ -46,6 +46,25 @@ Die Werte werden alle 5 Sekunden aktualisiert und liegen als JSON unter
 Minuten stehen, meldet der Check **UNKNOWN** statt weiterhin die alten Zahlen — eine
 tote Messung ist schlimmer als gar keine.
 
+## Langzeitverlauf
+
+Neben dem Momentanzustand schreibt der überwachende Prozess einen Verlauf: eine Zeile
+pro Minute als CSV unter `%ProgramData%\EasyService\history\`.
+
+| Datei | Inhalt |
+|---|---|
+| `<Dienst>-metrics.csv` | `utc,cpu_avg,cpu_max,mem_avg,mem_max,procs,restarts_total` |
+| `<Dienst>-events.csv` | `utc,event_id,exit_code,detail` |
+
+Zeitstempel sind UTC im Format `yyyy-MM-ddTHH:mm:ssZ`, Zahlen invariant formatiert —
+beides direkt maschinenlesbar. Die Aufbewahrung steht pro Dienst im Editor auf der
+Registerkarte *Überwachung* (Standard 30 Tage, 0 schaltet ab); ältere Zeilen werden
+täglich entfernt.
+
+Wer die Werte lieber im eigenen Zeitreihensystem hätte, kann `metrics.csv` direkt
+einlesen — oder gleich den Prometheus-Weg unten nehmen und die Historie dort führen.
+In der Oberfläche zeigt ein Doppelklick auf den Dienst dieselben Daten als Diagramm.
+
 ## Bewertung
 
 Aus den Rohwerten wird ein Status nach Nagios-Konvention (0 OK, 1 WARN, 2 CRIT, 3 UNKNOWN):

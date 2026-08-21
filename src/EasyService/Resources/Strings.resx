@@ -359,6 +359,9 @@ Managing requires administrator rights; the monitoring commands only read.</valu
   <data name="Editor_Hint_ExitCodes" xml:space="preserve">
     <value>Example: set exit code 0 to "Stop the service" so a program that finished cleanly is not restarted forever.</value>
   </data>
+  <data name="Editor_Hint_HistoryDays" xml:space="preserve">
+    <value>0 = record no history. One row per minute, roughly 100 KB per service and month, stored as CSV under %ProgramData%\EasyService\history.</value>
+  </data>
   <data name="Editor_Hint_Interact" xml:space="preserve">
     <value>Only possible with the local system account. Modern Windows versions isolate services in session 0; windows of the application are not visible to logged-on users.</value>
   </data>
@@ -451,6 +454,9 @@ Managing requires administrator rights; the monitoring commands only read.</valu
   </data>
   <data name="Editor_Lbl_ExitCode" xml:space="preserve">
     <value>Exit code:</value>
+  </data>
+  <data name="Editor_Lbl_HistoryDays" xml:space="preserve">
+    <value>Keep history (days):</value>
   </data>
   <data name="Editor_Lbl_LogonAs" xml:space="preserve">
     <value>Log on as:</value>
@@ -614,6 +620,90 @@ Managing requires administrator rights; the monitoring commands only read.</valu
   <data name="Evt_SupervisorStarted" xml:space="preserve">
     <value>Supervision started</value>
   </data>
+  <data name="Hist_Btn_Export" xml:space="preserve">
+    <value>Export CSV...</value>
+  </data>
+  <data name="Hist_Btn_OpenFolder" xml:space="preserve">
+    <value>Open folder</value>
+  </data>
+  <data name="Hist_Chart_Cpu" xml:space="preserve">
+    <value>CPU load in % — line: average per minute, band: peak</value>
+  </data>
+  <data name="Hist_Chart_Memory" xml:space="preserve">
+    <value>Memory — line: average per minute, band: peak</value>
+  </data>
+  <data name="Hist_Col_Detail" xml:space="preserve">
+    <value>Detail</value>
+  </data>
+  <data name="Hist_Col_Event" xml:space="preserve">
+    <value>Event</value>
+  </data>
+  <data name="Hist_Col_ExitCode" xml:space="preserve">
+    <value>Exit code</value>
+  </data>
+  <data name="Hist_Col_Time" xml:space="preserve">
+    <value>Time</value>
+  </data>
+  <data name="Hist_Disabled" xml:space="preserve">
+    <value>The history is switched off for this service (Monitoring tab).</value>
+  </data>
+  <data name="Hist_Empty" xml:space="preserve">
+    <value>No measurements for this period yet.</value>
+  </data>
+  <data name="Hist_Export_Failed" xml:space="preserve">
+    <value>Export failed</value>
+  </data>
+  <data name="Hist_Exported" xml:space="preserve">
+    <value>Exported: {0}</value>
+  </data>
+  <data name="Hist_Group_Events" xml:space="preserve">
+    <value>Events</value>
+  </data>
+  <data name="Hist_Lbl_Range" xml:space="preserve">
+    <value>Period:</value>
+  </data>
+  <data name="Hist_MarkerLegend" xml:space="preserve">
+    <value>Dotted vertical lines mark application starts.</value>
+  </data>
+  <data name="Hist_NoEvents" xml:space="preserve">
+    <value>No events in this period.</value>
+  </data>
+  <data name="Hist_Range_1h" xml:space="preserve">
+    <value>Last hour</value>
+  </data>
+  <data name="Hist_Range_24h" xml:space="preserve">
+    <value>Last 24 hours</value>
+  </data>
+  <data name="Hist_Range_30d" xml:space="preserve">
+    <value>Last 30 days</value>
+  </data>
+  <data name="Hist_Range_7d" xml:space="preserve">
+    <value>Last 7 days</value>
+  </data>
+  <data name="Hist_Stat_Covered" xml:space="preserve">
+    <value>Period covered</value>
+  </data>
+  <data name="Hist_Stat_CpuAvg" xml:space="preserve">
+    <value>CPU average</value>
+  </data>
+  <data name="Hist_Stat_CpuPeak" xml:space="preserve">
+    <value>CPU peak</value>
+  </data>
+  <data name="Hist_Stat_MemAvg" xml:space="preserve">
+    <value>Memory average</value>
+  </data>
+  <data name="Hist_Stat_MemPeak" xml:space="preserve">
+    <value>Memory peak</value>
+  </data>
+  <data name="Hist_Stat_Restarts" xml:space="preserve">
+    <value>Restarts</value>
+  </data>
+  <data name="Hist_Status" xml:space="preserve">
+    <value>{0} measurements, {1} events</value>
+  </data>
+  <data name="Hist_Title" xml:space="preserve">
+    <value>History - {0}</value>
+  </data>
   <data name="Host_ConfigReadFailed" xml:space="preserve">
     <value>The configuration could not be read: {0}</value>
   </data>
@@ -742,6 +832,9 @@ will be deleted. Continue?</value>
   </data>
   <data name="Main_Btn_Edit" xml:space="preserve">
     <value>Edit...</value>
+  </data>
+  <data name="Main_Btn_History" xml:space="preserve">
+    <value>History...</value>
   </data>
   <data name="Main_Btn_Logs" xml:space="preserve">
     <value>Logs...</value>
@@ -916,6 +1009,9 @@ The cause is usually in the log. Open it now?</value>
   </data>
   <data name="Main_Tip_Edit" xml:space="preserve">
     <value>Change the configuration of the selected service</value>
+  </data>
+  <data name="Main_Tip_History" xml:space="preserve">
+    <value>Past CPU load, memory and restarts of the selected service</value>
   </data>
   <data name="Main_Tip_Logs" xml:space="preserve">
     <value>Live view of the stdout/stderr logs</value>

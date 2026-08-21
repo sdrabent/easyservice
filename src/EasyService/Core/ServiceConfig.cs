@@ -104,6 +104,9 @@ public sealed class ServiceConfig
     public int WarnRestartsPerHour { get; set; } = 3;
     public int CritRestartsPerHour { get; set; } = 10;
 
+    /// <summary>Days of measurement history to keep. 0 turns the history off.</summary>
+    public int HistoryDays { get; set; } = 30;
+
     // --- shutdown sequence --------------------------------------------------
     public bool StopUseConsole { get; set; } = true;
     public int StopConsoleMs { get; set; } = 1500;
@@ -226,6 +229,7 @@ public sealed class ServiceConfig
         key.SetValue("MonCritMemoryMb", CritMemoryMb, RegistryValueKind.DWord);
         key.SetValue("MonWarnRestartsPerHour", WarnRestartsPerHour, RegistryValueKind.DWord);
         key.SetValue("MonCritRestartsPerHour", CritRestartsPerHour, RegistryValueKind.DWord);
+        key.SetValue("HistoryDays", HistoryDays, RegistryValueKind.DWord);
 
         key.SetValue("AppStopUseConsole", StopUseConsole ? 1 : 0, RegistryValueKind.DWord);
         key.SetValue("AppStopConsoleDelay", StopConsoleMs, RegistryValueKind.DWord);
@@ -283,6 +287,7 @@ public sealed class ServiceConfig
         c.CritMemoryMb = Num(key, "MonCritMemoryMb", 0);
         c.WarnRestartsPerHour = Num(key, "MonWarnRestartsPerHour", 3);
         c.CritRestartsPerHour = Num(key, "MonCritRestartsPerHour", 10);
+        c.HistoryDays = Num(key, "HistoryDays", 30);
 
         c.StopUseConsole = Num(key, "AppStopUseConsole", 1) != 0;
         c.StopConsoleMs = Num(key, "AppStopConsoleDelay", 1500);

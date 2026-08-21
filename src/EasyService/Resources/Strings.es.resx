@@ -359,6 +359,9 @@ Administrar requiere permisos de administrador; los comandos de supervisión sol
   <data name="Editor_Hint_ExitCodes" xml:space="preserve">
     <value>Ejemplo: asigne al código de salida 0 la acción «Detener el servicio» para que un programa que terminó correctamente no se reinicie indefinidamente.</value>
   </data>
+  <data name="Editor_Hint_HistoryDays" xml:space="preserve">
+    <value>0 = no registrar historial. Una fila por minuto, unos 100 KB por servicio y mes, en formato CSV en %ProgramData%\EasyService\history.</value>
+  </data>
   <data name="Editor_Hint_Interact" xml:space="preserve">
     <value>Solo es posible con la cuenta del sistema local. Las versiones modernas de Windows aíslan los servicios en la sesión 0; las ventanas de la aplicación no son visibles para los usuarios conectados.</value>
   </data>
@@ -451,6 +454,9 @@ Administrar requiere permisos de administrador; los comandos de supervisión sol
   </data>
   <data name="Editor_Lbl_ExitCode" xml:space="preserve">
     <value>Código de salida:</value>
+  </data>
+  <data name="Editor_Lbl_HistoryDays" xml:space="preserve">
+    <value>Conservar el historial (días):</value>
   </data>
   <data name="Editor_Lbl_LogonAs" xml:space="preserve">
     <value>Iniciar sesión como:</value>
@@ -614,6 +620,90 @@ Administrar requiere permisos de administrador; los comandos de supervisión sol
   <data name="Evt_SupervisorStarted" xml:space="preserve">
     <value>Supervisión iniciada</value>
   </data>
+  <data name="Hist_Btn_Export" xml:space="preserve">
+    <value>Exportar CSV...</value>
+  </data>
+  <data name="Hist_Btn_OpenFolder" xml:space="preserve">
+    <value>Abrir carpeta</value>
+  </data>
+  <data name="Hist_Chart_Cpu" xml:space="preserve">
+    <value>Carga de CPU en % — línea: media por minuto, banda: pico</value>
+  </data>
+  <data name="Hist_Chart_Memory" xml:space="preserve">
+    <value>Memoria — línea: media por minuto, banda: pico</value>
+  </data>
+  <data name="Hist_Col_Detail" xml:space="preserve">
+    <value>Detalle</value>
+  </data>
+  <data name="Hist_Col_Event" xml:space="preserve">
+    <value>Evento</value>
+  </data>
+  <data name="Hist_Col_ExitCode" xml:space="preserve">
+    <value>Código de salida</value>
+  </data>
+  <data name="Hist_Col_Time" xml:space="preserve">
+    <value>Momento</value>
+  </data>
+  <data name="Hist_Disabled" xml:space="preserve">
+    <value>El historial está desactivado para este servicio (pestaña Supervisión).</value>
+  </data>
+  <data name="Hist_Empty" xml:space="preserve">
+    <value>Todavía no hay mediciones para este periodo.</value>
+  </data>
+  <data name="Hist_Export_Failed" xml:space="preserve">
+    <value>Error al exportar</value>
+  </data>
+  <data name="Hist_Exported" xml:space="preserve">
+    <value>Exportado: {0}</value>
+  </data>
+  <data name="Hist_Group_Events" xml:space="preserve">
+    <value>Eventos</value>
+  </data>
+  <data name="Hist_Lbl_Range" xml:space="preserve">
+    <value>Periodo:</value>
+  </data>
+  <data name="Hist_MarkerLegend" xml:space="preserve">
+    <value>Las líneas verticales punteadas marcan los inicios de la aplicación.</value>
+  </data>
+  <data name="Hist_NoEvents" xml:space="preserve">
+    <value>No hay eventos en este periodo.</value>
+  </data>
+  <data name="Hist_Range_1h" xml:space="preserve">
+    <value>Última hora</value>
+  </data>
+  <data name="Hist_Range_24h" xml:space="preserve">
+    <value>Últimas 24 horas</value>
+  </data>
+  <data name="Hist_Range_30d" xml:space="preserve">
+    <value>Últimos 30 días</value>
+  </data>
+  <data name="Hist_Range_7d" xml:space="preserve">
+    <value>Últimos 7 días</value>
+  </data>
+  <data name="Hist_Stat_Covered" xml:space="preserve">
+    <value>Periodo cubierto</value>
+  </data>
+  <data name="Hist_Stat_CpuAvg" xml:space="preserve">
+    <value>CPU de media</value>
+  </data>
+  <data name="Hist_Stat_CpuPeak" xml:space="preserve">
+    <value>Pico de CPU</value>
+  </data>
+  <data name="Hist_Stat_MemAvg" xml:space="preserve">
+    <value>Memoria de media</value>
+  </data>
+  <data name="Hist_Stat_MemPeak" xml:space="preserve">
+    <value>Pico de memoria</value>
+  </data>
+  <data name="Hist_Stat_Restarts" xml:space="preserve">
+    <value>Reinicios</value>
+  </data>
+  <data name="Hist_Status" xml:space="preserve">
+    <value>{0} mediciones, {1} eventos</value>
+  </data>
+  <data name="Hist_Title" xml:space="preserve">
+    <value>Historial - {0}</value>
+  </data>
   <data name="Host_ConfigReadFailed" xml:space="preserve">
     <value>No se pudo leer la configuración: {0}</value>
   </data>
@@ -742,6 +832,9 @@ Administrar requiere permisos de administrador; los comandos de supervisión sol
   </data>
   <data name="Main_Btn_Edit" xml:space="preserve">
     <value>Editar...</value>
+  </data>
+  <data name="Main_Btn_History" xml:space="preserve">
+    <value>Historial...</value>
   </data>
   <data name="Main_Btn_Logs" xml:space="preserve">
     <value>Registros...</value>
@@ -916,6 +1009,9 @@ La causa suele estar en el registro. ¿Abrirlo ahora?</value>
   </data>
   <data name="Main_Tip_Edit" xml:space="preserve">
     <value>Cambiar la configuración del servicio seleccionado</value>
+  </data>
+  <data name="Main_Tip_History" xml:space="preserve">
+    <value>Carga de CPU, memoria y reinicios pasados del servicio seleccionado</value>
   </data>
   <data name="Main_Tip_Logs" xml:space="preserve">
     <value>Vista en directo de los registros stdout/stderr</value>

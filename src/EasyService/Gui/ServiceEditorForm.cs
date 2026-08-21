@@ -80,6 +80,7 @@ public sealed class ServiceEditorForm : Form
     private readonly NumericUpDown _critCpu = Ui.Spin(0, 100, 0);
     private readonly NumericUpDown _warnMemory = Ui.Spin(0, 1_048_576, 0, 64);
     private readonly NumericUpDown _critMemory = Ui.Spin(0, 1_048_576, 0, 64);
+    private readonly NumericUpDown _historyDays = Ui.Spin(0, 3650, 30);
     private readonly TextBox _integration = new()
     {
         Multiline = true,
@@ -354,6 +355,9 @@ public sealed class ServiceEditorForm : Form
         Ui.AddRow(p, S.Editor_Lbl_CritMemory, _critMemory);
         Ui.AddFullRow(p, Ui.Hint(S.Editor_Hint_Memory));
 
+        Ui.AddRow(p, S.Editor_Lbl_HistoryDays, _historyDays);
+        Ui.AddFullRow(p, Ui.Hint(S.Editor_Hint_HistoryDays));
+
         Ui.AddSpacer(p, S.Editor_Group_Integration);
         Ui.AddFullRow(p, _integration);
         _integration.Font = Ui.MonoFont;
@@ -506,6 +510,7 @@ public sealed class ServiceEditorForm : Form
         _critCpu.Value = Math.Clamp(c.CritCpuPercent, 0, 100);
         _warnMemory.Value = Math.Clamp(c.WarnMemoryMb, 0, 1_048_576);
         _critMemory.Value = Math.Clamp(c.CritMemoryMb, 0, 1_048_576);
+        _historyDays.Value = Math.Clamp(c.HistoryDays, 0, 3650);
 
         _stopConsole.Checked = c.StopUseConsole;
         _stopConsoleMs.Value = Math.Clamp(c.StopConsoleMs, 0, 600_000);
@@ -594,6 +599,7 @@ public sealed class ServiceEditorForm : Form
         c.CritCpuPercent = (int)_critCpu.Value;
         c.WarnMemoryMb = (int)_warnMemory.Value;
         c.CritMemoryMb = (int)_critMemory.Value;
+        c.HistoryDays = (int)_historyDays.Value;
 
         c.StopUseConsole = _stopConsole.Checked;
         c.StopConsoleMs = (int)_stopConsoleMs.Value;

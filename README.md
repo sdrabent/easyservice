@@ -39,6 +39,7 @@ gleichermaßen „Wird ausgeführt" melden.*
 | Einzelne .exe, keine Installation | ✓ | ✓ | ✓ |
 | **Monitoring-Anbindung** | ✗ | ✗ | **✓ Checkmk, Prometheus, Zabbix, Nagios** |
 | **Flapping-Erkennung** | ✗ | ✗ | **✓** |
+| **Verlauf: CPU, Speicher, Neustarts** | ✗ | ✗ | **✓** |
 | Open Source | ✗ | ✓ (Public Domain) | ✓ (MIT) |
 
 ## Download
@@ -167,6 +168,30 @@ Windows-Anwendungsprotokoll (1004 = Neustart gedrosselt, 1005 = Start fehlgeschl
 1008 = hart beendet), sodass sich ohne Textmustersuche alarmieren lässt.
 
 Alle Einzelheiten samt fertiger Konfigurationsschnipsel: **[docs/monitoring.md](docs/monitoring.md)**.
+
+### Verlauf
+
+Doppelklick auf einen Dienst öffnet seinen **Verlauf**: was er in der Vergangenheit an
+CPU und Speicher gekostet hat, wie oft er neu gestartet wurde und was ihm zugestoßen ist.
+
+Der überwachende Prozess verdichtet seine 5-Sekunden-Messungen auf **eine Zeile pro
+Minute** und schreibt sie als CSV nach `%ProgramData%\EasyService\history\`. Das sind
+rund 100 KB je Dienst und Monat; voreingestellt sind 30 Tage, einstellbar auf der
+Registerkarte *Überwachung* (0 schaltet die Aufzeichnung ab).
+
+Im Fenster:
+
+- **Kennzahlen** für den gewählten Zeitraum: Neustarts, CPU im Mittel und in der Spitze,
+  Speicher im Mittel und in der Spitze
+- **Zwei Diagramme** – CPU und Speicher getrennt, bewusst nicht mit zwei y-Achsen in
+  einem Rahmen. Die Linie zeigt den Minutenmittelwert, die Fläche die Spitze: ein Dienst,
+  der bei 2 % dümpelt und jede Minute auf 90 % springt, sieht damit anders aus als einer,
+  der konstant bei 40 % liegt. Gepunktete senkrechte Linien markieren Starts der Anwendung.
+- **Ereignisliste** mit Zeitpunkt, Ereignis und Exit-Code
+- Zeitraum 1 Stunde bis 30 Tage, Export des gezeigten Ausschnitts als CSV
+
+Das Format ist bewusst CSV: eine Datei, die ein Administrator in fünf Jahren auch ohne
+EasyService noch öffnen, greppen oder in Excel auswerten kann.
 
 ### Sicherheitsnetz beim Löschen
 

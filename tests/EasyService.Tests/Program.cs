@@ -40,6 +40,9 @@ internal static class Program
 
             foreach (var (name, test) in MonitoringTests.All(_root))
                 Run(name, test);
+
+            foreach (var (name, test) in HistoryTests.All(_root))
+                Run(name, test);
         }
         finally
         {
@@ -241,6 +244,9 @@ internal static class Program
 
         using (var quick = new Gui.QuickAddForm(Cmd))
             quick.CreateControl();
+
+        using (var history = new Gui.HistoryForm(config))
+            history.CreateControl();
     }
 
     // ------------------------------------------------------------- infrastructure

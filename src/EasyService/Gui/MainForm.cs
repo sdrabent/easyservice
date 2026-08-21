@@ -13,7 +13,7 @@ public sealed class MainForm : Form
     private readonly ToolStripButton _onlyManaged;
     private readonly System.Windows.Forms.Timer _refreshTimer;
 
-    private readonly ToolStripButton _btnEdit, _btnStart, _btnStop, _btnRestart, _btnLogs, _btnRemove;
+    private readonly ToolStripButton _btnEdit, _btnStart, _btnStop, _btnRestart, _btnLogs, _btnRemove, _btnHistory;
 
     private List<ServiceInfo> _services = new();
     private Dictionary<string, CheckResult> _checks = new(StringComparer.OrdinalIgnoreCase);
@@ -59,7 +59,7 @@ public sealed class MainForm : Form
         _list.Columns.Add(S.Main_Col_Account, 140);
         _list.Columns.Add(S.Main_Col_Program, 260);
         _list.SelectedIndexChanged += (_, _) => UpdateButtons();
-        _list.DoubleClick += (_, _) => EditSelected();
+        _list.DoubleClick += (_, _) => ShowHistory();
         _list.ColumnClick += OnColumnClick;
         _list.KeyDown += OnListKeyDown;
 
@@ -73,6 +73,8 @@ public sealed class MainForm : Form
         _btnRestart = Button(S.Main_Btn_Restart, (_, _) => Control(ServiceAction.Restart), null);
         _toolbar.Items.AddRange(new ToolStripItem[] { _btnStart, _btnStop, _btnRestart });
         _toolbar.Items.Add(new ToolStripSeparator());
+        _btnHistory = Button(S.Main_Btn_History, (_, _) => ShowHistory(), S.Main_Tip_History);
+        _toolbar.Items.Add(_btnHistory);
         _btnLogs = Button(S.Main_Btn_Logs, (_, _) => ShowLogs(), S.Main_Tip_Logs);
         _toolbar.Items.Add(_btnLogs);
         _btnRemove = Button(S.Main_Btn_Remove, (_, _) => RemoveSelected(), S.Main_Tip_Remove);
@@ -219,6 +221,7 @@ public sealed class MainForm : Form
     private ContextMenuStrip BuildContextMenu()
     {
         var menu = new ContextMenuStrip();
+        menu.Items.Add(S.Main_Btn_History, null, (_, _) => ShowHistory());
         menu.Items.Add(S.Main_Btn_Edit, null, (_, _) => EditSelected());
         menu.Items.Add(S.Main_Btn_Logs, null, (_, _) => ShowLogs());
         menu.Items.Add(new ToolStripSeparator());
@@ -433,6 +436,7 @@ public sealed class MainForm : Form
         var managed = s?.ManagedByEasyService == true;
         _btnEdit.Enabled = managed;
         _btnLogs.Enabled = managed;
+        _btnHistory.Enabled = managed;
         _btnRemove.Enabled = s is not null;
         _btnStart.Enabled = s is { IsStopped: true, Startup: not StartupType.Disabled };
         _btnStop.Enabled = s is { IsRunning: true };
@@ -555,6 +559,18 @@ public sealed class MainForm : Form
 
         Run(S.Main_Task_Remove(s.Name), () => ServiceRegistry.Remove(s.Name));
         Reload();
+    }
+
+    private void ShowHistory()
+    {
+        if (Selected is not { } s) return;
+        var config = ServiceConfig.Load(s.Name);
+        if (config is null)
+        {
+            Ui.ShowInfo(this, S.Main_NotEditable_Title, S.Main_MissingConfig_Text(s.Name));
+            return;
+        }
+        new HistoryForm(config).Show(this);
     }
 
     private void ShowLogs()

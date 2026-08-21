@@ -359,6 +359,9 @@ La gestion exige des droits d'administrateur ; les commandes de surveillance ne 
   <data name="Editor_Hint_ExitCodes" xml:space="preserve">
     <value>Exemple : associer le code de sortie 0 à « Arrêter le service » pour qu'un programme terminé proprement ne soit pas redémarré indéfiniment.</value>
   </data>
+  <data name="Editor_Hint_HistoryDays" xml:space="preserve">
+    <value>0 = ne pas enregistrer d'historique. Une ligne par minute, environ 100 Ko par service et par mois, au format CSV dans %ProgramData%\EasyService\history.</value>
+  </data>
   <data name="Editor_Hint_Interact" xml:space="preserve">
     <value>Possible uniquement avec le compte système local. Les versions récentes de Windows isolent les services dans la session 0 ; les fenêtres de l'application ne sont pas visibles pour les utilisateurs connectés.</value>
   </data>
@@ -451,6 +454,9 @@ La gestion exige des droits d'administrateur ; les commandes de surveillance ne 
   </data>
   <data name="Editor_Lbl_ExitCode" xml:space="preserve">
     <value>Code de sortie :</value>
+  </data>
+  <data name="Editor_Lbl_HistoryDays" xml:space="preserve">
+    <value>Conserver l'historique (jours) :</value>
   </data>
   <data name="Editor_Lbl_LogonAs" xml:space="preserve">
     <value>Ouvrir la session en tant que :</value>
@@ -614,6 +620,90 @@ La gestion exige des droits d'administrateur ; les commandes de surveillance ne 
   <data name="Evt_SupervisorStarted" xml:space="preserve">
     <value>Surveillance démarrée</value>
   </data>
+  <data name="Hist_Btn_Export" xml:space="preserve">
+    <value>Exporter en CSV...</value>
+  </data>
+  <data name="Hist_Btn_OpenFolder" xml:space="preserve">
+    <value>Ouvrir le dossier</value>
+  </data>
+  <data name="Hist_Chart_Cpu" xml:space="preserve">
+    <value>Charge UC en % — ligne : moyenne par minute, bande : pic</value>
+  </data>
+  <data name="Hist_Chart_Memory" xml:space="preserve">
+    <value>Mémoire — ligne : moyenne par minute, bande : pic</value>
+  </data>
+  <data name="Hist_Col_Detail" xml:space="preserve">
+    <value>Détail</value>
+  </data>
+  <data name="Hist_Col_Event" xml:space="preserve">
+    <value>Événement</value>
+  </data>
+  <data name="Hist_Col_ExitCode" xml:space="preserve">
+    <value>Code de sortie</value>
+  </data>
+  <data name="Hist_Col_Time" xml:space="preserve">
+    <value>Horodatage</value>
+  </data>
+  <data name="Hist_Disabled" xml:space="preserve">
+    <value>L'historique est désactivé pour ce service (onglet Surveillance).</value>
+  </data>
+  <data name="Hist_Empty" xml:space="preserve">
+    <value>Aucune mesure pour cette période pour le moment.</value>
+  </data>
+  <data name="Hist_Export_Failed" xml:space="preserve">
+    <value>Échec de l'exportation</value>
+  </data>
+  <data name="Hist_Exported" xml:space="preserve">
+    <value>Exporté : {0}</value>
+  </data>
+  <data name="Hist_Group_Events" xml:space="preserve">
+    <value>Événements</value>
+  </data>
+  <data name="Hist_Lbl_Range" xml:space="preserve">
+    <value>Période :</value>
+  </data>
+  <data name="Hist_MarkerLegend" xml:space="preserve">
+    <value>Les lignes verticales pointillées marquent les démarrages de l'application.</value>
+  </data>
+  <data name="Hist_NoEvents" xml:space="preserve">
+    <value>Aucun événement pendant cette période.</value>
+  </data>
+  <data name="Hist_Range_1h" xml:space="preserve">
+    <value>Dernière heure</value>
+  </data>
+  <data name="Hist_Range_24h" xml:space="preserve">
+    <value>Dernières 24 heures</value>
+  </data>
+  <data name="Hist_Range_30d" xml:space="preserve">
+    <value>30 derniers jours</value>
+  </data>
+  <data name="Hist_Range_7d" xml:space="preserve">
+    <value>7 derniers jours</value>
+  </data>
+  <data name="Hist_Stat_Covered" xml:space="preserve">
+    <value>Période couverte</value>
+  </data>
+  <data name="Hist_Stat_CpuAvg" xml:space="preserve">
+    <value>UC en moyenne</value>
+  </data>
+  <data name="Hist_Stat_CpuPeak" xml:space="preserve">
+    <value>Pic UC</value>
+  </data>
+  <data name="Hist_Stat_MemAvg" xml:space="preserve">
+    <value>Mémoire en moyenne</value>
+  </data>
+  <data name="Hist_Stat_MemPeak" xml:space="preserve">
+    <value>Pic mémoire</value>
+  </data>
+  <data name="Hist_Stat_Restarts" xml:space="preserve">
+    <value>Redémarrages</value>
+  </data>
+  <data name="Hist_Status" xml:space="preserve">
+    <value>{0} mesures, {1} événements</value>
+  </data>
+  <data name="Hist_Title" xml:space="preserve">
+    <value>Historique - {0}</value>
+  </data>
   <data name="Host_ConfigReadFailed" xml:space="preserve">
     <value>Impossible de lire la configuration : {0}</value>
   </data>
@@ -742,6 +832,9 @@ sera supprimé. Continuer ?</value>
   </data>
   <data name="Main_Btn_Edit" xml:space="preserve">
     <value>Modifier...</value>
+  </data>
+  <data name="Main_Btn_History" xml:space="preserve">
+    <value>Historique...</value>
   </data>
   <data name="Main_Btn_Logs" xml:space="preserve">
     <value>Journaux...</value>
@@ -916,6 +1009,9 @@ La cause se trouve généralement dans le journal. L'ouvrir maintenant ?</value>
   </data>
   <data name="Main_Tip_Edit" xml:space="preserve">
     <value>Modifier la configuration du service sélectionné</value>
+  </data>
+  <data name="Main_Tip_History" xml:space="preserve">
+    <value>Charge UC, mémoire et redémarrages passés du service sélectionné</value>
   </data>
   <data name="Main_Tip_Logs" xml:space="preserve">
     <value>Vue en direct des journaux stdout/stderr</value>
