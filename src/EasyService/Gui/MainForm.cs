@@ -23,6 +23,11 @@ public sealed class MainForm : Form
     private readonly string? _initialSelection;
 
     private ToolStripMenuItem _menuExport = null!;
+    private ImageList? _statusIcons;
+    private Panel _empty = null!;
+    private Label _emptyTitle = null!, _emptyText = null!;
+    private Button _emptyButton = null!;
+    private Font? _rowFont, _rowFontBold;
     private readonly bool _openQuickAdd;
     private readonly string? _openHistoryFor;
 
@@ -46,7 +51,9 @@ public sealed class MainForm : Form
             FullRowSelect = true,
             GridLines = false,
             HideSelection = false,
-            MultiSelect = false,
+            // Mehrfachauswahl: wer zehn Dienste nach einem Update neu starten muss, soll
+            // das nicht zehnmal einzeln tun.
+            MultiSelect = true,
             UseCompatibleStateImageBehavior = false,
         };
         _list.Columns.Add(S.Main_Col_Name, 190);
@@ -110,7 +117,10 @@ public sealed class MainForm : Form
         _list.ShowItemToolTips = true;
         _list.ContextMenuStrip = BuildContextMenu();
 
+        _empty = BuildEmptyState();
+
         Controls.Add(_list);
+        Controls.Add(_empty);
         Controls.Add(_toolbar);
         Controls.Add(statusStrip);
 
@@ -133,10 +143,30 @@ public sealed class MainForm : Form
         KeyDown += (_, e) =>
         {
             if (e.KeyCode == Keys.F5) { Reload(); e.Handled = true; }
+            else if (e.Control && e.KeyCode == Keys.N) { CreateNew(); e.Handled = true; }
+            else if (e.Control && e.KeyCode == Keys.E) { EditSelected(); e.Handled = true; }
+            else if (e.Control && e.KeyCode == Keys.L) { ShowLogs(); e.Handled = true; }
+            else if (e.Control && e.KeyCode == Keys.H) { ShowHistory(); e.Handled = true; }
+            else if (e.Control && e.KeyCode == Keys.D) { DuplicateSelected(); e.Handled = true; }
+            else if (e.Control && e.KeyCode == Keys.F)
+            {
+                // Strg+F springt ins Filterfeld und markiert, was drin steht - dann tippt
+                // man die naechste Suche einfach drueber.
+                _filterBox.Focus();
+                _filterBox.SelectAll();
+                e.Handled = true;
+            }
         };
 
         Load += (_, _) =>
         {
+            // Erst hier: vorher stehen weder die tatsaechliche Hintergrundfarbe (hell oder
+            // dunkel) noch die DPI des Bildschirms fest, auf dem das Fenster landet.
+            _statusIcons = Ui.BuildStatusIcons(_list);
+            _list.SmallImageList = _statusIcons;
+            _rowFont = _list.Font;
+            _rowFontBold = new Font(_list.Font, FontStyle.Bold);
+
             RestoreWindowState();
             Reload();
             _refreshTimer.Start();
@@ -144,7 +174,12 @@ public sealed class MainForm : Form
             if (_openHistoryFor is { } service) BeginInvoke(() => ShowHistoryFor(service));
         };
         FormClosing += (_, _) => SaveWindowState();
-        FormClosed += (_, _) => _refreshTimer.Stop();
+        FormClosed += (_, _) =>
+        {
+            _refreshTimer.Stop();
+            _statusIcons?.Dispose();
+            _rowFontBold?.Dispose();
+        };
     }
 
     // ------------------------------------------------------- Fensterzustand ---
@@ -223,12 +258,83 @@ public sealed class MainForm : Form
         return button;
     }
 
+    /// <summary>
+    /// What the window shows when the list has nothing in it. A first start otherwise looks
+    /// like an empty table with twelve column headers and no hint what to do with it.
+    /// </summary>
+    private Panel BuildEmptyState()
+    {
+        var panel = new Panel { Dock = DockStyle.Fill, Visible = false };
+
+        var stack = new FlowLayoutPanel
+        {
+            FlowDirection = FlowDirection.TopDown,
+            AutoSize = true,
+            AutoSizeMode = AutoSizeMode.GrowAndShrink,
+            WrapContents = false,
+            Anchor = AnchorStyles.None,
+        };
+
+        _emptyTitle = new Label
+        {
+            AutoSize = true,
+            Font = new Font(Font.FontFamily, Font.Size + 3f, FontStyle.Bold),
+            Margin = new Padding(0, 0, 0, 10),
+        };
+        _emptyText = new Label
+        {
+            AutoSize = true,
+            MaximumSize = new Size(520, 0),
+            ForeColor = SystemColors.GrayText,
+            Margin = new Padding(0, 0, 0, 18),
+        };
+        _emptyButton = new Button
+        {
+            Text = S.Main_Btn_Add,
+            AutoSize = true,
+            Padding = new Padding(14, 6, 14, 6),
+        };
+        _emptyButton.Click += (_, _) => CreateNew();
+
+        stack.Controls.Add(_emptyTitle);
+        stack.Controls.Add(_emptyText);
+        stack.Controls.Add(_emptyButton);
+        panel.Controls.Add(stack);
+
+        void Centre() => stack.Location = new Point(Math.Max(0, (panel.Width - stack.Width) / 2),
+                                                    Math.Max(0, (panel.Height - stack.Height) / 2));
+        panel.Resize += (_, _) => Centre();
+        stack.SizeChanged += (_, _) => Centre();
+        return panel;
+    }
+
+    private void UpdateEmptyState(int visibleCount)
+    {
+        var filtering = _filterBox.Text.Trim().Length > 0;
+        var show = visibleCount == 0;
+
+        if (show)
+        {
+            _emptyTitle.Text = filtering ? S.Main_Empty_Filter_Title : S.Main_Empty_Title;
+            _emptyText.Text = filtering
+                ? S.Main_Empty_Filter_Text(_filterBox.Text.Trim(), S.Main_Btn_OnlyManaged)
+                : S.Main_Empty_Text;
+            _emptyButton.Visible = !filtering;
+        }
+
+        // Nur eines von beiden sichtbar: zwei auf Fill gedockte Steuerelemente teilen sich
+        // sonst den Platz und keines bekommt ihn ganz.
+        _list.Visible = !show;
+        _empty.Visible = show;
+    }
+
     private ContextMenuStrip BuildContextMenu()
     {
         var menu = new ContextMenuStrip();
-        menu.Items.Add(S.Main_Btn_History, null, (_, _) => ShowHistory());
-        menu.Items.Add(S.Main_Btn_Edit, null, (_, _) => EditSelected());
-        menu.Items.Add(S.Main_Btn_Logs, null, (_, _) => ShowLogs());
+        menu.Items.Add(MenuItem(S.Main_Btn_History, Keys.Control | Keys.H, ShowHistory));
+        menu.Items.Add(MenuItem(S.Main_Btn_Edit, Keys.Control | Keys.E, EditSelected));
+        menu.Items.Add(MenuItem(S.Main_Btn_Logs, Keys.Control | Keys.L, ShowLogs));
+        menu.Items.Add(MenuItem(S.Main_Btn_Duplicate, Keys.Control | Keys.D, DuplicateSelected));
         menu.Items.Add(new ToolStripSeparator());
         menu.Items.Add(S.Main_Btn_Start, null, (_, _) => Control(ServiceAction.Start));
         menu.Items.Add(S.Main_Btn_Stop, null, (_, _) => Control(ServiceAction.Stop));
@@ -252,8 +358,70 @@ public sealed class MainForm : Form
         return menu;
     }
 
+    /// <summary>
+    /// Menu entry with a shortcut. Windows renders the key combination in the menu itself and
+    /// handles it while the menu is closed, so the shortcut is documented where it is used.
+    /// </summary>
+    private static ToolStripMenuItem MenuItem(string text, Keys shortcut, Action action)
+    {
+        var item = new ToolStripMenuItem(text, null, (_, _) => action());
+        if (shortcut == Keys.None) return item;
+
+        item.ShortcutKeys = shortcut;
+        item.ShowShortcutKeys = true;
+        return item;
+    }
+
+    /// <summary>
+    /// A second service from an existing one. Most services on a machine are variations of
+    /// each other - same program, another port, another working directory - and setting the
+    /// nine tabs up again by hand is how differences creep in.
+    /// </summary>
+    private void DuplicateSelected()
+    {
+        if (Selected is not { ManagedByEasyService: true } s) return;
+
+        var config = ServiceRegistry.LoadComplete(s.Name);
+        if (config is null)
+        {
+            Ui.ShowError(this, S.Main_MissingConfig_Title, S.Main_MissingConfig_Text(s.Name));
+            return;
+        }
+
+        var copy = CopyName(s.Name);
+
+        // Die Protokollpfade tragen den Dienstnamen. Ohne diesen Schritt schreiben Original
+        // und Kopie in dieselbe Datei und keiner der beiden Ausgaben ist mehr zu trauen.
+        config.StdoutPath = RenameInPath(config.StdoutPath, s.Name, copy);
+        config.StderrPath = RenameInPath(config.StderrPath, s.Name, copy);
+
+        config.ServiceName = copy;
+        config.DisplayName = "";     // leitet sich wieder vom Namen ab
+        config.Password = "";        // Kennwoerter gehoeren dem Original
+        config.ApplyDefaultLogPaths();
+
+        using var dlg = new ServiceEditorForm(config, isNew: true);
+        if (dlg.ShowDialog(this) != DialogResult.OK) return;
+
+        Run(S.Main_Task_Install(dlg.Config.ServiceName), () => ServiceRegistry.Install(dlg.Config));
+        Reload();
+    }
+
+    private static string CopyName(string original)
+    {
+        var candidate = original + "-copy";
+        for (var n = 2; ServiceRegistry.Exists(candidate); n++) candidate = $"{original}-copy{n}";
+        return candidate;
+    }
+
+    private static string RenameInPath(string path, string from, string to) =>
+        string.IsNullOrWhiteSpace(path) ? path : path.Replace(from, to, StringComparison.OrdinalIgnoreCase);
+
     private ServiceInfo? Selected =>
         _list.SelectedItems.Count > 0 ? _list.SelectedItems[0].Tag as ServiceInfo : null;
+
+    private List<ServiceInfo> SelectedMany =>
+        _list.SelectedItems.Cast<ListViewItem>().Select(i => i.Tag).OfType<ServiceInfo>().ToList();
 
     // ------------------------------------------------------------- loading ---
 
@@ -307,7 +475,10 @@ public sealed class MainForm : Form
 
         visible = Sort(visible);
 
-        var previous = Selected?.Name;
+        var previous = _list.SelectedItems.Cast<ListViewItem>()
+                            .Select(i => (i.Tag as ServiceInfo)?.Name)
+                            .OfType<string>()
+                            .ToHashSet(StringComparer.OrdinalIgnoreCase);
         _list.BeginUpdate();
         try
         {
@@ -355,19 +526,25 @@ public sealed class MainForm : Form
                 var fallback = s.IsRunning ? CheckStatus.Ok
                     : s.Startup == StartupType.Disabled ? CheckStatus.Unknown
                     : (CheckStatus?)null;
-                item.ForeColor = Ui.HealthColor(check?.Status ?? fallback, _list, _list.ForeColor);
-                item.Font = s.ManagedByEasyService ? new Font(_list.Font, FontStyle.Bold) : _list.Font;
+                var status = check?.Status ?? fallback;
+
+                // Symbol und Wort tragen den Zustand, nicht die Farbe der ganzen Zeile. Eine
+                // durchgefaerbte Zeile ist erstens fuer Rotgruenblinde stumm und zweitens
+                // schlecht zu lesen: der Kontoname wird nicht dadurch dringlich, dass der
+                // Dienst haengt.
+                item.UseItemStyleForSubItems = false;
+                item.ImageIndex = Ui.StatusIconIndex(status);
+                item.ForeColor = _list.ForeColor;
+                item.SubItems[1].ForeColor = Ui.HealthColor(status, _list, _list.ForeColor);
+                item.SubItems[2].ForeColor = Ui.HealthColor(status, _list, _list.ForeColor);
+                item.Font = s.ManagedByEasyService ? _rowFontBold ?? _list.Font : _rowFont ?? _list.Font;
                 item.ToolTipText = check?.Summary ?? "";
             }
 
-            if (previous is not null)
+            if (previous.Count > 0)
             {
                 foreach (ListViewItem item in _list.Items)
-                    if (((ServiceInfo)item.Tag!).Name == previous)
-                    {
-                        item.Selected = true;
-                        break;
-                    }
+                    item.Selected = previous.Contains(((ServiceInfo)item.Tag!).Name);
             }
             else if (_initialSelection is not null)
             {
@@ -392,6 +569,7 @@ public sealed class MainForm : Form
             ? S.Main_Status_Health(critical, warning)
             : managed > 0 ? S.Main_Status_AllFine : "";
         _status.Text = S.Main_Status_Summary(visible.Count, _services.Count, managed, health);
+        UpdateEmptyState(visible.Count);
         UpdateButtons();
     }
 
@@ -437,16 +615,20 @@ public sealed class MainForm : Form
 
     private void UpdateButtons()
     {
-        var s = Selected;
-        var managed = s?.ManagedByEasyService == true;
-        _btnEdit.Enabled = managed;
-        _btnLogs.Enabled = managed;
-        _btnHistory.Enabled = managed;
-        _menuExport.Enabled = managed;
-        _btnRemove.Enabled = s is not null;
-        _btnStart.Enabled = s is { IsStopped: true, Startup: not StartupType.Disabled };
-        _btnStop.Enabled = s is { IsRunning: true };
-        _btnRestart.Enabled = s is { IsRunning: true };
+        var many = SelectedMany;
+
+        // Bearbeiten, Verlauf und Protokoll gibt es nur fuer genau einen Dienst - fuer zehn
+        // gleichzeitig ergaeben sie kein Fenster, das jemand lesen will.
+        var single = many.Count == 1 && many[0].ManagedByEasyService;
+        _btnEdit.Enabled = single;
+        _btnLogs.Enabled = single;
+        _btnHistory.Enabled = single;
+        _menuExport.Enabled = single;
+
+        _btnRemove.Enabled = many.Count > 0;
+        _btnStart.Enabled = many.Any(s => s.IsStopped && s.Startup != StartupType.Disabled);
+        _btnStop.Enabled = many.Any(s => s.IsRunning);
+        _btnRestart.Enabled = many.Any(s => s.IsRunning);
     }
 
     // ------------------------------------------------------------- actions ---
@@ -640,41 +822,84 @@ public sealed class MainForm : Form
 
     private void Control(ServiceAction action)
     {
-        if (Selected is not { } s) return;
-        var timeout = TimeSpan.FromSeconds(60);
-        switch (action)
+        // Nur die Dienste anfassen, bei denen die Aktion ueberhaupt etwas bedeutet: wer zehn
+        // Zeilen markiert und "Beenden" drueckt, meint die laufenden davon.
+        var targets = action == ServiceAction.Start
+            ? SelectedMany.Where(s => s.IsStopped && s.Startup != StartupType.Disabled).ToList()
+            : SelectedMany.Where(s => s.IsRunning).ToList();
+
+        if (targets.Count == 0) return;
+
+        if (targets.Count > 1)
         {
-            case ServiceAction.Start:
-                Run(S.Main_Task_Start(s.Name), () => ServiceRegistry.Start(s.Name, timeout));
-                break;
-            case ServiceAction.Stop:
-                Run(S.Main_Task_Stop(s.Name), () => ServiceRegistry.Stop(s.Name, timeout));
-                break;
-            case ServiceAction.Restart:
-                Run(S.Main_Task_Restart(s.Name), () => ServiceRegistry.Restart(s.Name, timeout));
-                break;
+            var question = action switch
+            {
+                ServiceAction.Start => S.Main_Bulk_Start(targets.Count),
+                ServiceAction.Stop => S.Main_Bulk_Stop(targets.Count),
+                _ => S.Main_Bulk_Restart(targets.Count),
+            };
+            if (!Ui.Confirm(this, S.Main_Bulk_Title, question)) return;
         }
+
+        RunMany(targets.Select(s => (Describe(action, s.Name), (Action)(() => Apply(action, s.Name)))).ToList());
         Reload();
     }
 
+    private static void Apply(ServiceAction action, string name)
+    {
+        var timeout = TimeSpan.FromSeconds(60);
+        switch (action)
+        {
+            case ServiceAction.Start: ServiceRegistry.Start(name, timeout); break;
+            case ServiceAction.Stop: ServiceRegistry.Stop(name, timeout); break;
+            case ServiceAction.Restart: ServiceRegistry.Restart(name, timeout); break;
+        }
+    }
+
+    private static string Describe(ServiceAction action, string name) => action switch
+    {
+        ServiceAction.Start => S.Main_Task_Start(name),
+        ServiceAction.Stop => S.Main_Task_Stop(name),
+        _ => S.Main_Task_Restart(name),
+    };
+
     private void RemoveSelected()
     {
-        if (Selected is not { } s) return;
+        var targets = SelectedMany;
+        if (targets.Count == 0) return;
 
-        var warning = s.ManagedByEasyService
-            ? S.Main_Remove_Managed(s.Name)
-            : S.Main_Remove_Foreign(s.Name);
-
-        if (!Ui.Confirm(this, S.Main_Remove_Title, warning)) return;
-
-        if (!s.ManagedByEasyService)
+        if (targets.Count == 1)
         {
-            using var confirm = new TextConfirmDialog(s.Name);
-            if (confirm.ShowDialog(this) != DialogResult.OK) return;
+            var s = targets[0];
+            var warning = s.ManagedByEasyService
+                ? S.Main_Remove_Managed(s.Name)
+                : S.Main_Remove_Foreign(s.Name);
+
+            if (!Ui.Confirm(this, S.Main_Remove_Title, warning)) return;
+            if (!ConfirmForeign(s)) return;
+
+            Run(S.Main_Task_Remove(s.Name), () => ServiceRegistry.Remove(s.Name));
+            Reload();
+            return;
         }
 
-        Run(S.Main_Task_Remove(s.Name), () => ServiceRegistry.Remove(s.Name));
+        var names = string.Join(Environment.NewLine, targets.Select(t => "    " + t.Name));
+        if (!Ui.Confirm(this, S.Main_Remove_Title, S.Main_Remove_Many(targets.Count, names))) return;
+
+        // Fremde Dienste bleiben einzeln zu bestaetigen. Der Tippschutz ist genau fuer den
+        // Fall da, dass in einer Mehrfachauswahl versehentlich etwas Fremdes steckt.
+        foreach (var foreign in targets.Where(t => !t.ManagedByEasyService))
+            if (!ConfirmForeign(foreign)) return;
+
+        RunMany(targets.Select(t => (S.Main_Task_Remove(t.Name), (Action)(() => ServiceRegistry.Remove(t.Name)))).ToList());
         Reload();
+    }
+
+    private bool ConfirmForeign(ServiceInfo s)
+    {
+        if (s.ManagedByEasyService) return true;
+        using var confirm = new TextConfirmDialog(s.Name);
+        return confirm.ShowDialog(this) == DialogResult.OK;
     }
 
     private void ShowHistory()
@@ -703,6 +928,41 @@ public sealed class MainForm : Form
             return;
         }
         new LogViewerForm(config).Show(this);
+    }
+
+    /// <summary>
+    /// Runs several SCM calls in a row. One failure must neither stop the remaining ones nor
+    /// produce a message box of its own: ten stacked dialogs are worse than one list.
+    /// </summary>
+    private void RunMany(IReadOnlyList<(string What, Action Do)> tasks)
+    {
+        if (tasks.Count == 0) return;
+        if (tasks.Count == 1) { Run(tasks[0].What, tasks[0].Do); return; }
+
+        _refreshTimer.Stop();
+        var previousCursor = Cursor;
+        Cursor = Cursors.WaitCursor;
+        var failures = new List<string>();
+        try
+        {
+            foreach (var (what, action) in tasks)
+            {
+                _status.Text = S.Main_Task_Running(what);
+                Application.DoEvents();
+                try { action(); }
+                catch (Exception e) { failures.Add($"{what}: {e.Message}"); }
+            }
+        }
+        finally
+        {
+            Cursor = previousCursor;
+            _refreshTimer.Start();
+        }
+
+        if (failures.Count > 0)
+            Ui.ShowError(this, S.Main_Bulk_Failed, string.Join(Environment.NewLine, failures));
+
+        _status.Text = S.Main_Bulk_Done(tasks.Count - failures.Count, tasks.Count);
     }
 
     /// <summary>

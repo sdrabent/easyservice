@@ -70,6 +70,76 @@ internal static class Ui
         };
     }
 
+    // ------------------------------------------------------------ status icons ---
+
+    /// <summary>
+    /// Glyphs for the service list. The shape carries the meaning as much as the colour
+    /// does: roughly one man in twelve cannot tell the green from the red, and a list where
+    /// health is a hue and nothing else is unreadable for them. Circle, triangle, square.
+    /// </summary>
+    public static ImageList BuildStatusIcons(Control control)
+    {
+        var size = Math.Max(16, 16 * control.DeviceDpi / 96);
+        var list = new ImageList { ImageSize = new Size(size, size), ColorDepth = ColorDepth.Depth32Bit };
+
+        foreach (var status in new Core.CheckStatus?[]
+                 { Core.CheckStatus.Ok, Core.CheckStatus.Warning, Core.CheckStatus.Critical, Core.CheckStatus.Unknown, null })
+            list.Images.Add(StatusGlyph(status, control, size));
+
+        return list;
+    }
+
+    /// <summary>Index into <see cref="BuildStatusIcons"/>, in the same order.</summary>
+    public static int StatusIconIndex(Core.CheckStatus? status) => status switch
+    {
+        Core.CheckStatus.Ok => 0,
+        Core.CheckStatus.Warning => 1,
+        Core.CheckStatus.Critical => 2,
+        Core.CheckStatus.Unknown => 3,
+        _ => 4,
+    };
+
+    private static Bitmap StatusGlyph(Core.CheckStatus? status, Control control, int size)
+    {
+        var bitmap = new Bitmap(size, size);
+        using var g = Graphics.FromImage(bitmap);
+        g.SmoothingMode = System.Drawing.Drawing2D.SmoothingMode.AntiAlias;
+
+        if (status is null) return bitmap;   // nothing to say: an empty cell, not a grey dot
+
+        var colour = HealthColor(status, control, control.ForeColor);
+        using var brush = new SolidBrush(colour);
+        var pad = Math.Max(2, size / 6);
+        var box = new Rectangle(pad, pad, size - 2 * pad - 1, size - 2 * pad - 1);
+
+        switch (status)
+        {
+            case Core.CheckStatus.Ok:
+                g.FillEllipse(brush, box);
+                break;
+
+            case Core.CheckStatus.Warning:
+                g.FillPolygon(brush, new[]
+                {
+                    new Point(box.Left + box.Width / 2, box.Top),
+                    new Point(box.Right, box.Bottom),
+                    new Point(box.Left, box.Bottom),
+                });
+                break;
+
+            case Core.CheckStatus.Critical:
+                g.FillRectangle(brush, box);
+                break;
+
+            default:   // Unknown: an outline, because there is nothing to report
+                using (var pen = new Pen(colour, Math.Max(1.5f, size / 10f)))
+                    g.DrawEllipse(pen, box);
+                break;
+        }
+
+        return bitmap;
+    }
+
     private static Font MakeMono()
     {
         foreach (var name in new[] { "Cascadia Mono", "Consolas", "Lucida Console" })

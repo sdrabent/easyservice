@@ -910,6 +910,9 @@ wird gelöscht. Fortfahren?</value>
   <data name="Main_Btn_Add" xml:space="preserve">
     <value>Dienst hinzufügen...</value>
   </data>
+  <data name="Main_Btn_Duplicate" xml:space="preserve">
+    <value>Duplizieren...</value>
+  </data>
   <data name="Main_Btn_Edit" xml:space="preserve">
     <value>Bearbeiten...</value>
   </data>
@@ -945,6 +948,24 @@ wird gelöscht. Fortfahren?</value>
   </data>
   <data name="Main_Btn_Stop" xml:space="preserve">
     <value>Beenden</value>
+  </data>
+  <data name="Main_Bulk_Done" xml:space="preserve">
+    <value>{0} von {1} erledigt.</value>
+  </data>
+  <data name="Main_Bulk_Failed" xml:space="preserve">
+    <value>Nicht alles hat geklappt</value>
+  </data>
+  <data name="Main_Bulk_Restart" xml:space="preserve">
+    <value>{0} ausgewählte Dienste neu starten?</value>
+  </data>
+  <data name="Main_Bulk_Start" xml:space="preserve">
+    <value>{0} ausgewählte Dienste starten?</value>
+  </data>
+  <data name="Main_Bulk_Stop" xml:space="preserve">
+    <value>{0} ausgewählte Dienste beenden?</value>
+  </data>
+  <data name="Main_Bulk_Title" xml:space="preserve">
+    <value>Mehrere Dienste</value>
   </data>
   <data name="Main_Col_Account" xml:space="preserve">
     <value>Konto</value>
@@ -987,6 +1008,20 @@ wird gelöscht. Fortfahren?</value>
   </data>
   <data name="Main_Ctx_ServicesMsc" xml:space="preserve">
     <value>In services.msc anzeigen</value>
+  </data>
+  <data name="Main_Empty_Filter_Text" xml:space="preserve">
+    <value>Kein Dienst passt zu „{0}“. Filter leeren oder „{1}“ abschalten, um alle Windows-Dienste zu sehen.</value>
+  </data>
+  <data name="Main_Empty_Filter_Title" xml:space="preserve">
+    <value>Nichts gefunden</value>
+  </data>
+  <data name="Main_Empty_Text" xml:space="preserve">
+    <value>EasyService betreibt ein Programm als Windows-Dienst: beim Systemstart gestartet, nach einem Absturz neu gestartet, die Ausgabe in einer Protokolldatei, der Zustand im Monitoring.
+
+Ein Programm auf dieses Fenster ziehen oder die Schaltfläche unten benutzen.</value>
+  </data>
+  <data name="Main_Empty_Title" xml:space="preserve">
+    <value>Noch keine Dienste</value>
   </data>
   <data name="Main_Err_ListFailed" xml:space="preserve">
     <value>Dienste konnten nicht gelesen werden</value>
@@ -1034,6 +1069,13 @@ Wirklich entfernen?</value>
     <value>Der Dienst "{0}" wird beendet und dauerhaft entfernt.
 
 Die Protokolldateien bleiben erhalten.</value>
+  </data>
+  <data name="Main_Remove_Many" xml:space="preserve">
+    <value>Diese {0} Dienste werden entfernt:
+
+{1}
+
+Fortfahren?</value>
   </data>
   <data name="Main_Remove_Title" xml:space="preserve">
     <value>Dienst entfernen</value>
@@ -1098,6 +1140,9 @@ Die Ursache steht meist im Protokoll. Jetzt öffnen?</value>
   </data>
   <data name="Main_Tip_Add" xml:space="preserve">
     <value>Schnell einrichten: Programm wählen, Rest wird vorbelegt (oder eine .exe ins Fenster ziehen)</value>
+  </data>
+  <data name="Main_Tip_Duplicate" xml:space="preserve">
+    <value>Einen neuen Dienst aus diesem erzeugen - gleiche Einstellungen, neuer Name</value>
   </data>
   <data name="Main_Tip_Edit" xml:space="preserve">
     <value>Konfiguration des markierten Dienstes ändern</value>

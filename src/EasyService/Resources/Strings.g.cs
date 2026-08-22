@@ -860,6 +860,9 @@ internal static class S
     /// <summary>Add service...</summary>
     public static string Main_Btn_Add => Get("Main_Btn_Add");
 
+    /// <summary>Duplicate...</summary>
+    public static string Main_Btn_Duplicate => Get("Main_Btn_Duplicate");
+
     /// <summary>Edit...</summary>
     public static string Main_Btn_Edit => Get("Main_Btn_Edit");
 
@@ -895,6 +898,24 @@ internal static class S
 
     /// <summary>Stop</summary>
     public static string Main_Btn_Stop => Get("Main_Btn_Stop");
+
+    /// <summary>{0} of {1} done.</summary>
+    public static string Main_Bulk_Done(object? p0, object? p1) => Fmt("Main_Bulk_Done", p0, p1);
+
+    /// <summary>Not everything worked</summary>
+    public static string Main_Bulk_Failed => Get("Main_Bulk_Failed");
+
+    /// <summary>Restart {0} selected services?</summary>
+    public static string Main_Bulk_Restart(object? p0) => Fmt("Main_Bulk_Restart", p0);
+
+    /// <summary>Start {0} selected services?</summary>
+    public static string Main_Bulk_Start(object? p0) => Fmt("Main_Bulk_Start", p0);
+
+    /// <summary>Stop {0} selected services?</summary>
+    public static string Main_Bulk_Stop(object? p0) => Fmt("Main_Bulk_Stop", p0);
+
+    /// <summary>Several services</summary>
+    public static string Main_Bulk_Title => Get("Main_Bulk_Title");
 
     /// <summary>Account</summary>
     public static string Main_Col_Account => Get("Main_Col_Account");
@@ -938,6 +959,18 @@ internal static class S
     /// <summary>Show in services.msc</summary>
     public static string Main_Ctx_ServicesMsc => Get("Main_Ctx_ServicesMsc");
 
+    /// <summary>No service matches “{0}”. Clear the filter, or switch off “{1}” to see every Windows service.</summary>
+    public static string Main_Empty_Filter_Text(object? p0, object? p1) => Fmt("Main_Empty_Filter_Text", p0, p1);
+
+    /// <summary>Nothing matches</summary>
+    public static string Main_Empty_Filter_Title => Get("Main_Empty_Filter_Title");
+
+    /// <summary>EasyService runs a program as a Windows service: started at boot, restarted after a crash, its output written to a log file and its state handed to your moni...</summary>
+    public static string Main_Empty_Text => Get("Main_Empty_Text");
+
+    /// <summary>No services yet</summary>
+    public static string Main_Empty_Title => Get("Main_Empty_Title");
+
     /// <summary>Services could not be read</summary>
     public static string Main_Err_ListFailed => Get("Main_Err_ListFailed");
 
@@ -976,6 +1009,9 @@ internal static class S
 
     /// <summary>The service "{0}" will be stopped and permanently removed. The log files are kept.</summary>
     public static string Main_Remove_Managed(object? p0) => Fmt("Main_Remove_Managed", p0);
+
+    /// <summary>These {0} services will be removed: {1} Continue?</summary>
+    public static string Main_Remove_Many(object? p0, object? p1) => Fmt("Main_Remove_Many", p0, p1);
 
     /// <summary>Remove service</summary>
     public static string Main_Remove_Title => Get("Main_Remove_Title");
@@ -1036,6 +1072,9 @@ internal static class S
 
     /// <summary>Quick setup: pick a program, the rest is pre-filled (or drop an .exe on the window)</summary>
     public static string Main_Tip_Add => Get("Main_Tip_Add");
+
+    /// <summary>Create a new service from this one - same settings, new name</summary>
+    public static string Main_Tip_Duplicate => Get("Main_Tip_Duplicate");
 
     /// <summary>Change the configuration of the selected service</summary>
     public static string Main_Tip_Edit => Get("Main_Tip_Edit");

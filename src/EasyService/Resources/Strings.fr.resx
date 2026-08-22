@@ -911,6 +911,9 @@ sera supprimé. Continuer ?</value>
   <data name="Main_Btn_Add" xml:space="preserve">
     <value>Ajouter un service...</value>
   </data>
+  <data name="Main_Btn_Duplicate" xml:space="preserve">
+    <value>Dupliquer...</value>
+  </data>
   <data name="Main_Btn_Edit" xml:space="preserve">
     <value>Modifier...</value>
   </data>
@@ -946,6 +949,24 @@ sera supprimé. Continuer ?</value>
   </data>
   <data name="Main_Btn_Stop" xml:space="preserve">
     <value>Arrêter</value>
+  </data>
+  <data name="Main_Bulk_Done" xml:space="preserve">
+    <value>{0} sur {1} effectués.</value>
+  </data>
+  <data name="Main_Bulk_Failed" xml:space="preserve">
+    <value>Tout n'a pas fonctionné</value>
+  </data>
+  <data name="Main_Bulk_Restart" xml:space="preserve">
+    <value>Redémarrer les {0} services sélectionnés ?</value>
+  </data>
+  <data name="Main_Bulk_Start" xml:space="preserve">
+    <value>Démarrer les {0} services sélectionnés ?</value>
+  </data>
+  <data name="Main_Bulk_Stop" xml:space="preserve">
+    <value>Arrêter les {0} services sélectionnés ?</value>
+  </data>
+  <data name="Main_Bulk_Title" xml:space="preserve">
+    <value>Plusieurs services</value>
   </data>
   <data name="Main_Col_Account" xml:space="preserve">
     <value>Compte</value>
@@ -988,6 +1009,20 @@ sera supprimé. Continuer ?</value>
   </data>
   <data name="Main_Ctx_ServicesMsc" xml:space="preserve">
     <value>Afficher dans services.msc</value>
+  </data>
+  <data name="Main_Empty_Filter_Text" xml:space="preserve">
+    <value>Aucun service ne correspond à « {0} ». Videz le filtre ou désactivez « {1} » pour voir tous les services Windows.</value>
+  </data>
+  <data name="Main_Empty_Filter_Title" xml:space="preserve">
+    <value>Aucun résultat</value>
+  </data>
+  <data name="Main_Empty_Text" xml:space="preserve">
+    <value>EasyService fait tourner un programme comme service Windows : démarré au boot, relancé après un plantage, sa sortie écrite dans un journal et son état transmis à la supervision.
+
+Glissez un programme sur cette fenêtre ou utilisez le bouton ci-dessous.</value>
+  </data>
+  <data name="Main_Empty_Title" xml:space="preserve">
+    <value>Aucun service pour l'instant</value>
   </data>
   <data name="Main_Err_ListFailed" xml:space="preserve">
     <value>Impossible de lire les services</value>
@@ -1035,6 +1070,13 @@ Vraiment supprimer ?</value>
     <value>Le service « {0} » sera arrêté et définitivement supprimé.
 
 Les fichiers journaux sont conservés.</value>
+  </data>
+  <data name="Main_Remove_Many" xml:space="preserve">
+    <value>Ces {0} services vont être supprimés :
+
+{1}
+
+Continuer ?</value>
   </data>
   <data name="Main_Remove_Title" xml:space="preserve">
     <value>Supprimer le service</value>
@@ -1099,6 +1141,9 @@ La cause se trouve généralement dans le journal. L'ouvrir maintenant ?</value>
   </data>
   <data name="Main_Tip_Add" xml:space="preserve">
     <value>Configuration rapide : choisissez un programme, le reste est prérempli (ou déposez un .exe sur la fenêtre)</value>
+  </data>
+  <data name="Main_Tip_Duplicate" xml:space="preserve">
+    <value>Créer un nouveau service à partir de celui-ci - mêmes réglages, nouveau nom</value>
   </data>
   <data name="Main_Tip_Edit" xml:space="preserve">
     <value>Modifier la configuration du service sélectionné</value>
