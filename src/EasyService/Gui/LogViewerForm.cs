@@ -44,12 +44,9 @@ public sealed class LogViewerForm : Form
         MultiSelect = false,
     };
 
-    private readonly List<string> _lines = new();
-    private FileStream? _stream;
+    // Das Mitlesen steckt in LogTail, weil die Vorschau im Hauptfenster dasselbe braucht.
+    private readonly LogTail _tail = new(MaxLines);
     private string? _currentPath;
-    private long _position;
-    private readonly Decoder _decoder = Encoding.UTF8.GetDecoder();
-    private string _partialLine = "";
     private string _lastFilter = "";
 
     public LogViewerForm(ServiceConfig config)
@@ -124,7 +121,7 @@ public sealed class LogViewerForm : Form
         FormClosed += (_, _) =>
         {
             _timer.Stop();
-            _stream?.Dispose();
+            _tail.Dispose();
         };
     }
 
@@ -194,83 +191,41 @@ public sealed class LogViewerForm : Form
         if (_fileSelector.SelectedItem is not LogFile file) return;
         if (!force && file.Path == _currentPath) return;
 
-        _stream?.Dispose();
-        _stream = null;
-        _lines.Clear();
-        _partialLine = "";
-        _position = 0;
         _currentPath = file.Path;
         _view.Clear();
 
-        try
+        if (!_tail.Open(file.Path))
         {
-            _stream = new FileStream(file.Path, FileMode.Open, FileAccess.Read,
-                FileShare.ReadWrite | FileShare.Delete);
-        }
-        catch (FileNotFoundException)
-        {
-            _status.Text = S.Log_NotFound(file.Path);
-            return;
-        }
-        catch (Exception e)
-        {
-            _status.Text = S.Main_Status_Error(e.Message);
+            _status.Text = File.Exists(file.Path)
+                ? S.Main_Status_Error(_tail.Error ?? "")
+                : S.Log_NotFound(file.Path);
             return;
         }
 
-        ReadNewData();
         Render(full: true);
         ScrollToEnd();
     }
 
     private void Poll()
     {
-        if (_stream is null || _currentPath is null) return;
-        try
+        switch (_tail.Poll())
         {
-            var info = new FileInfo(_currentPath);
-            if (!info.Exists || info.Length < _position)
-            {
-                // The file was rotated away underneath us: pick up the new one.
+            case TailChange.Rotated:
+                // Die Datei ist unter uns weggezogen worden - damit stimmt auch die Liste
+                // der Archive nicht mehr.
                 PopulateFileList();
-                OpenSelected(force: true);
-                return;
-            }
-            if (info.Length == _position) return;
+                Render(full: true);
+                ScrollToEnd();
+                break;
 
-            var before = _lines.Count;
-            ReadNewData();
-            if (_lines.Count != before || _view.TextLength == 0) Render(full: false);
+            case TailChange.Appended:
+                Render(full: false);
+                break;
+
+            default:
+                if (_view.TextLength == 0 && _tail.Lines.Count > 0) Render(full: true);
+                break;
         }
-        catch (IOException)
-        {
-        }
-    }
-
-    private void ReadNewData()
-    {
-        if (_stream is null) return;
-
-        _stream.Seek(_position, SeekOrigin.Begin);
-        var buffer = new byte[64 * 1024];
-        var chars = new char[64 * 1024];
-        var sb = new StringBuilder(_partialLine);
-        _partialLine = "";
-
-        int read;
-        while ((read = _stream.Read(buffer, 0, buffer.Length)) > 0)
-        {
-            var count = _decoder.GetChars(buffer, 0, read, chars, 0);
-            sb.Append(chars, 0, count);
-            _position += read;
-        }
-
-        var text = sb.ToString().Replace("\r\n", "\n").Replace('\r', '\n');
-        var parts = text.Split('\n');
-        for (var i = 0; i < parts.Length - 1; i++) _lines.Add(parts[i]);
-        _partialLine = parts[^1];
-
-        if (_lines.Count > MaxLines) _lines.RemoveRange(0, _lines.Count - MaxLines);
     }
 
     private void Render(bool full)
@@ -279,7 +234,7 @@ public sealed class LogViewerForm : Form
         var filterChanged = filter != _lastFilter;
         _lastFilter = filter;
 
-        IEnumerable<string> lines = _lines;
+        IEnumerable<string> lines = _tail.Lines;
         if (filter.Length > 0)
             lines = lines.Where(l => l.Contains(filter, StringComparison.OrdinalIgnoreCase));
 
@@ -293,15 +248,15 @@ public sealed class LogViewerForm : Form
         {
             // Fast path: nothing filtered, just append what arrived since the last render.
             var rendered = _view.Lines.Length;
-            if (rendered < _lines.Count)
+            if (rendered < _tail.Lines.Count)
             {
-                var appended = string.Join(System.Environment.NewLine, _lines.Skip(rendered));
+                var appended = string.Join(System.Environment.NewLine, _tail.Lines.Skip(rendered));
                 _view.AppendText((_view.TextLength > 0 ? System.Environment.NewLine : "") + appended);
                 if (_follow.Checked) ScrollToEnd();
             }
         }
 
-        var shownCount = filter.Length > 0 ? lines.Count() : _lines.Count;
+        var shownCount = filter.Length > 0 ? lines.Count() : _tail.Lines.Count;
         var size = "";
         try
         {
@@ -311,8 +266,8 @@ public sealed class LogViewerForm : Form
         catch (IOException) { }
 
         _status.Text = filter.Length > 0
-            ? S.Log_Status_Filtered(shownCount, _lines.Count, size, _currentPath)
-            : S.Log_Status_Plain(_lines.Count, size, _currentPath);
+            ? S.Log_Status_Filtered(shownCount, _tail.Lines.Count, size, _currentPath)
+            : S.Log_Status_Plain(_tail.Lines.Count, size, _currentPath);
     }
 
     private void ScrollToEnd()
@@ -351,8 +306,7 @@ public sealed class LogViewerForm : Form
 
         try
         {
-            _stream?.Dispose();
-            _stream = null;
+            _tail.Dispose();
             using (var fs = new FileStream(_currentPath, FileMode.Open, FileAccess.Write, FileShare.ReadWrite | FileShare.Delete))
                 fs.SetLength(0);
             OpenSelected(force: true);

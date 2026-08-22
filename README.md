@@ -43,6 +43,7 @@ attached is genuinely useful.
 | Monitoring | Checkmk, Prometheus, Nagios/Icinga and Zabbix output, plus stable event IDs |
 | History | Per-minute CPU, memory and restart records, kept as CSV |
 | Configuration as a file | JSON export and import, in the window or on the command line, for rolling the same definition out to many machines |
+| Live output in the window | Select a service and the pane below the list tails its log while it runs |
 | Languages | English, German, French, Spanish, Italian |
 
 ![EasyService overview](assets/screenshot-overview.png)

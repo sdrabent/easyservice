@@ -860,6 +860,9 @@ internal static class S
     /// <summary>Add service...</summary>
     public static string Main_Btn_Add => Get("Main_Btn_Add");
 
+    /// <summary>Details</summary>
+    public static string Main_Btn_Details => Get("Main_Btn_Details");
+
     /// <summary>Duplicate...</summary>
     public static string Main_Btn_Duplicate => Get("Main_Btn_Duplicate");
 
@@ -1073,6 +1076,9 @@ internal static class S
     /// <summary>Quick setup: pick a program, the rest is pre-filled (or drop an .exe on the window)</summary>
     public static string Main_Tip_Add => Get("Main_Tip_Add");
 
+    /// <summary>Show state and the last log lines of the selected service below the list</summary>
+    public static string Main_Tip_Details => Get("Main_Tip_Details");
+
     /// <summary>Create a new service from this one - same settings, new name</summary>
     public static string Main_Tip_Duplicate => Get("Main_Tip_Duplicate");
 
@@ -1192,6 +1198,12 @@ internal static class S
 
     /// <summary>unknown error</summary>
     public static string Mon_UnknownError => Get("Mon_UnknownError");
+
+    /// <summary>Nothing logged yet: {0}</summary>
+    public static string Prev_NoLog(object? p0) => Fmt("Prev_NoLog", p0);
+
+    /// <summary>Select a service to see its state and its last log lines here.</summary>
+    public static string Prev_NoSelection => Get("Prev_NoSelection");
 
     /// <summary>Advanced settings...</summary>
     public static string Quick_Btn_Advanced => Get("Quick_Btn_Advanced");

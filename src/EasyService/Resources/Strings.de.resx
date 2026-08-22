@@ -910,6 +910,9 @@ wird gelöscht. Fortfahren?</value>
   <data name="Main_Btn_Add" xml:space="preserve">
     <value>Dienst hinzufügen...</value>
   </data>
+  <data name="Main_Btn_Details" xml:space="preserve">
+    <value>Details</value>
+  </data>
   <data name="Main_Btn_Duplicate" xml:space="preserve">
     <value>Duplizieren...</value>
   </data>
@@ -1141,6 +1144,9 @@ Die Ursache steht meist im Protokoll. Jetzt öffnen?</value>
   <data name="Main_Tip_Add" xml:space="preserve">
     <value>Schnell einrichten: Programm wählen, Rest wird vorbelegt (oder eine .exe ins Fenster ziehen)</value>
   </data>
+  <data name="Main_Tip_Details" xml:space="preserve">
+    <value>Zustand und die letzten Protokollzeilen des markierten Dienstes unter der Liste anzeigen</value>
+  </data>
   <data name="Main_Tip_Duplicate" xml:space="preserve">
     <value>Einen neuen Dienst aus diesem erzeugen - gleiche Einstellungen, neuer Name</value>
   </data>
@@ -1260,6 +1266,12 @@ Die Ursache steht meist im Protokoll. Jetzt öffnen?</value>
   </data>
   <data name="Mon_UnknownError" xml:space="preserve">
     <value>unbekannter Fehler</value>
+  </data>
+  <data name="Prev_NoLog" xml:space="preserve">
+    <value>Noch nichts protokolliert: {0}</value>
+  </data>
+  <data name="Prev_NoSelection" xml:space="preserve">
+    <value>Einen Dienst markieren, um hier seinen Zustand und seine letzten Protokollzeilen zu sehen.</value>
   </data>
   <data name="Quick_Btn_Advanced" xml:space="preserve">
     <value>Erweiterte Einstellungen...</value>

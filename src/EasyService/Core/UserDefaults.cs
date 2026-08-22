@@ -120,6 +120,20 @@ public static class UserDefaults
         set => Set("MainWindowMaximized", value ? 1 : 0, RegistryValueKind.DWord);
     }
 
+    /// <summary>Whether the detail pane below the list is open.</summary>
+    public static bool PreviewVisible
+    {
+        get => GetInt("PreviewVisible", 1) != 0;
+        set => Set("PreviewVisible", value ? 1 : 0, RegistryValueKind.DWord);
+    }
+
+    /// <summary>Height of the detail pane in pixels.</summary>
+    public static int PreviewHeight
+    {
+        get => GetInt("PreviewHeight", 0);
+        set => Set("PreviewHeight", value, RegistryValueKind.DWord);
+    }
+
     public static int[] ColumnWidths
     {
         get => GetString("ColumnWidths", "").Split(',', StringSplitOptions.RemoveEmptyEntries)

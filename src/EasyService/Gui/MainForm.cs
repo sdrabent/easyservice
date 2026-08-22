@@ -25,6 +25,9 @@ public sealed class MainForm : Form
     private ToolStripMenuItem _menuExport = null!;
     private ImageList? _statusIcons;
     private Panel _empty = null!;
+    private SplitContainer _split = null!;
+    private ServicePreview _preview = null!;
+    private ToolStripButton _btnPreview = null!;
     private Label _emptyTitle = null!, _emptyText = null!;
     private Button _emptyButton = null!;
     private Font? _rowFont, _rowFontBold;
@@ -68,7 +71,7 @@ public sealed class MainForm : Form
         _list.Columns.Add(S.Main_Col_DisplayName, 200);
         _list.Columns.Add(S.Main_Col_Account, 140);
         _list.Columns.Add(S.Main_Col_Program, 260);
-        _list.SelectedIndexChanged += (_, _) => UpdateButtons();
+        _list.SelectedIndexChanged += (_, _) => { UpdateButtons(); UpdatePreview(); };
         _list.DoubleClick += (_, _) => ShowHistory();
         _list.ColumnClick += OnColumnClick;
         _list.KeyDown += OnListKeyDown;
@@ -91,6 +94,15 @@ public sealed class MainForm : Form
         _toolbar.Items.Add(_btnRemove);
         _toolbar.Items.Add(new ToolStripSeparator());
         _toolbar.Items.Add(Button(S.Main_Btn_Refresh, (_, _) => Reload(), S.Main_Tip_Refresh));
+        _btnPreview = new ToolStripButton(S.Main_Btn_Details)
+        {
+            CheckOnClick = true,
+            Checked = UserDefaults.PreviewVisible,
+            DisplayStyle = ToolStripItemDisplayStyle.Text,
+            ToolTipText = S.Main_Tip_Details,
+        };
+        _btnPreview.CheckedChanged += (_, _) => { ApplyPreviewLayout(); UpdatePreview(); };
+        _toolbar.Items.Add(_btnPreview);
         _toolbar.Items.Add(BuildConfigMenu());
         _toolbar.Items.Add(BuildLanguageMenu());
 
@@ -118,9 +130,22 @@ public sealed class MainForm : Form
         _list.ContextMenuStrip = BuildContextMenu();
 
         _empty = BuildEmptyState();
+        _preview = new ServicePreview { Dock = DockStyle.Fill };
 
-        Controls.Add(_list);
-        Controls.Add(_empty);
+        _split = new SplitContainer
+        {
+            Dock = DockStyle.Fill,
+            Orientation = Orientation.Horizontal,
+            FixedPanel = FixedPanel.Panel2,
+            SplitterWidth = 6,
+            Panel1MinSize = 120,
+            Panel2MinSize = 90,
+        };
+        _split.Panel1.Controls.Add(_list);
+        _split.Panel1.Controls.Add(_empty);
+        _split.Panel2.Controls.Add(_preview);
+
+        Controls.Add(_split);
         Controls.Add(_toolbar);
         Controls.Add(statusStrip);
 
@@ -168,12 +193,18 @@ public sealed class MainForm : Form
             _rowFontBold = new Font(_list.Font, FontStyle.Bold);
 
             RestoreWindowState();
+            ApplyPreviewLayout();
             Reload();
             _refreshTimer.Start();
             if (_openQuickAdd) BeginInvoke(() => CreateNew());
             if (_openHistoryFor is { } service) BeginInvoke(() => ShowHistoryFor(service));
         };
-        FormClosing += (_, _) => SaveWindowState();
+        FormClosing += (_, _) =>
+        {
+            SaveWindowState();
+            UserDefaults.PreviewVisible = _btnPreview.Checked;
+            if (_btnPreview.Checked) UserDefaults.PreviewHeight = _split.Panel2.Height;
+        };
         FormClosed += (_, _) =>
         {
             _refreshTimer.Stop();
@@ -306,6 +337,32 @@ public sealed class MainForm : Form
         panel.Resize += (_, _) => Centre();
         stack.SizeChanged += (_, _) => Centre();
         return panel;
+    }
+
+    /// <summary>
+    /// Opens or closes the detail pane and restores the height the administrator left it at.
+    /// </summary>
+    private void ApplyPreviewLayout()
+    {
+        _split.Panel2Collapsed = !_btnPreview.Checked;
+        if (!_btnPreview.Checked || _split.Height <= _split.Panel1MinSize + _split.Panel2MinSize) return;
+
+        var wanted = UserDefaults.PreviewHeight > 0 ? UserDefaults.PreviewHeight : Math.Max(160, _split.Height / 4);
+        var distance = _split.Height - wanted - _split.SplitterWidth;
+        var lowest = _split.Panel1MinSize;
+        var highest = _split.Height - _split.Panel2MinSize - _split.SplitterWidth;
+
+        try { _split.SplitterDistance = Math.Clamp(distance, lowest, Math.Max(lowest, highest)); }
+        catch (InvalidOperationException) { /* das Fenster ist gerade zu klein dafuer */ }
+    }
+
+    private void UpdatePreview()
+    {
+        if (_btnPreview is null || !_btnPreview.Checked) return;
+
+        var info = Selected;
+        _checks.TryGetValue(info?.Name ?? "", out var check);
+        _preview.Show(info, check);
     }
 
     private void UpdateEmptyState(int visibleCount)
@@ -571,6 +628,7 @@ public sealed class MainForm : Form
         _status.Text = S.Main_Status_Summary(visible.Count, _services.Count, managed, health);
         UpdateEmptyState(visible.Count);
         UpdateButtons();
+        UpdatePreview();
     }
 
     private List<ServiceInfo> Sort(List<ServiceInfo> items)
@@ -604,7 +662,23 @@ public sealed class MainForm : Form
     {
         if (_sortColumn == e.Column) _sortAscending = !_sortAscending;
         else { _sortColumn = e.Column; _sortAscending = true; }
+        ShowSortIndicator();
         ApplyFilter();
+    }
+
+    /// <summary>
+    /// Marks the sorted column in its header. Without it a click sorts the list and leaves no
+    /// trace of what it sorted by, which is the kind of thing that makes people click twice
+    /// to find out.
+    /// </summary>
+    private void ShowSortIndicator()
+    {
+        for (var i = 0; i < _list.Columns.Count; i++)
+        {
+            var column = _list.Columns[i];
+            var text = column.Text.TrimEnd(' ', '▲', '▼');
+            column.Text = i == _sortColumn ? text + (_sortAscending ? " ▲" : " ▼") : text;
+        }
     }
 
     private void OnListKeyDown(object? sender, KeyEventArgs e)

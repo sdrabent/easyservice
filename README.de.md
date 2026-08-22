@@ -45,6 +45,7 @@ im Anhang wirklich weiter.
 | Monitoring | Ausgabe für Checkmk, Prometheus, Nagios/Icinga und Zabbix, dazu stabile Ereignis-IDs |
 | Verlauf | CPU, Speicher und Neustarts je Minute, als CSV aufbewahrt |
 | Konfiguration als Datei | Export und Import als JSON, im Fenster oder auf der Kommandozeile, um dieselbe Definition auf viele Rechner zu bringen |
+| Ausgabe im Fenster | Dienst markieren, und unter der Liste läuft sein Protokoll mit |
 | Sprachen | Englisch, Deutsch, Französisch, Spanisch, Italienisch |
 
 ![EasyService-Übersicht](assets/screenshot-overview.png)

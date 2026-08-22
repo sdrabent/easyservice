@@ -911,6 +911,9 @@ verrà eliminato. Continuare?</value>
   <data name="Main_Btn_Add" xml:space="preserve">
     <value>Aggiungi servizio...</value>
   </data>
+  <data name="Main_Btn_Details" xml:space="preserve">
+    <value>Dettagli</value>
+  </data>
   <data name="Main_Btn_Duplicate" xml:space="preserve">
     <value>Duplica...</value>
   </data>
@@ -1142,6 +1145,9 @@ La causa si trova di solito nel registro. Aprirlo adesso?</value>
   <data name="Main_Tip_Add" xml:space="preserve">
     <value>Configurazione rapida: scegliere un programma, il resto è precompilato (oppure trascinare un .exe sulla finestra)</value>
   </data>
+  <data name="Main_Tip_Details" xml:space="preserve">
+    <value>Mostrare stato e ultime righe di log del servizio selezionato sotto l'elenco</value>
+  </data>
   <data name="Main_Tip_Duplicate" xml:space="preserve">
     <value>Creare un nuovo servizio da questo: stesse impostazioni, nome nuovo</value>
   </data>
@@ -1261,6 +1267,12 @@ La causa si trova di solito nel registro. Aprirlo adesso?</value>
   </data>
   <data name="Mon_UnknownError" xml:space="preserve">
     <value>errore sconosciuto</value>
+  </data>
+  <data name="Prev_NoLog" xml:space="preserve">
+    <value>Ancora nessun log: {0}</value>
+  </data>
+  <data name="Prev_NoSelection" xml:space="preserve">
+    <value>Selezionare un servizio per vederne qui lo stato e le ultime righe di log.</value>
   </data>
   <data name="Quick_Btn_Advanced" xml:space="preserve">
     <value>Impostazioni avanzate...</value>

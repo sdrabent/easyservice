@@ -50,6 +50,9 @@ internal static class Program
             foreach (var (name, test) in LockTests.All())
                 Run(name, test);
 
+            foreach (var (name, test) in LogTailTests.All(_root))
+                Run(name, test);
+
             foreach (var (name, test) in GuiTests.All())
                 Run(name, test);
         }

@@ -911,6 +911,9 @@ sera supprimé. Continuer ?</value>
   <data name="Main_Btn_Add" xml:space="preserve">
     <value>Ajouter un service...</value>
   </data>
+  <data name="Main_Btn_Details" xml:space="preserve">
+    <value>Détails</value>
+  </data>
   <data name="Main_Btn_Duplicate" xml:space="preserve">
     <value>Dupliquer...</value>
   </data>
@@ -1142,6 +1145,9 @@ La cause se trouve généralement dans le journal. L'ouvrir maintenant ?</value>
   <data name="Main_Tip_Add" xml:space="preserve">
     <value>Configuration rapide : choisissez un programme, le reste est prérempli (ou déposez un .exe sur la fenêtre)</value>
   </data>
+  <data name="Main_Tip_Details" xml:space="preserve">
+    <value>Afficher l'état et les dernières lignes de journal du service sélectionné sous la liste</value>
+  </data>
   <data name="Main_Tip_Duplicate" xml:space="preserve">
     <value>Créer un nouveau service à partir de celui-ci - mêmes réglages, nouveau nom</value>
   </data>
@@ -1261,6 +1267,12 @@ La cause se trouve généralement dans le journal. L'ouvrir maintenant ?</value>
   </data>
   <data name="Mon_UnknownError" xml:space="preserve">
     <value>erreur inconnue</value>
+  </data>
+  <data name="Prev_NoLog" xml:space="preserve">
+    <value>Rien de journalisé pour l'instant : {0}</value>
+  </data>
+  <data name="Prev_NoSelection" xml:space="preserve">
+    <value>Sélectionnez un service pour voir ici son état et ses dernières lignes de journal.</value>
   </data>
   <data name="Quick_Btn_Advanced" xml:space="preserve">
     <value>Paramètres avancés...</value>

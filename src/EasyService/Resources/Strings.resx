@@ -910,6 +910,9 @@ will be deleted. Continue?</value>
   <data name="Main_Btn_Add" xml:space="preserve">
     <value>Add service...</value>
   </data>
+  <data name="Main_Btn_Details" xml:space="preserve">
+    <value>Details</value>
+  </data>
   <data name="Main_Btn_Duplicate" xml:space="preserve">
     <value>Duplicate...</value>
   </data>
@@ -1141,6 +1144,9 @@ The cause is usually in the log. Open it now?</value>
   <data name="Main_Tip_Add" xml:space="preserve">
     <value>Quick setup: pick a program, the rest is pre-filled (or drop an .exe on the window)</value>
   </data>
+  <data name="Main_Tip_Details" xml:space="preserve">
+    <value>Show state and the last log lines of the selected service below the list</value>
+  </data>
   <data name="Main_Tip_Duplicate" xml:space="preserve">
     <value>Create a new service from this one - same settings, new name</value>
   </data>
@@ -1260,6 +1266,12 @@ The cause is usually in the log. Open it now?</value>
   </data>
   <data name="Mon_UnknownError" xml:space="preserve">
     <value>unknown error</value>
+  </data>
+  <data name="Prev_NoLog" xml:space="preserve">
+    <value>Nothing logged yet: {0}</value>
+  </data>
+  <data name="Prev_NoSelection" xml:space="preserve">
+    <value>Select a service to see its state and its last log lines here.</value>
   </data>
   <data name="Quick_Btn_Advanced" xml:space="preserve">
     <value>Advanced settings...</value>
