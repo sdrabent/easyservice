@@ -1,12 +1,21 @@
 # EasyService
 
-Führt beliebige Programme als Windows-Dienst aus, schreibt ihre Ausgabe in rotierende
-Protokolldateien und meldet ihren Zustand an Checkmk, Prometheus, Zabbix oder Nagios.
+**Der Dienst-Wrapper für Administratoren, die den Pieper tragen.** Führt beliebige
+Programme als Windows-Dienst aus, prüft, ob das Programm tatsächlich noch arbeitet, und
+gibt die Antwort an Checkmk, Prometheus, Zabbix oder Nagios weiter, bevor jemand fragen
+muss.
+
+So sieht es in dieser Ecke aus: Die letzte stabile NSSM-Fassung stammt vom August 2014,
+der neueste Build überhaupt ist eine Vorabversion von 2017. WinSW hat gar keine Oberfläche.
+Die Werkzeuge, die den ganzen Weg gehen, werden pro Rechner lizenziert. EasyService macht
+es in einer Programmdatei, umsonst, ohne Runtime.
 
 Das Grundprinzip ist dasselbe wie bei NSSM: Ein Supervisor-Prozess sitzt zwischen dem
-Dienst-Manager und der Anwendung. Der Unterschied ist, dass dieser Supervisor Buch führt —
-Neustartzahlen, CPU und Speicher des Prozessbaums, Exit-Codes — und die Zahlen an das
-Monitoring weitergibt, das ohnehin läuft.
+Dienst-Manager und der Anwendung. Der Unterschied ist, was dieser Supervisor weiß. Er zählt
+Neustarts, misst CPU und Speicher des ganzen Prozessbaums, merkt sich Exit-Codes und fragt
+die Anwendung jede halbe Minute, ob sie noch antwortet — denn ein verklemmter Prozess sieht
+für Windows genauso aus wie ein gesunder, und das ist der Ausfall, für den niemand geweckt
+wird.
 
 [![build](https://github.com/sdrabent/easyservice/actions/workflows/build.yml/badge.svg)](https://github.com/sdrabent/easyservice/actions/workflows/build.yml)
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
@@ -42,6 +51,7 @@ im Anhang wirklich weiter.
 | Neustart-Richtlinie | Pro Exit-Code, mit einem Backoff, der Neustartschleifen beendet |
 | Herunterfahren | Strg+C, dann `WM_CLOSE`, dann `WM_QUIT`, dann hart; jede Stufe abschaltbar mit eigenem Zeitlimit |
 | Prozessbaum | Kindprozesse laufen im Job-Objekt, werden also mit beendet und mitgezählt |
+| Health-Checks | Die Anwendung selbst fragen: eine URL abrufen, einen TCP-Port öffnen, eine Datei beobachten oder ein Programm ausführen. Bei Fehlschlag melden oder neu starten |
 | Monitoring | Ausgabe für Checkmk, Prometheus, Nagios/Icinga und Zabbix, dazu stabile Ereignis-IDs |
 | Verlauf | CPU, Speicher und Neustarts je Minute, als CSV aufbewahrt |
 | Konfiguration als Datei | Export und Import als JSON, im Fenster oder auf der Kommandozeile, um dieselbe Definition auf viele Rechner zu bringen |
@@ -92,6 +102,61 @@ Get-WinEvent -FilterHashtable @{ LogName='Application'; ProviderName='EasyServic
 Die Konfigurationsschnipsel für die einzelnen Systeme stehen in
 [docs/monitoring.de.md](docs/monitoring.de.md), samt `mk_logwatch`-Einrichtung, um die
 Fehlerausgabe der eigenen Anwendung in Checkmk zu bekommen.
+
+## Health-Checks
+
+Ein laufender Prozess ist keine arbeitende Anwendung. Eine, die sich verklemmt hat, ihre
+Datenbankverbindung verloren hat oder keine Anfragen mehr beantwortet, sieht für Windows
+genauso aus wie eine gesunde — und das ist die Störung, für die niemand einen Alarm hat.
+
+Also die Anwendung fragen. Vier Wege, auf der Registerkarte **Health-Check** im Editor:
+
+```
+Http        http://localhost:8080/health    Status 2xx oder der genannte
+Tcp         localhost:5432                  der Port nimmt eine Verbindung an
+FileFresh   C:\app\heartbeat.txt              in den letzten N Sekunden geschrieben
+Command     "C:\app\check.exe" --quick        Exit-Code 0
+```
+
+Drumherum: wie oft, wie lange auf eine Antwort gewartet wird, wie lange die Anwendung nach
+einem Start in Ruhe bleibt, und wie viele Fehlschläge hintereinander das Urteil kippen.
+Eine einzelne fehlgeschlagene Prüfung während einer Garbage Collection ist kein Ausfall und
+bleibt deshalb im Diagnoseprotokoll.
+
+Danach entweder melden — der Dienst wird in Checkmk, Prometheus, Nagios und Zabbix
+**kritisch**, noch vor jedem CPU-Schwellwert — oder die Anwendung neu starten und auch das
+melden, mit Ereignis-ID 1013.
+
+Ausprobieren, bevor man sich darauf verlässt:
+
+```cmd
+easyservice health MeinDaemon
+gesund - HTTP 200 OK (34 ms)
+```
+
+Im Editor macht **Jetzt testen** dasselbe mit den Werten, die gerade im Dialog stehen. Eine
+URL einzutippen und drei Minuten später aus dem Ereignisprotokoll zu erfahren, dass es die
+falsche war, ist keine Art, etwas einzurichten.
+
+## Wie es gegen die anderen dasteht
+
+| | EasyService | NSSM | WinSW | AlwaysUp / FireDaemon |
+|---|---|---|---|---|
+| Preis | kostenlos, MIT | kostenlos | kostenlos | Lizenz pro Rechner |
+| Grafische Oberfläche | ja | Installer-Dialog | keine | ja |
+| Health-Check über „der Prozess existiert" hinaus | ja | nein | nein | ja |
+| Ausgabe live im Fenster | ja | nein | nein | ja |
+| CPU- und Speicherverlauf | ja | nein | nein | teilweise |
+| Ausgabe für Checkmk / Prometheus / Nagios / Zabbix | ja | nein | nein | nein — E-Mail und eigene Weboberfläche |
+| Ganze Definition als eine Datei | JSON | nein | XML | teilweise |
+| Signierte Binärdateien | **nein** | nein | ja | **ja** |
+| Support, den man anrufen kann | **nein** | nein | nein | **ja** |
+| Zeitgesteuerte Neustarts | **noch nicht** | nein | nein | **ja** |
+| Letzte Veröffentlichung | diesen Monat | 2014 | Wartungsmodus | aktuell |
+
+Die fett gesetzten Zeilen sind die, in denen Bezahlen die bessere Antwort ist. Wer signierte
+Binärdateien braucht und einen Hersteller zum Eskalieren, kauft die Lizenz — das ist ein
+echter Grund, und keine Funktionsliste ändert daran etwas.
 
 ## Verlauf
 
@@ -308,6 +373,13 @@ und schreiben.
 | `MonWarnMemoryMb` / `MonCritMemoryMb` | DWORD | Speicherschwellen in MB |
 | `MonWarnRestartsPerHour` / `MonCritRestartsPerHour` | DWORD | Neustart-Schwellen |
 | `HistoryDays` | DWORD | Aufbewahrung des Verlaufs in Tagen, 0 = aus |
+| `HealthType` | DWORD | 0 keiner, 1 http, 2 tcp, 3 Datei, 4 Kommando |
+| `HealthTarget` | EXPAND_SZ | URL, host:port, Dateipfad oder Kommandozeile |
+| `HealthInterval` / `HealthTimeout` / `HealthGrace` | DWORD | Abstand, Zeitlimit, Anlaufzeit nach dem Start (ms) |
+| `HealthFailures` | DWORD | Fehlschläge hintereinander, bis der Dienst als krank gilt |
+| `HealthAction` | DWORD | 0 nur melden, 1 Anwendung neu starten |
+| `HealthExpectStatus` | DWORD | HTTP: erwarteter Status, 0 nimmt 200-299 |
+| `HealthMaxAge` | DWORD | Datei-Check: erlaubtes Alter der Datei in Sekunden |
 
 Protokolle liegen standardmäßig unter `%ProgramData%\EasyService\logs\`, der Verlauf
 unter `%ProgramData%\EasyService\history\`.

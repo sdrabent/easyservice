@@ -277,14 +277,72 @@ the message text.
 | **1008** | **Application terminated** — it responded to no request to close | **Warning** |
 | 1009 | Configuration problem | Error |
 | 1010 | Logging problem | Warning |
+| **1011** | **Health check failed** — the application no longer answers | **Warning** |
+| 1012 | Health check recovered | Information |
+| **1013** | **Restarted by the health check** | **Warning** |
 
 The ones in bold are the ones worth an alert.
 
 Querying with PowerShell, for example for a check of your own:
 
 ```powershell
-Get-WinEvent -FilterHashtable @{ LogName='Application'; ProviderName='EasyService'; Id=1004,1005,1008 } -MaxEvents 20
+Get-WinEvent -FilterHashtable @{ LogName='Application'; ProviderName='EasyService'; Id=1004,1005,1008,1011,1013 } -MaxEvents 20
 ```
+
+---
+
+## Health checks
+
+A process that exists is not the same as an application that works. The Service Control
+Manager cannot tell the difference; it reports RUNNING for a deadlocked process just as
+happily as for a healthy one. A health check asks the application itself.
+
+Four kinds, configured on the **Health check** tab of the editor or under `Parameters` in
+the registry:
+
+| Kind | Target | Healthy when |
+|---|---|---|
+| `Http` | `http://localhost:8080/health` | the status code is 2xx, or the one you named |
+| `Tcp` | `localhost:5432` | the port accepts a connection |
+| `FileFresh` | `C:\app\heartbeat.txt` | the file was written to within the last N seconds |
+| `Command` | `"C:\app\check.exe" --quick` | the program exits with 0 |
+
+The HTTPS case does not verify the certificate. The question is whether the application
+answers, not who it is, and health endpoints on localhost carry self-signed certificates
+more often than not.
+
+Around the probe sit four numbers: how often to check, how long to wait for an answer, how
+long to leave the application alone after a start, and how many failures in a row it takes
+before the service counts as unhealthy. The last one matters: a single failed probe during
+a garbage collection is not an outage, and it stays in the diagnostic log instead of
+becoming an event.
+
+Once a service is unhealthy, EasyService either reports it or restarts the application.
+Reporting is the default — a check that was configured wrong should not turn into a restart
+loop. When it does restart, the exit action is overridden on purpose: `Ignore` describes
+what to do when the application exits on its own, not what to do when we kill it.
+
+Trying a check out, without waiting for the interval:
+
+```cmd
+"C:\Program Files\EasyService\easyservice.exe" health MyDaemon
+```
+
+```
+healthy - HTTP 200 OK (34 ms)
+```
+
+Exit code `0` healthy, `2` unhealthy, `3` no check configured. The editor has a **Test now**
+button that does the same thing with the values currently in the dialog.
+
+The result reaches the monitoring on the usual paths: an unhealthy service is **critical**
+in every output format, before any CPU or memory threshold is looked at, because an
+application that stopped answering is not a CPU problem. Two metrics come with it:
+
+| Metric | Meaning |
+|---|---|
+| `health` | 1 healthy, 0 unhealthy. Absent while the check has no verdict yet |
+| `health_restarts` | how often a failed check restarted the application |
 
 ---
 

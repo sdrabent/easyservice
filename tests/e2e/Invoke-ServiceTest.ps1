@@ -197,6 +197,36 @@ try {
     Wait-Until { Test-EventPresent 1003 $startedAt } "Ereignis 1003 (Neustart) steht im Anwendungsprotokoll"
     $secondPid = (Get-State).ApplicationPid
 
+    Step "Health-Check"
+    # Der Dienst schreibt jede Sekunde eine Zeile. Ein Datei-Check auf sein eigenes Protokoll
+    # ist damit gesund, solange er laeuft - und krank, sobald er es nicht mehr tut.
+    $definition = Join-Path $workDir "definition.json"
+    Invoke-Es @("export", $ServiceName, "--output", $definition) | Out-Null
+
+    $json = Get-Content $definition -Raw | ConvertFrom-Json
+    $json.healthType = "FileFresh"
+    $json.healthTarget = $logPath
+    $json.healthMaxAgeSec = 10
+    $json.healthIntervalMs = 1000
+    $json.healthGraceMs = 0
+    $json.healthFailures = 1
+    $json.healthAction = "Report"
+    $json | ConvertTo-Json -Depth 6 | Set-Content $definition -Encoding UTF8
+
+    Invoke-Es @("import", $definition) | Out-Null
+    Invoke-Es @("restart", $ServiceName) | Out-Null
+
+    Wait-Until { (Get-State).Health -eq "Healthy" } "der Health-Check meldet den Dienst als gesund"
+
+    $health = Invoke-Es @("health", $ServiceName)
+    Confirm-That ($health.Length -gt 0) "easyservice health gibt ein Ergebnis aus"
+
+    # Und andersherum: ein Ziel, das es nicht gibt, muss auffallen.
+    $json.healthTarget = Join-Path $workDir "gibtesnicht.txt"
+    $json | ConvertTo-Json -Depth 6 | Set-Content $definition -Encoding UTF8
+    Invoke-Es @("import", $definition) | Out-Null
+    Invoke-Es @("health", $ServiceName) -ExpectedExitCode 2 | Out-Null
+
     Step "Stoppen"
     Invoke-Es @("stop", $ServiceName) | Out-Null
     Confirm-That ((Get-Service $ServiceName).Status -eq "Stopped") "der SCM meldet Stopped"

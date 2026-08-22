@@ -279,14 +279,74 @@ alarmiere auf die ID, nicht auf den Meldungstext.
 | **1008** | **Anwendung hart beendet** — sie hat auf keine Aufforderung reagiert | **Warnung** |
 | 1009 | Konfigurationsproblem | Fehler |
 | 1010 | Protokollierungsproblem | Warnung |
+| **1011** | **Health-Check fehlgeschlagen** — die Anwendung antwortet nicht mehr | **Warnung** |
+| 1012 | Health-Check wieder in Ordnung | Information |
+| **1013** | **Vom Health-Check neu gestartet** | **Warnung** |
 
 Die fett markierten sind die, auf die sich ein Alarm lohnt.
 
 Abfrage per PowerShell, etwa für einen eigenen Check:
 
 ```powershell
-Get-WinEvent -FilterHashtable @{ LogName='Application'; ProviderName='EasyService'; Id=1004,1005,1008 } -MaxEvents 20
+Get-WinEvent -FilterHashtable @{ LogName='Application'; ProviderName='EasyService'; Id=1004,1005,1008,1011,1013 } -MaxEvents 20
 ```
+
+---
+
+## Health-Checks
+
+Ein Prozess, den es gibt, ist nicht dasselbe wie eine Anwendung, die arbeitet. Der
+Dienst-Manager kann das nicht unterscheiden: er meldet für einen verklemmten Prozess
+genauso zufrieden RUNNING wie für einen gesunden. Ein Health-Check fragt die Anwendung
+selbst.
+
+Vier Arten, einzustellen auf der Registerkarte **Health-Check** im Editor oder unter
+`Parameters` in der Registry:
+
+| Art | Ziel | Gesund, wenn |
+|---|---|---|
+| `Http` | `http://localhost:8080/health` | der Statuscode 2xx ist oder der genannte |
+| `Tcp` | `localhost:5432` | der Port eine Verbindung annimmt |
+| `FileFresh` | `C:\app\heartbeat.txt` | die Datei in den letzten N Sekunden geschrieben wurde |
+| `Command` | `"C:\app\check.exe" --quick` | das Programm mit 0 endet |
+
+Der HTTPS-Fall prüft das Zertifikat nicht. Die Frage ist, ob die Anwendung antwortet, nicht
+wer sie ist, und Health-Endpunkte auf localhost tragen häufiger ein selbstsigniertes
+Zertifikat als eines.
+
+Um die Prüfung herum stehen vier Zahlen: wie oft geprüft wird, wie lange auf eine Antwort
+gewartet wird, wie lange die Anwendung nach einem Start in Ruhe gelassen wird, und wie
+viele Fehlschläge hintereinander es braucht, bis der Dienst als krank gilt. Die letzte ist
+wichtig: eine einzelne fehlgeschlagene Prüfung während einer Garbage Collection ist kein
+Ausfall und bleibt deshalb im Diagnoseprotokoll, statt ein Ereignis zu werden.
+
+Gilt ein Dienst als krank, meldet EasyService das entweder nur, oder es startet die
+Anwendung neu. Melden ist die Vorgabe — ein falsch eingerichteter Check soll sich nicht in
+eine Neustartschleife verwandeln. Beim Neustart wird die Exit-Regel bewusst überstimmt:
+`Nichts tun` beschreibt, was bei einem Ende von sich aus zu tun ist, nicht was gilt, wenn
+wir die Anwendung selbst beenden.
+
+Eine Prüfung ausprobieren, ohne auf den nächsten Durchlauf zu warten:
+
+```cmd
+"C:\Program Files\EasyService\easyservice.exe" health MeinDaemon
+```
+
+```
+gesund - HTTP 200 OK (34 ms)
+```
+
+Rückgabewert `0` gesund, `2` krank, `3` kein Check eingerichtet. Im Editor macht die
+Schaltfläche **Jetzt testen** dasselbe mit den Werten, die gerade im Dialog stehen.
+
+Das Ergebnis geht die gewohnten Wege: ein kranker Dienst ist in jedem Ausgabeformat
+**kritisch**, und zwar bevor irgendein CPU- oder Speicherschwellwert angesehen wird — eine
+Anwendung, die nicht mehr antwortet, ist kein CPU-Problem. Dazu zwei Messwerte:
+
+| Messwert | Bedeutung |
+|---|---|
+| `health` | 1 gesund, 0 krank. Fehlt, solange die Prüfung noch kein Urteil hat |
+| `health_restarts` | wie oft eine fehlgeschlagene Prüfung die Anwendung neu gestartet hat |
 
 ---
 

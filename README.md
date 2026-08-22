@@ -1,12 +1,19 @@
 # EasyService
 
-Runs any program as a Windows service, captures its output to rotating log files, and
-reports what it is doing to Checkmk, Prometheus, Zabbix or Nagios.
+**The service wrapper for administrators who carry the pager.** It runs any program as a
+Windows service, checks whether that program is still actually working, and hands the
+answer to Checkmk, Prometheus, Zabbix or Nagios before anyone has to ask.
 
-It works the same way NSSM does: a supervisor process sits between the Service Control
-Manager and your application. The difference is that the supervisor keeps records —
-restart counts, CPU and memory of the process tree, exit codes — and hands them to
-whatever monitoring you already run.
+Here is the state of this corner of the world. NSSM's last stable release is from August
+2014, its newest build of any kind a 2017 prerelease. WinSW has no interface at all. The
+tools that do the whole job are licensed per machine. EasyService does it in one
+executable, for nothing, and needs no runtime.
+
+It works the way NSSM does: a supervisor process sits between the Service Control Manager
+and your application. The difference is what the supervisor knows. It counts restarts,
+measures CPU and memory of the whole process tree, keeps exit codes, and asks the
+application every half minute whether it is still answering — because a deadlocked process
+looks exactly like a healthy one to Windows, and that is the outage nobody gets woken for.
 
 [![build](https://github.com/sdrabent/easyservice/actions/workflows/build.yml/badge.svg)](https://github.com/sdrabent/easyservice/actions/workflows/build.yml)
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
@@ -40,6 +47,7 @@ attached is genuinely useful.
 | Restart policy | Per exit code, with an exponential back-off that stops restart loops |
 | Shutdown | Ctrl+C, then `WM_CLOSE`, then `WM_QUIT`, then terminate; each stage optional with its own timeout |
 | Process tree | Children run inside a job object, so they are terminated with the service and counted in its resource usage |
+| Health checks | Ask the application itself: fetch a URL, open a TCP port, watch a file, or run a program. Report it or restart on failure |
 | Monitoring | Checkmk, Prometheus, Nagios/Icinga and Zabbix output, plus stable event IDs |
 | History | Per-minute CPU, memory and restart records, kept as CSV |
 | Configuration as a file | JSON export and import, in the window or on the command line, for rolling the same definition out to many machines |
@@ -89,6 +97,60 @@ Get-WinEvent -FilterHashtable @{ LogName='Application'; ProviderName='EasyServic
 
 Configuration snippets for each system are in [docs/monitoring.md](docs/monitoring.md),
 including the `mk_logwatch` setup for feeding your application's stderr into Checkmk.
+
+## Health checks
+
+A running process is not a working application. One that has deadlocked, lost its database
+connection or stopped serving requests looks exactly like a healthy one to Windows, and
+that is the failure mode nobody has an alert for.
+
+So ask the application. Four ways, on the **Health check** tab of the editor:
+
+```
+Http        http://localhost:8080/health    status 2xx, or the one you name
+Tcp         localhost:5432                  the port accepts a connection
+FileFresh   C:\app\heartbeat.txt              written to within the last N seconds
+Command     "C:\app\check.exe" --quick        exit code 0
+```
+
+Around it: how often, how long to wait, how long to leave the application alone after a
+start, and how many failures in a row it takes before the verdict changes. One failed probe
+during a garbage collection is not an outage, so it stays in the diagnostic log.
+
+Then either report it — the service goes **critical** in Checkmk, Prometheus, Nagios and
+Zabbix, ahead of any CPU threshold — or restart the application and report that too, with
+event ID 1013.
+
+Trying it before trusting it:
+
+```cmd
+easyservice health MyDaemon
+healthy - HTTP 200 OK (34 ms)
+```
+
+The editor has a **Test now** button doing the same with the values on screen. Typing a URL
+and finding out three minutes later from the event log that it was the wrong one is not a
+way to configure anything.
+
+## Where it stands against the others
+
+| | EasyService | NSSM | WinSW | AlwaysUp / FireDaemon |
+|---|---|---|---|---|
+| Price | free, MIT | free | free | licensed per machine |
+| Graphical interface | yes | installer dialog | none | yes |
+| Health check beyond "the process exists" | yes | no | no | yes |
+| Live output in the window | yes | no | no | yes |
+| CPU and memory history | yes | no | no | partly |
+| Checkmk / Prometheus / Nagios / Zabbix output | yes | no | no | no — email and their own web UI |
+| Whole definition as one file | JSON | no | XML | partly |
+| Signed binaries | **no** | no | yes | **yes** |
+| Support you can phone | **no** | no | no | **yes** |
+| Scheduled restarts | **not yet** | no | no | **yes** |
+| Last release | this month | 2014 | maintenance | current |
+
+The bold rows are the ones where paying is the better answer. If your policy needs signed
+binaries and a vendor to escalate to, buy the licence — that is a real reason, and no
+feature list changes it.
 
 ## History
 
@@ -296,6 +358,13 @@ read and write.
 | `MonWarnMemoryMb` / `MonCritMemoryMb` | DWORD | Memory thresholds in MB |
 | `MonWarnRestartsPerHour` / `MonCritRestartsPerHour` | DWORD | Restart thresholds |
 | `HistoryDays` | DWORD | Days of history to keep, 0 = off |
+| `HealthType` | DWORD | 0 none, 1 http, 2 tcp, 3 file, 4 command |
+| `HealthTarget` | EXPAND_SZ | URL, host:port, file path or command line |
+| `HealthInterval` / `HealthTimeout` / `HealthGrace` | DWORD | Interval, time limit, grace after a start (ms) |
+| `HealthFailures` | DWORD | Failures in a row before the service counts as unhealthy |
+| `HealthAction` | DWORD | 0 report only, 1 restart the application |
+| `HealthExpectStatus` | DWORD | HTTP: expected status, 0 accepts 200-299 |
+| `HealthMaxAge` | DWORD | File check: how old the file may be, in seconds |
 
 Logs default to `%ProgramData%\EasyService\logs\`, history to
 `%ProgramData%\EasyService\history\`.
