@@ -32,6 +32,12 @@ public sealed class ProcessSupervisor : IDisposable
     private readonly ServiceState _state;
     private readonly ResourceSampler _sampler = new();
     private readonly System.Threading.Timer _sampleTimer;
+    private readonly System.Threading.Timer? _healthTimer;
+
+    // Vom Health-Check gesetzt, von der Hauptschleife gelesen: der naechste Beendigungsgrund
+    // ist dann keiner der Anwendung, sondern unserer.
+    private int _healthRestartRequested;
+    private int _healthCheckRunning;
 
     private IntPtr _process = IntPtr.Zero;
     private IntPtr _job = IntPtr.Zero;
@@ -87,6 +93,97 @@ public sealed class ProcessSupervisor : IDisposable
         }
 
         _sampleTimer = new System.Threading.Timer(_ => SampleResources(), null, FirstSampleDelay, SampleInterval);
+
+        if (cfg.HealthType != HealthCheckType.None)
+        {
+            _state.Health = HealthStatus.Pending;
+            var interval = Math.Max(1000, cfg.HealthIntervalMs);
+            _healthTimer = new System.Threading.Timer(_ => RunHealthCheck(), null, interval, interval);
+        }
+    }
+
+    // ----------------------------------------------------------- health check ---
+
+    /// <summary>
+    /// Asks the application whether it is still doing its job. Runs on its own timer, never
+    /// twice at the same time, and never while the application has not been up long enough to
+    /// have finished starting.
+    /// </summary>
+    private void RunHealthCheck()
+    {
+        if (_stopRequested.IsSet || _cfg.HealthType == HealthCheckType.None) return;
+        if (_state.State != SupervisorState.Running) return;
+
+        if (_state.ApplicationStartedUtc is not { } startedAt) return;
+        if (DateTime.UtcNow - startedAt < TimeSpan.FromMilliseconds(Math.Max(0, _cfg.HealthGraceMs))) return;
+
+        // Ein langsamer Check darf sich nicht selbst ueberholen.
+        if (Interlocked.Exchange(ref _healthCheckRunning, 1) == 1) return;
+
+        try
+        {
+            ApplyHealthResult(HealthProbe.Run(_cfg));
+        }
+        catch (Exception e)
+        {
+            LogQuiet(S.Sup_HealthFailedOnce(1, Math.Max(1, _cfg.HealthFailures), e.Message));
+        }
+        finally
+        {
+            Interlocked.Exchange(ref _healthCheckRunning, 0);
+        }
+    }
+
+    private void ApplyHealthResult(HealthResult result)
+    {
+        var wasUnhealthy = _state.Health == HealthStatus.Unhealthy;
+        _state.HealthCheckedUtc = DateTime.UtcNow;
+        _state.HealthDetail = result.Detail;
+
+        if (result.Healthy)
+        {
+            _state.HealthFailuresInARow = 0;
+            _state.Health = HealthStatus.Healthy;
+            if (wasUnhealthy) Log(EasyServiceEvent.HealthCheckRecovered, S.Sup_HealthRecovered(result.Detail));
+            _state.Save();
+            return;
+        }
+
+        _state.HealthFailuresInARow++;
+        var threshold = Math.Max(1, _cfg.HealthFailures);
+
+        if (_state.HealthFailuresInARow < threshold)
+        {
+            // Noch kein Vorfall: ein einzelner Aussetzer gehoert ins Diagnoseprotokoll, nicht
+            // ins Ereignisprotokoll, sonst alarmiert das Monitoring auf Rauschen.
+            LogQuiet(S.Sup_HealthFailedOnce(_state.HealthFailuresInARow, threshold, result.Detail));
+            _state.Save();
+            return;
+        }
+
+        if (!wasUnhealthy)
+        {
+            _state.Health = HealthStatus.Unhealthy;
+            Log(EasyServiceEvent.HealthCheckFailed,
+                S.Sup_HealthFailed(_state.HealthFailuresInARow, result.Detail),
+                EventLogEntryType.Warning);
+
+            if (_cfg.HealthAction == HealthAction.Restart)
+            {
+                _state.HealthRestarts++;
+                Log(EasyServiceEvent.HealthCheckRestarted, S.Sup_HealthRestart(result.Detail),
+                    EventLogEntryType.Warning);
+
+                Interlocked.Exchange(ref _healthRestartRequested, 1);
+                _state.Save();
+
+                // Geordnet beenden: die Hauptschleife sieht das Ende und startet neu.
+                StopChild();
+                return;
+            }
+        }
+
+        _state.Save();
     }
 
     // ---------------------------------------------------------------- logging ---
@@ -228,6 +325,16 @@ public sealed class ProcessSupervisor : IDisposable
                 _state.ApplicationStartedUtc = startedAt;
                 _state.LastError = null;
                 _sampler.Reset();
+
+                // Nach einem Start faengt die Beurteilung von vorn an, sonst wuerde die
+                // frische Anwendung die Fehlerzaehlung der alten erben.
+                if (_cfg.HealthType != HealthCheckType.None)
+                {
+                    _state.Health = HealthStatus.Pending;
+                    _state.HealthFailuresInARow = 0;
+                    _state.HealthDetail = null;
+                }
+
                 SetState(SupervisorState.Running);
 
                 Log(EasyServiceEvent.ApplicationStarted, S.Sup_AppStarted(_pid));
@@ -261,6 +368,11 @@ public sealed class ProcessSupervisor : IDisposable
 
             var ranFor = DateTime.UtcNow - startedAt;
             var action = _cfg.ExitActions.TryGetValue(exitCode, out var specific) ? specific : _cfg.DefaultExitAction;
+
+            // Wir haben die Anwendung selbst beendet, weil der Health-Check anhaltend
+            // fehlschlug. Die Exit-Regel gilt fuer das, was die Anwendung tut - nicht fuer
+            // das, was wir mit ihr tun.
+            if (Interlocked.Exchange(ref _healthRestartRequested, 0) == 1) action = ExitAction.Restart;
 
             Log(EasyServiceEvent.ApplicationExited,
                 S.Sup_AppExited(exitCode, ranFor.TotalSeconds.ToString("F1"), Describe(action)),
@@ -748,6 +860,7 @@ public sealed class ProcessSupervisor : IDisposable
     {
         RequestStop();
         _sampleTimer.Dispose();
+        _healthTimer?.Dispose();
         FlushHistoryBucket();
         CleanUpChild();
 

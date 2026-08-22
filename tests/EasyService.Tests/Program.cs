@@ -53,6 +53,9 @@ internal static class Program
             foreach (var (name, test) in LogTailTests.All(_root))
                 Run(name, test);
 
+            foreach (var (name, test) in HealthTests.All(_root))
+                Run(name, test);
+
             foreach (var (name, test) in GuiTests.All())
                 Run(name, test);
         }

@@ -27,6 +27,21 @@
   <data name="Cfg_Err_Foreign" xml:space="preserve">
     <value>"{0}" already exists but was not created with EasyService. Importing would overwrite a foreign service.</value>
   </data>
+  <data name="Cfg_Err_HealthEndpoint" xml:space="preserve">
+    <value>Not a host:port pair: {0}</value>
+  </data>
+  <data name="Cfg_Err_HealthFailures" xml:space="preserve">
+    <value>At least one failed check is needed before a service counts as unhealthy.</value>
+  </data>
+  <data name="Cfg_Err_HealthInterval" xml:space="preserve">
+    <value>The health check interval has to be at least one second.</value>
+  </data>
+  <data name="Cfg_Err_HealthTarget" xml:space="preserve">
+    <value>The health check needs a target: a URL, host:port, a file or a command line.</value>
+  </data>
+  <data name="Cfg_Err_HealthUrl" xml:space="preserve">
+    <value>Not an http or https address: {0}</value>
+  </data>
   <data name="Cfg_Err_NameEmpty" xml:space="preserve">
     <value>The service name must not be empty.</value>
   </data>
@@ -100,6 +115,15 @@ Overwrite its configuration?</value>
   </data>
   <data name="Cli_FileNotFound" xml:space="preserve">
     <value>File not found: {0}</value>
+  </data>
+  <data name="Cli_Health_Failed" xml:space="preserve">
+    <value>UNHEALTHY - {0} ({1} ms)</value>
+  </data>
+  <data name="Cli_Health_None" xml:space="preserve">
+    <value>No health check configured for "{0}".</value>
+  </data>
+  <data name="Cli_Health_Ok" xml:space="preserve">
+    <value>healthy - {0} ({1} ms)</value>
   </data>
   <data name="Cli_Hdr_DisplayName" xml:space="preserve">
     <value>DISPLAY NAME</value>
@@ -242,6 +266,10 @@ MANAGE
       set EASYSERVICE_PASSWORD beforehand.
 
 MONITORING
+  easyservice health &lt;name&gt;
+      Runs the configured health check once and prints the answer.
+      Exit code 0 = healthy, 2 = unhealthy, 3 = no check configured.
+
   easyservice checkmk
       Checkmk local check: one line per monitored service, with perfdata.
 
@@ -315,6 +343,9 @@ they exit with code 5. The monitoring commands only read and run under any accou
   </data>
   <data name="Editor_Btn_Add" xml:space="preserve">
     <value>Add</value>
+  </data>
+  <data name="Editor_Btn_HealthTest" xml:space="preserve">
+    <value>Test now</value>
   </data>
   <data name="Editor_Btn_Copy" xml:space="preserve">
     <value>Copy to clipboard</value>
@@ -439,6 +470,27 @@ they exit with code 5. The monitoring commands only read and run under any accou
   <data name="Editor_Hint_ExitCodes" xml:space="preserve">
     <value>Example: set exit code 0 to "Stop the service" so a program that finished cleanly is not restarted forever.</value>
   </data>
+  <data name="Editor_Health_Testing" xml:space="preserve">
+    <value>Checking...</value>
+  </data>
+  <data name="Editor_Hint_Health" xml:space="preserve">
+    <value>Windows only knows whether the process exists. An application that has deadlocked or lost its database still looks healthy to it. A check asks the application itself.</value>
+  </data>
+  <data name="Editor_Hint_HealthCommand" xml:space="preserve">
+    <value>A command line. Exit code 0 means healthy. Runs as the service account.</value>
+  </data>
+  <data name="Editor_Hint_HealthExpect" xml:space="preserve">
+    <value>0 accepts anything from 200 to 299.</value>
+  </data>
+  <data name="Editor_Hint_HealthFile" xml:space="preserve">
+    <value>A file the application keeps writing to - a heartbeat file, or its own log.</value>
+  </data>
+  <data name="Editor_Hint_HealthHttp" xml:space="preserve">
+    <value>For example http://localhost:8080/health - the certificate is not verified, the question is whether the application answers.</value>
+  </data>
+  <data name="Editor_Hint_HealthTcp" xml:space="preserve">
+    <value>For example localhost:5432</value>
+  </data>
   <data name="Editor_Hint_HistoryDays" xml:space="preserve">
     <value>0 = record no history. One row per minute, about 80 KB per service and day, stored as CSV under %ProgramData%\EasyService\history.</value>
   </data>
@@ -534,6 +586,33 @@ they exit with code 5. The monitoring commands only read and run under any accou
   </data>
   <data name="Editor_Lbl_ExitCode" xml:space="preserve">
     <value>Exit code:</value>
+  </data>
+  <data name="Editor_Lbl_HealthAction" xml:space="preserve">
+    <value>Then:</value>
+  </data>
+  <data name="Editor_Lbl_HealthExpect" xml:space="preserve">
+    <value>Expected status:</value>
+  </data>
+  <data name="Editor_Lbl_HealthFailures" xml:space="preserve">
+    <value>Failures in a row:</value>
+  </data>
+  <data name="Editor_Lbl_HealthGrace" xml:space="preserve">
+    <value>Grace after start (ms):</value>
+  </data>
+  <data name="Editor_Lbl_HealthInterval" xml:space="preserve">
+    <value>Every (ms):</value>
+  </data>
+  <data name="Editor_Lbl_HealthMaxAge" xml:space="preserve">
+    <value>File at most (s) old:</value>
+  </data>
+  <data name="Editor_Lbl_HealthTarget" xml:space="preserve">
+    <value>Target:</value>
+  </data>
+  <data name="Editor_Lbl_HealthTimeout" xml:space="preserve">
+    <value>Timeout (ms):</value>
+  </data>
+  <data name="Editor_Lbl_HealthType" xml:space="preserve">
+    <value>Check:</value>
   </data>
   <data name="Editor_Lbl_HistoryDays" xml:space="preserve">
     <value>Keep history (days):</value>
@@ -649,6 +728,9 @@ they exit with code 5. The monitoring commands only read and run under any accou
   <data name="Editor_Tab_Exit" xml:space="preserve">
     <value>Exit actions</value>
   </data>
+  <data name="Editor_Tab_Health" xml:space="preserve">
+    <value>Health check</value>
+  </data>
   <data name="Editor_Tab_LogOn" xml:space="preserve">
     <value>Log on</value>
   </data>
@@ -684,6 +766,15 @@ they exit with code 5. The monitoring commands only read and run under any accou
   </data>
   <data name="Evt_ConfigurationProblem" xml:space="preserve">
     <value>Configuration problem</value>
+  </data>
+  <data name="Evt_HealthCheckFailed" xml:space="preserve">
+    <value>Health check failed</value>
+  </data>
+  <data name="Evt_HealthCheckRecovered" xml:space="preserve">
+    <value>Health check recovered</value>
+  </data>
+  <data name="Evt_HealthCheckRestarted" xml:space="preserve">
+    <value>Restarted by the health check</value>
   </data>
   <data name="Evt_LoggingProblem" xml:space="preserve">
     <value>Logging problem</value>
@@ -801,6 +892,54 @@ they exit with code 5. The monitoring commands only read and run under any accou
   </data>
   <data name="Host_Unexpected" xml:space="preserve">
     <value>Unexpected error: {0}</value>
+  </data>
+  <data name="Health_CommandExit" xml:space="preserve">
+    <value>Exit code {0}: {1}</value>
+  </data>
+  <data name="Health_FileFresh" xml:space="preserve">
+    <value>Written {0} s ago</value>
+  </data>
+  <data name="Health_FileMissing" xml:space="preserve">
+    <value>File does not exist: {0}</value>
+  </data>
+  <data name="Health_FileStale" xml:space="preserve">
+    <value>Untouched for {0} s, allowed are {1} s</value>
+  </data>
+  <data name="Health_Action_Report" xml:space="preserve">
+    <value>only report it</value>
+  </data>
+  <data name="Health_Action_Restart" xml:space="preserve">
+    <value>restart the application</value>
+  </data>
+  <data name="Health_Type_Command" xml:space="preserve">
+    <value>Run a program, exit code 0</value>
+  </data>
+  <data name="Health_Type_File" xml:space="preserve">
+    <value>File was written recently</value>
+  </data>
+  <data name="Health_Type_Http" xml:space="preserve">
+    <value>Fetch a URL</value>
+  </data>
+  <data name="Health_Type_None" xml:space="preserve">
+    <value>No check</value>
+  </data>
+  <data name="Health_Type_Tcp" xml:space="preserve">
+    <value>Open a TCP port</value>
+  </data>
+  <data name="Health_HttpStatus" xml:space="preserve">
+    <value>HTTP {0} {1}</value>
+  </data>
+  <data name="Health_NotConfigured" xml:space="preserve">
+    <value>No health check configured</value>
+  </data>
+  <data name="Health_TcpOpen" xml:space="preserve">
+    <value>{0}:{1} accepts connections</value>
+  </data>
+  <data name="Health_TcpRefused" xml:space="preserve">
+    <value>{0}:{1} not reachable ({2})</value>
+  </data>
+  <data name="Health_Timeout" xml:space="preserve">
+    <value>No answer within {0} ms</value>
   </data>
   <data name="Log_Btn_Clear" xml:space="preserve">
     <value>Clear</value>
@@ -1264,6 +1403,12 @@ The cause is usually in the log. Open it now?</value>
   <data name="Mon_Throttled" xml:space="preserve">
     <value>The application keeps restarting and is being throttled. {0} restarts in the last hour, last exit code {1}.</value>
   </data>
+  <data name="Mon_Healthy" xml:space="preserve">
+    <value>health check ok</value>
+  </data>
+  <data name="Mon_Unhealthy" xml:space="preserve">
+    <value>health check failing ({0})</value>
+  </data>
   <data name="Mon_UnknownError" xml:space="preserve">
     <value>unknown error</value>
   </data>
@@ -1398,6 +1543,18 @@ The cause is usually in the log. Open it now?</value>
   </data>
   <data name="Sup_LogOpenFailed" xml:space="preserve">
     <value>The {0} log file could not be opened ({1}): {2}</value>
+  </data>
+  <data name="Sup_HealthFailed" xml:space="preserve">
+    <value>Health check failed {0} times in a row: {1}</value>
+  </data>
+  <data name="Sup_HealthFailedOnce" xml:space="preserve">
+    <value>Health check failed ({0} of {1}): {2}</value>
+  </data>
+  <data name="Sup_HealthRecovered" xml:space="preserve">
+    <value>Health check is fine again: {0}</value>
+  </data>
+  <data name="Sup_HealthRestart" xml:space="preserve">
+    <value>Restarting the application because the health check keeps failing: {0}</value>
   </data>
   <data name="Sup_NextAttempt" xml:space="preserve">
     <value>Next start attempt in {0} ms.</value>

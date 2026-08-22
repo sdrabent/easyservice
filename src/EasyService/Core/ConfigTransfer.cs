@@ -89,6 +89,19 @@ public static class ConfigTransfer
         public int CritRestartsPerHour { get; set; }
         public int HistoryDays { get; set; }
 
+        // Mit denselben Vorgaben wie ServiceConfig: eine Datei aus einer aelteren Fassung
+        // kennt diese Felder nicht, und eine 0 als Abstand zwischen zwei Pruefungen waere
+        // keine Vorgabe, sondern ein Fehler.
+        public HealthCheckType HealthType { get; set; }
+        public string HealthTarget { get; set; } = "";
+        public int HealthIntervalMs { get; set; } = 30_000;
+        public int HealthTimeoutMs { get; set; } = 5_000;
+        public int HealthGraceMs { get; set; } = 30_000;
+        public int HealthFailures { get; set; } = 3;
+        public HealthAction HealthAction { get; set; }
+        public int HealthExpectStatus { get; set; }
+        public int HealthMaxAgeSec { get; set; } = 120;
+
         public bool StopUseConsole { get; set; }
         public int StopConsoleMs { get; set; }
         public bool StopUseWindow { get; set; }
@@ -147,6 +160,15 @@ public static class ConfigTransfer
         WarnRestartsPerHour = c.WarnRestartsPerHour,
         CritRestartsPerHour = c.CritRestartsPerHour,
         HistoryDays = c.HistoryDays,
+        HealthType = c.HealthType,
+        HealthTarget = c.HealthTarget,
+        HealthIntervalMs = c.HealthIntervalMs,
+        HealthTimeoutMs = c.HealthTimeoutMs,
+        HealthGraceMs = c.HealthGraceMs,
+        HealthFailures = c.HealthFailures,
+        HealthAction = c.HealthAction,
+        HealthExpectStatus = c.HealthExpectStatus,
+        HealthMaxAgeSec = c.HealthMaxAgeSec,
         StopUseConsole = c.StopUseConsole,
         StopConsoleMs = c.StopConsoleMs,
         StopUseWindow = c.StopUseWindow,
@@ -257,6 +279,15 @@ public static class ConfigTransfer
             WarnRestartsPerHour = d.WarnRestartsPerHour,
             CritRestartsPerHour = d.CritRestartsPerHour,
             HistoryDays = d.HistoryDays,
+            HealthType = d.HealthType,
+            HealthTarget = d.HealthTarget,
+            HealthIntervalMs = d.HealthIntervalMs,
+            HealthTimeoutMs = d.HealthTimeoutMs,
+            HealthGraceMs = d.HealthGraceMs,
+            HealthFailures = d.HealthFailures,
+            HealthAction = d.HealthAction,
+            HealthExpectStatus = d.HealthExpectStatus,
+            HealthMaxAgeSec = d.HealthMaxAgeSec,
             StopUseConsole = d.StopUseConsole,
             StopConsoleMs = d.StopConsoleMs,
             StopUseWindow = d.StopUseWindow,

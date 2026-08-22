@@ -5,6 +5,22 @@ using EasyService.Resources;
 
 namespace EasyService.Core;
 
+/// <summary>What the health check says about the application.</summary>
+public enum HealthStatus
+{
+    /// <summary>No check configured. Windows-level "the process exists" is all there is.</summary>
+    Unconfigured,
+
+    /// <summary>Configured, but no verdict yet - the application is still inside its grace period.</summary>
+    Pending,
+
+    /// <summary>The application answered.</summary>
+    Healthy,
+
+    /// <summary>It failed often enough in a row to count as broken.</summary>
+    Unhealthy,
+}
+
 /// <summary>What the supervisor is currently doing with the application.</summary>
 public enum SupervisorState
 {
@@ -71,6 +87,22 @@ public sealed class ServiceState
     public long WorkingSetBytes { get; set; }
     public int ProcessCount { get; set; }
     public double CpuSecondsTotal { get; set; }
+
+    // --- health check --------------------------------------------------------
+
+    [JsonConverter(typeof(JsonStringEnumConverter))]
+    public HealthStatus Health { get; set; } = HealthStatus.Unconfigured;
+
+    public DateTime? HealthCheckedUtc { get; set; }
+
+    /// <summary>Result of the last probe in words - "HTTP 503", "No answer within 5000 ms".</summary>
+    public string? HealthDetail { get; set; }
+
+    /// <summary>Failures since the last success. One blip is not an outage.</summary>
+    public int HealthFailuresInARow { get; set; }
+
+    /// <summary>How often a failed check restarted the application.</summary>
+    public int HealthRestarts { get; set; }
 
     public DateTime UpdatedUtc { get; set; }
 

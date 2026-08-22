@@ -24,6 +24,9 @@ public enum EasyServiceEvent
     ApplicationTerminated = 1008,
     ConfigurationProblem = 1009,
     LoggingProblem = 1010,
+    HealthCheckFailed = 1011,
+    HealthCheckRecovered = 1012,
+    HealthCheckRestarted = 1013,
 }
 
 /// <summary>
@@ -116,6 +119,9 @@ public static class EventLogSink
         (int)EasyServiceEvent.ServiceStopping => S.Evt_ServiceStopping,
         (int)EasyServiceEvent.StoppedByExitPolicy => S.Evt_StoppedByExitPolicy,
         (int)EasyServiceEvent.ApplicationTerminated => S.Evt_ApplicationTerminated,
+        (int)EasyServiceEvent.HealthCheckFailed => S.Evt_HealthCheckFailed,
+        (int)EasyServiceEvent.HealthCheckRecovered => S.Evt_HealthCheckRecovered,
+        (int)EasyServiceEvent.HealthCheckRestarted => S.Evt_HealthCheckRestarted,
         (int)EasyServiceEvent.ConfigurationProblem => S.Evt_ConfigurationProblem,
         (int)EasyServiceEvent.LoggingProblem => S.Evt_LoggingProblem,
         _ => "",

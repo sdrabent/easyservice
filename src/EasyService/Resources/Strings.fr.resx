@@ -27,6 +27,21 @@
   <data name="Cfg_Err_Foreign" xml:space="preserve">
     <value>« {0} » existe déjà mais n'a pas été créé avec EasyService. L'importation écraserait un service étranger.</value>
   </data>
+  <data name="Cfg_Err_HealthEndpoint" xml:space="preserve">
+    <value>Ce n'est pas un couple hôte:port : {0}</value>
+  </data>
+  <data name="Cfg_Err_HealthFailures" xml:space="preserve">
+    <value>Il faut au moins un contrôle en échec avant qu'un service soit considéré en défaut.</value>
+  </data>
+  <data name="Cfg_Err_HealthInterval" xml:space="preserve">
+    <value>L'intervalle entre deux contrôles de santé doit être d'au moins une seconde.</value>
+  </data>
+  <data name="Cfg_Err_HealthTarget" xml:space="preserve">
+    <value>Le contrôle de santé a besoin d'une cible : une URL, hôte:port, un fichier ou une ligne de commande.</value>
+  </data>
+  <data name="Cfg_Err_HealthUrl" xml:space="preserve">
+    <value>Ce n'est pas une adresse http ou https : {0}</value>
+  </data>
   <data name="Cfg_Err_NameEmpty" xml:space="preserve">
     <value>Le nom du service ne peut pas être vide.</value>
   </data>
@@ -100,6 +115,15 @@
   </data>
   <data name="Cli_FileNotFound" xml:space="preserve">
     <value>Fichier introuvable : {0}</value>
+  </data>
+  <data name="Cli_Health_Failed" xml:space="preserve">
+    <value>EN DEFAUT - {0} ({1} ms)</value>
+  </data>
+  <data name="Cli_Health_None" xml:space="preserve">
+    <value>Aucun contrôle de santé configuré pour « {0} ».</value>
+  </data>
+  <data name="Cli_Health_Ok" xml:space="preserve">
+    <value>sain - {0} ({1} ms)</value>
   </data>
   <data name="Cli_Hdr_DisplayName" xml:space="preserve">
     <value>NOM AFFICHÉ</value>
@@ -242,6 +266,10 @@ GÉRER
       service, définissez EASYSERVICE_PASSWORD au préalable.
 
 SURVEILLANCE
+  easyservice health &lt;nom&gt;
+      Exécute une fois le contrôle de santé configuré et affiche la réponse.
+      Code de sortie 0 = sain, 2 = en défaut, 3 = aucun contrôle configuré.
+
   easyservice checkmk
       Local check Checkmk : une ligne par service surveillé, avec données de performance.
 
@@ -316,6 +344,9 @@ fonctionnent sous n'importe quel compte.</value>
   </data>
   <data name="Editor_Btn_Add" xml:space="preserve">
     <value>Ajouter</value>
+  </data>
+  <data name="Editor_Btn_HealthTest" xml:space="preserve">
+    <value>Tester maintenant</value>
   </data>
   <data name="Editor_Btn_Copy" xml:space="preserve">
     <value>Copier dans le presse-papiers</value>
@@ -440,6 +471,27 @@ fonctionnent sous n'importe quel compte.</value>
   <data name="Editor_Hint_ExitCodes" xml:space="preserve">
     <value>Exemple : associer le code de sortie 0 à « Arrêter le service » pour qu'un programme terminé proprement ne soit pas redémarré indéfiniment.</value>
   </data>
+  <data name="Editor_Health_Testing" xml:space="preserve">
+    <value>Vérification...</value>
+  </data>
+  <data name="Editor_Hint_Health" xml:space="preserve">
+    <value>Windows sait seulement si le processus existe. Une application bloquée ou ayant perdu sa base de données lui paraît tout aussi saine. Un contrôle interroge l'application elle-même.</value>
+  </data>
+  <data name="Editor_Hint_HealthCommand" xml:space="preserve">
+    <value>Une ligne de commande. Le code de sortie 0 signifie sain. S'exécute sous le compte du service.</value>
+  </data>
+  <data name="Editor_Hint_HealthExpect" xml:space="preserve">
+    <value>0 accepte tout de 200 à 299.</value>
+  </data>
+  <data name="Editor_Hint_HealthFile" xml:space="preserve">
+    <value>Un fichier que l'application écrit en continu - un fichier de battement ou son propre journal.</value>
+  </data>
+  <data name="Editor_Hint_HealthHttp" xml:space="preserve">
+    <value>Par exemple http://localhost:8080/health - le certificat n'est pas vérifié, la question est de savoir si l'application répond.</value>
+  </data>
+  <data name="Editor_Hint_HealthTcp" xml:space="preserve">
+    <value>Par exemple localhost:5432</value>
+  </data>
   <data name="Editor_Hint_HistoryDays" xml:space="preserve">
     <value>0 = ne pas enregistrer d'historique. Une ligne par minute, environ 80 Ko par service et par jour, au format CSV dans %ProgramData%\EasyService\history.</value>
   </data>
@@ -535,6 +587,33 @@ fonctionnent sous n'importe quel compte.</value>
   </data>
   <data name="Editor_Lbl_ExitCode" xml:space="preserve">
     <value>Code de sortie :</value>
+  </data>
+  <data name="Editor_Lbl_HealthAction" xml:space="preserve">
+    <value>Ensuite :</value>
+  </data>
+  <data name="Editor_Lbl_HealthExpect" xml:space="preserve">
+    <value>Statut attendu :</value>
+  </data>
+  <data name="Editor_Lbl_HealthFailures" xml:space="preserve">
+    <value>Échecs consécutifs :</value>
+  </data>
+  <data name="Editor_Lbl_HealthGrace" xml:space="preserve">
+    <value>Délai de démarrage (ms) :</value>
+  </data>
+  <data name="Editor_Lbl_HealthInterval" xml:space="preserve">
+    <value>Toutes les (ms) :</value>
+  </data>
+  <data name="Editor_Lbl_HealthMaxAge" xml:space="preserve">
+    <value>Fichier vieux d'au plus (s) :</value>
+  </data>
+  <data name="Editor_Lbl_HealthTarget" xml:space="preserve">
+    <value>Cible :</value>
+  </data>
+  <data name="Editor_Lbl_HealthTimeout" xml:space="preserve">
+    <value>Délai (ms) :</value>
+  </data>
+  <data name="Editor_Lbl_HealthType" xml:space="preserve">
+    <value>Contrôle :</value>
   </data>
   <data name="Editor_Lbl_HistoryDays" xml:space="preserve">
     <value>Conserver l'historique (jours) :</value>
@@ -650,6 +729,9 @@ fonctionnent sous n'importe quel compte.</value>
   <data name="Editor_Tab_Exit" xml:space="preserve">
     <value>Actions de sortie</value>
   </data>
+  <data name="Editor_Tab_Health" xml:space="preserve">
+    <value>Contrôle de santé</value>
+  </data>
   <data name="Editor_Tab_LogOn" xml:space="preserve">
     <value>Connexion</value>
   </data>
@@ -685,6 +767,15 @@ fonctionnent sous n'importe quel compte.</value>
   </data>
   <data name="Evt_ConfigurationProblem" xml:space="preserve">
     <value>Problème de configuration</value>
+  </data>
+  <data name="Evt_HealthCheckFailed" xml:space="preserve">
+    <value>Contrôle de santé en échec</value>
+  </data>
+  <data name="Evt_HealthCheckRecovered" xml:space="preserve">
+    <value>Contrôle de santé rétabli</value>
+  </data>
+  <data name="Evt_HealthCheckRestarted" xml:space="preserve">
+    <value>Redémarré par le contrôle de santé</value>
   </data>
   <data name="Evt_LoggingProblem" xml:space="preserve">
     <value>Problème de journalisation</value>
@@ -802,6 +893,54 @@ fonctionnent sous n'importe quel compte.</value>
   </data>
   <data name="Host_Unexpected" xml:space="preserve">
     <value>Erreur inattendue : {0}</value>
+  </data>
+  <data name="Health_CommandExit" xml:space="preserve">
+    <value>Code de sortie {0} : {1}</value>
+  </data>
+  <data name="Health_FileFresh" xml:space="preserve">
+    <value>Écrit il y a {0} s</value>
+  </data>
+  <data name="Health_FileMissing" xml:space="preserve">
+    <value>Le fichier n'existe pas : {0}</value>
+  </data>
+  <data name="Health_FileStale" xml:space="preserve">
+    <value>Inchangé depuis {0} s, {1} s autorisées</value>
+  </data>
+  <data name="Health_Action_Report" xml:space="preserve">
+    <value>seulement le signaler</value>
+  </data>
+  <data name="Health_Action_Restart" xml:space="preserve">
+    <value>redémarrer l'application</value>
+  </data>
+  <data name="Health_Type_Command" xml:space="preserve">
+    <value>Exécuter un programme, code de sortie 0</value>
+  </data>
+  <data name="Health_Type_File" xml:space="preserve">
+    <value>Fichier écrit récemment</value>
+  </data>
+  <data name="Health_Type_Http" xml:space="preserve">
+    <value>Récupérer une URL</value>
+  </data>
+  <data name="Health_Type_None" xml:space="preserve">
+    <value>Aucun contrôle</value>
+  </data>
+  <data name="Health_Type_Tcp" xml:space="preserve">
+    <value>Ouvrir un port TCP</value>
+  </data>
+  <data name="Health_HttpStatus" xml:space="preserve">
+    <value>HTTP {0} {1}</value>
+  </data>
+  <data name="Health_NotConfigured" xml:space="preserve">
+    <value>Aucun contrôle de santé configuré</value>
+  </data>
+  <data name="Health_TcpOpen" xml:space="preserve">
+    <value>{0}:{1} accepte les connexions</value>
+  </data>
+  <data name="Health_TcpRefused" xml:space="preserve">
+    <value>{0}:{1} injoignable ({2})</value>
+  </data>
+  <data name="Health_Timeout" xml:space="preserve">
+    <value>Aucune réponse en {0} ms</value>
   </data>
   <data name="Log_Btn_Clear" xml:space="preserve">
     <value>Vider</value>
@@ -1265,6 +1404,12 @@ La cause se trouve généralement dans le journal. L'ouvrir maintenant ?</value>
   <data name="Mon_Throttled" xml:space="preserve">
     <value>L'application redémarre sans cesse et est limitée. {0} redémarrages dans la dernière heure, dernier code de sortie {1}.</value>
   </data>
+  <data name="Mon_Healthy" xml:space="preserve">
+    <value>contrôle de santé ok</value>
+  </data>
+  <data name="Mon_Unhealthy" xml:space="preserve">
+    <value>contrôle de santé en échec ({0})</value>
+  </data>
   <data name="Mon_UnknownError" xml:space="preserve">
     <value>erreur inconnue</value>
   </data>
@@ -1399,6 +1544,18 @@ La cause se trouve généralement dans le journal. L'ouvrir maintenant ?</value>
   </data>
   <data name="Sup_LogOpenFailed" xml:space="preserve">
     <value>Impossible d'ouvrir le fichier journal {0} ({1}) : {2}</value>
+  </data>
+  <data name="Sup_HealthFailed" xml:space="preserve">
+    <value>Contrôle de santé en échec {0} fois de suite : {1}</value>
+  </data>
+  <data name="Sup_HealthFailedOnce" xml:space="preserve">
+    <value>Contrôle de santé en échec ({0} sur {1}) : {2}</value>
+  </data>
+  <data name="Sup_HealthRecovered" xml:space="preserve">
+    <value>Le contrôle de santé repasse au vert : {0}</value>
+  </data>
+  <data name="Sup_HealthRestart" xml:space="preserve">
+    <value>Redémarrage de l'application, le contrôle de santé échoue durablement : {0}</value>
   </data>
   <data name="Sup_NextAttempt" xml:space="preserve">
     <value>Prochaine tentative de démarrage dans {0} ms.</value>

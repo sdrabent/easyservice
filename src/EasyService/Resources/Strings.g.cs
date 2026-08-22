@@ -41,6 +41,21 @@ internal static class S
     /// <summary>"{0}" already exists but was not created with EasyService. Importing would overwrite a foreign service.</summary>
     public static string Cfg_Err_Foreign(object? p0) => Fmt("Cfg_Err_Foreign", p0);
 
+    /// <summary>Not a host:port pair: {0}</summary>
+    public static string Cfg_Err_HealthEndpoint(object? p0) => Fmt("Cfg_Err_HealthEndpoint", p0);
+
+    /// <summary>At least one failed check is needed before a service counts as unhealthy.</summary>
+    public static string Cfg_Err_HealthFailures => Get("Cfg_Err_HealthFailures");
+
+    /// <summary>The health check interval has to be at least one second.</summary>
+    public static string Cfg_Err_HealthInterval => Get("Cfg_Err_HealthInterval");
+
+    /// <summary>The health check needs a target: a URL, host:port, a file or a command line.</summary>
+    public static string Cfg_Err_HealthTarget => Get("Cfg_Err_HealthTarget");
+
+    /// <summary>Not an http or https address: {0}</summary>
+    public static string Cfg_Err_HealthUrl(object? p0) => Fmt("Cfg_Err_HealthUrl", p0);
+
     /// <summary>The service name must not be empty.</summary>
     public static string Cfg_Err_NameEmpty => Get("Cfg_Err_NameEmpty");
 
@@ -124,6 +139,15 @@ internal static class S
 
     /// <summary>STATUS</summary>
     public static string Cli_Hdr_Status => Get("Cli_Hdr_Status");
+
+    /// <summary>UNHEALTHY - {0} ({1} ms)</summary>
+    public static string Cli_Health_Failed(object? p0, object? p1) => Fmt("Cli_Health_Failed", p0, p1);
+
+    /// <summary>No health check configured for "{0}".</summary>
+    public static string Cli_Health_None(object? p0) => Fmt("Cli_Health_None", p0);
+
+    /// <summary>healthy - {0} ({1} ms)</summary>
+    public static string Cli_Health_Ok(object? p0, object? p1) => Fmt("Cli_Health_Ok", p0, p1);
 
     /// <summary>import requires a file.</summary>
     public static string Cli_ImportNeedsFile => Get("Cli_ImportNeedsFile");
@@ -278,6 +302,9 @@ internal static class S
     /// <summary>Create service</summary>
     public static string Editor_Btn_Create => Get("Editor_Btn_Create");
 
+    /// <summary>Test now</summary>
+    public static string Editor_Btn_HealthTest => Get("Editor_Btn_HealthTest");
+
     /// <summary>Select services...</summary>
     public static string Editor_Btn_PickServices => Get("Editor_Btn_PickServices");
 
@@ -374,6 +401,9 @@ internal static class S
     /// <summary>Thresholds</summary>
     public static string Editor_Group_Thresholds => Get("Editor_Group_Thresholds");
 
+    /// <summary>Checking...</summary>
+    public static string Editor_Health_Testing => Get("Editor_Health_Testing");
+
     /// <summary>Format: DOMAIN\User, or .\User for local accounts. EasyService grants the account the "Log on as a service" right automatically.</summary>
     public static string Editor_Hint_Account => Get("Editor_Hint_Account");
 
@@ -394,6 +424,24 @@ internal static class S
 
     /// <summary>Example: set exit code 0 to "Stop the service" so a program that finished cleanly is not restarted forever.</summary>
     public static string Editor_Hint_ExitCodes => Get("Editor_Hint_ExitCodes");
+
+    /// <summary>Windows only knows whether the process exists. An application that has deadlocked or lost its database still looks healthy to it. A check asks the applicatio...</summary>
+    public static string Editor_Hint_Health => Get("Editor_Hint_Health");
+
+    /// <summary>A command line. Exit code 0 means healthy. Runs as the service account.</summary>
+    public static string Editor_Hint_HealthCommand => Get("Editor_Hint_HealthCommand");
+
+    /// <summary>0 accepts anything from 200 to 299.</summary>
+    public static string Editor_Hint_HealthExpect => Get("Editor_Hint_HealthExpect");
+
+    /// <summary>A file the application keeps writing to - a heartbeat file, or its own log.</summary>
+    public static string Editor_Hint_HealthFile => Get("Editor_Hint_HealthFile");
+
+    /// <summary>For example http://localhost:8080/health - the certificate is not verified, the question is whether the application answers.</summary>
+    public static string Editor_Hint_HealthHttp => Get("Editor_Hint_HealthHttp");
+
+    /// <summary>For example localhost:5432</summary>
+    public static string Editor_Hint_HealthTcp => Get("Editor_Hint_HealthTcp");
 
     /// <summary>0 = record no history. One row per minute, about 80 KB per service and day, stored as CSV under %ProgramData%\EasyService\history.</summary>
     public static string Editor_Hint_HistoryDays => Get("Editor_Hint_HistoryDays");
@@ -490,6 +538,33 @@ internal static class S
 
     /// <summary>Exit code:</summary>
     public static string Editor_Lbl_ExitCode => Get("Editor_Lbl_ExitCode");
+
+    /// <summary>Then:</summary>
+    public static string Editor_Lbl_HealthAction => Get("Editor_Lbl_HealthAction");
+
+    /// <summary>Expected status:</summary>
+    public static string Editor_Lbl_HealthExpect => Get("Editor_Lbl_HealthExpect");
+
+    /// <summary>Failures in a row:</summary>
+    public static string Editor_Lbl_HealthFailures => Get("Editor_Lbl_HealthFailures");
+
+    /// <summary>Grace after start (ms):</summary>
+    public static string Editor_Lbl_HealthGrace => Get("Editor_Lbl_HealthGrace");
+
+    /// <summary>Every (ms):</summary>
+    public static string Editor_Lbl_HealthInterval => Get("Editor_Lbl_HealthInterval");
+
+    /// <summary>File at most (s) old:</summary>
+    public static string Editor_Lbl_HealthMaxAge => Get("Editor_Lbl_HealthMaxAge");
+
+    /// <summary>Target:</summary>
+    public static string Editor_Lbl_HealthTarget => Get("Editor_Lbl_HealthTarget");
+
+    /// <summary>Timeout (ms):</summary>
+    public static string Editor_Lbl_HealthTimeout => Get("Editor_Lbl_HealthTimeout");
+
+    /// <summary>Check:</summary>
+    public static string Editor_Lbl_HealthType => Get("Editor_Lbl_HealthType");
 
     /// <summary>Keep history (days):</summary>
     public static string Editor_Lbl_HistoryDays => Get("Editor_Lbl_HistoryDays");
@@ -605,6 +680,9 @@ internal static class S
     /// <summary>Exit actions</summary>
     public static string Editor_Tab_Exit => Get("Editor_Tab_Exit");
 
+    /// <summary>Health check</summary>
+    public static string Editor_Tab_Health => Get("Editor_Tab_Health");
+
     /// <summary>Log on</summary>
     public static string Editor_Tab_LogOn => Get("Editor_Tab_LogOn");
 
@@ -641,6 +719,15 @@ internal static class S
     /// <summary>Configuration problem</summary>
     public static string Evt_ConfigurationProblem => Get("Evt_ConfigurationProblem");
 
+    /// <summary>Health check failed</summary>
+    public static string Evt_HealthCheckFailed => Get("Evt_HealthCheckFailed");
+
+    /// <summary>Health check recovered</summary>
+    public static string Evt_HealthCheckRecovered => Get("Evt_HealthCheckRecovered");
+
+    /// <summary>Restarted by the health check</summary>
+    public static string Evt_HealthCheckRestarted => Get("Evt_HealthCheckRestarted");
+
     /// <summary>Logging problem</summary>
     public static string Evt_LoggingProblem => Get("Evt_LoggingProblem");
 
@@ -655,6 +742,54 @@ internal static class S
 
     /// <summary>Supervision started</summary>
     public static string Evt_SupervisorStarted => Get("Evt_SupervisorStarted");
+
+    /// <summary>only report it</summary>
+    public static string Health_Action_Report => Get("Health_Action_Report");
+
+    /// <summary>restart the application</summary>
+    public static string Health_Action_Restart => Get("Health_Action_Restart");
+
+    /// <summary>Exit code {0}: {1}</summary>
+    public static string Health_CommandExit(object? p0, object? p1) => Fmt("Health_CommandExit", p0, p1);
+
+    /// <summary>Written {0} s ago</summary>
+    public static string Health_FileFresh(object? p0) => Fmt("Health_FileFresh", p0);
+
+    /// <summary>File does not exist: {0}</summary>
+    public static string Health_FileMissing(object? p0) => Fmt("Health_FileMissing", p0);
+
+    /// <summary>Untouched for {0} s, allowed are {1} s</summary>
+    public static string Health_FileStale(object? p0, object? p1) => Fmt("Health_FileStale", p0, p1);
+
+    /// <summary>HTTP {0} {1}</summary>
+    public static string Health_HttpStatus(object? p0, object? p1) => Fmt("Health_HttpStatus", p0, p1);
+
+    /// <summary>No health check configured</summary>
+    public static string Health_NotConfigured => Get("Health_NotConfigured");
+
+    /// <summary>{0}:{1} accepts connections</summary>
+    public static string Health_TcpOpen(object? p0, object? p1) => Fmt("Health_TcpOpen", p0, p1);
+
+    /// <summary>{0}:{1} not reachable ({2})</summary>
+    public static string Health_TcpRefused(object? p0, object? p1, object? p2) => Fmt("Health_TcpRefused", p0, p1, p2);
+
+    /// <summary>No answer within {0} ms</summary>
+    public static string Health_Timeout(object? p0) => Fmt("Health_Timeout", p0);
+
+    /// <summary>Run a program, exit code 0</summary>
+    public static string Health_Type_Command => Get("Health_Type_Command");
+
+    /// <summary>File was written recently</summary>
+    public static string Health_Type_File => Get("Health_Type_File");
+
+    /// <summary>Fetch a URL</summary>
+    public static string Health_Type_Http => Get("Health_Type_Http");
+
+    /// <summary>No check</summary>
+    public static string Health_Type_None => Get("Health_Type_None");
+
+    /// <summary>Open a TCP port</summary>
+    public static string Health_Type_Tcp => Get("Health_Type_Tcp");
 
     /// <summary>Export CSV...</summary>
     public static string Hist_Btn_Export => Get("Hist_Btn_Export");
@@ -1118,6 +1253,9 @@ internal static class S
     /// <summary>The application could not be started: {0}</summary>
     public static string Mon_Failed(object? p0) => Fmt("Mon_Failed", p0);
 
+    /// <summary>health check ok</summary>
+    public static string Mon_Healthy => Get("Mon_Healthy");
+
     /// <summary>The application exited (exit code {0}) and is not restarted per its configuration. The service is running without an application.</summary>
     public static string Mon_Ignored(object? p0) => Fmt("Mon_Ignored", p0);
 
@@ -1195,6 +1333,9 @@ internal static class S
 
     /// <summary>The application keeps restarting and is being throttled. {0} restarts in the last hour, last exit code {1}.</summary>
     public static string Mon_Throttled(object? p0, object? p1) => Fmt("Mon_Throttled", p0, p1);
+
+    /// <summary>health check failing ({0})</summary>
+    public static string Mon_Unhealthy(object? p0) => Fmt("Mon_Unhealthy", p0);
 
     /// <summary>unknown error</summary>
     public static string Mon_UnknownError => Get("Mon_UnknownError");
@@ -1321,6 +1462,18 @@ internal static class S
 
     /// <summary>The EasyService diagnostic log could not be opened: {0}</summary>
     public static string Sup_EventLogOpenFailed(object? p0) => Fmt("Sup_EventLogOpenFailed", p0);
+
+    /// <summary>Health check failed {0} times in a row: {1}</summary>
+    public static string Sup_HealthFailed(object? p0, object? p1) => Fmt("Sup_HealthFailed", p0, p1);
+
+    /// <summary>Health check failed ({0} of {1}): {2}</summary>
+    public static string Sup_HealthFailedOnce(object? p0, object? p1, object? p2) => Fmt("Sup_HealthFailedOnce", p0, p1, p2);
+
+    /// <summary>Health check is fine again: {0}</summary>
+    public static string Sup_HealthRecovered(object? p0) => Fmt("Sup_HealthRecovered", p0);
+
+    /// <summary>Restarting the application because the health check keeps failing: {0}</summary>
+    public static string Sup_HealthRestart(object? p0) => Fmt("Sup_HealthRestart", p0);
 
     /// <summary>The application did not respond; terminating the process.</summary>
     public static string Sup_KillProcess => Get("Sup_KillProcess");

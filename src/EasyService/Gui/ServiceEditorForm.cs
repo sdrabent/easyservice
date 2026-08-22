@@ -81,6 +81,19 @@ public sealed class ServiceEditorForm : Form
     private readonly NumericUpDown _warnMemory = Ui.Spin(0, 1_048_576, 0, 64);
     private readonly NumericUpDown _critMemory = Ui.Spin(0, 1_048_576, 0, 64);
     private readonly NumericUpDown _historyDays = Ui.Spin(0, 3650, 30);
+
+    // Health-Check
+    private readonly ComboBox _healthType = new() { DropDownStyle = ComboBoxStyle.DropDownList };
+    private readonly TextBox _healthTarget = new();
+    private readonly NumericUpDown _healthInterval = Ui.Spin(1000, 3_600_000, 30_000, 1000);
+    private readonly NumericUpDown _healthTimeout = Ui.Spin(500, 600_000, 5_000, 500);
+    private readonly NumericUpDown _healthGrace = Ui.Spin(0, 3_600_000, 30_000, 1000);
+    private readonly NumericUpDown _healthFailures = Ui.Spin(1, 100, 3);
+    private readonly ComboBox _healthAction = new() { DropDownStyle = ComboBoxStyle.DropDownList };
+    private readonly NumericUpDown _healthExpect = Ui.Spin(0, 599, 0);
+    private readonly NumericUpDown _healthMaxAge = Ui.Spin(1, 86_400, 120, 10);
+    private readonly Label _healthHint = Ui.Hint("");
+    private readonly Label _healthResult = Ui.Hint("");
     private readonly TextBox _integration = new()
     {
         Multiline = true,
@@ -121,6 +134,7 @@ public sealed class ServiceEditorForm : Form
         tabs.TabPages.Add(BuildEnvironmentTab());
         tabs.TabPages.Add(BuildLoggingTab(outPanel, errPanel));
         tabs.TabPages.Add(BuildExitTab());
+        tabs.TabPages.Add(BuildHealthTab());
         tabs.TabPages.Add(BuildMonitoringTab());
         tabs.TabPages.Add(BuildShutdownTab());
 
@@ -336,6 +350,119 @@ public sealed class ServiceEditorForm : Form
         return page;
     }
 
+    private TabPage BuildHealthTab()
+    {
+        var page = new TabPage(S.Editor_Tab_Health);
+        var p = Ui.FormPanel();
+
+        _healthType.Items.AddRange(new object[]
+        {
+            S.Health_Type_None, S.Health_Type_Http, S.Health_Type_Tcp,
+            S.Health_Type_File, S.Health_Type_Command,
+        });
+        _healthType.SelectedIndex = 0;
+        _healthAction.Items.AddRange(new object[] { S.Health_Action_Report, S.Health_Action_Restart });
+        _healthAction.SelectedIndex = 0;
+
+        Ui.AddFullRow(p, Ui.Hint(S.Editor_Hint_Health));
+        Ui.AddRow(p, S.Editor_Lbl_HealthType, _healthType);
+        Ui.AddRow(p, S.Editor_Lbl_HealthTarget, _healthTarget);
+        Ui.AddFullRow(p, _healthHint);
+
+        Ui.AddSpacer(p);
+        Ui.AddRow(p, S.Editor_Lbl_HealthInterval, _healthInterval);
+        Ui.AddRow(p, S.Editor_Lbl_HealthTimeout, _healthTimeout);
+        Ui.AddRow(p, S.Editor_Lbl_HealthGrace, _healthGrace);
+        Ui.AddRow(p, S.Editor_Lbl_HealthFailures, _healthFailures);
+        Ui.AddRow(p, S.Editor_Lbl_HealthAction, _healthAction);
+
+        Ui.AddSpacer(p);
+        Ui.AddRow(p, S.Editor_Lbl_HealthExpect, _healthExpect);
+        Ui.AddFullRow(p, Ui.Hint(S.Editor_Hint_HealthExpect));
+        Ui.AddRow(p, S.Editor_Lbl_HealthMaxAge, _healthMaxAge);
+
+        Ui.AddSpacer(p);
+        var test = new Button { Text = S.Editor_Btn_HealthTest, AutoSize = true };
+        test.Click += (_, _) => TestHealthNow();
+        Ui.AddFullRow(p, test);
+        Ui.AddFullRow(p, _healthResult);
+
+        _healthType.SelectedIndexChanged += (_, _) => UpdateHealthFields();
+        UpdateHealthFields();
+
+        page.Controls.Add(p);
+        return page;
+    }
+
+    /// <summary>Only offer the fields the chosen kind of check actually uses.</summary>
+    private void UpdateHealthFields()
+    {
+        var type = (HealthCheckType)Math.Max(0, _healthType.SelectedIndex);
+        var configured = type != HealthCheckType.None;
+
+        foreach (var control in new Control[] { _healthTarget, _healthInterval, _healthTimeout,
+                                                _healthGrace, _healthFailures, _healthAction })
+            control.Enabled = configured;
+
+        _healthExpect.Enabled = type == HealthCheckType.Http;
+        _healthMaxAge.Enabled = type == HealthCheckType.FileFresh;
+
+        _healthHint.Text = type switch
+        {
+            HealthCheckType.Http => S.Editor_Hint_HealthHttp,
+            HealthCheckType.Tcp => S.Editor_Hint_HealthTcp,
+            HealthCheckType.FileFresh => S.Editor_Hint_HealthFile,
+            HealthCheckType.Command => S.Editor_Hint_HealthCommand,
+            _ => "",
+        };
+    }
+
+    /// <summary>
+    /// Runs the check as it stands in the dialog. Typing a URL and finding out three minutes
+    /// later from the event log that it was the wrong one is not a way to configure anything.
+    /// </summary>
+    private void TestHealthNow()
+    {
+        var probe = new ServiceConfig
+        {
+            ServiceName = _serviceName.Text.Trim(),
+            AppDirectory = _appDirectory.Text.Trim(),
+            HealthType = (HealthCheckType)Math.Max(0, _healthType.SelectedIndex),
+            HealthTarget = _healthTarget.Text.Trim(),
+            HealthTimeoutMs = (int)_healthTimeout.Value,
+            HealthExpectStatus = (int)_healthExpect.Value,
+            HealthMaxAgeSec = (int)_healthMaxAge.Value,
+        };
+
+        if (probe.HealthType == HealthCheckType.None)
+        {
+            _healthResult.Text = S.Health_NotConfigured;
+            _healthResult.ForeColor = SystemColors.GrayText;
+            return;
+        }
+
+        _healthResult.Text = S.Editor_Health_Testing;
+        _healthResult.ForeColor = SystemColors.GrayText;
+        var previousCursor = Cursor;
+        Cursor = Cursors.WaitCursor;
+        Application.DoEvents();
+
+        try
+        {
+            var result = HealthProbe.Run(probe);
+            var milliseconds = (int)result.Duration.TotalMilliseconds;
+            _healthResult.Text = result.Healthy
+                ? S.Cli_Health_Ok(result.Detail, milliseconds)
+                : S.Cli_Health_Failed(result.Detail, milliseconds);
+            _healthResult.ForeColor = Ui.HealthColor(
+                result.Healthy ? CheckStatus.Ok : CheckStatus.Critical, this, ForeColor);
+        }
+        finally
+        {
+            Cursor = previousCursor;
+        }
+    }
+
     private TabPage BuildMonitoringTab()
     {
         var page = new TabPage(S.Editor_Tab_Monitoring);
@@ -512,6 +639,17 @@ public sealed class ServiceEditorForm : Form
         _critMemory.Value = Math.Clamp(c.CritMemoryMb, 0, 1_048_576);
         _historyDays.Value = Math.Clamp(c.HistoryDays, 0, 3650);
 
+        _healthType.SelectedIndex = (int)c.HealthType;
+        _healthTarget.Text = c.HealthTarget;
+        _healthInterval.Value = Math.Clamp(c.HealthIntervalMs, 1000, 3_600_000);
+        _healthTimeout.Value = Math.Clamp(c.HealthTimeoutMs, 500, 600_000);
+        _healthGrace.Value = Math.Clamp(c.HealthGraceMs, 0, 3_600_000);
+        _healthFailures.Value = Math.Clamp(c.HealthFailures, 1, 100);
+        _healthAction.SelectedIndex = (int)c.HealthAction;
+        _healthExpect.Value = Math.Clamp(c.HealthExpectStatus, 0, 599);
+        _healthMaxAge.Value = Math.Clamp(c.HealthMaxAgeSec, 1, 86_400);
+        UpdateHealthFields();
+
         _stopConsole.Checked = c.StopUseConsole;
         _stopConsoleMs.Value = Math.Clamp(c.StopConsoleMs, 0, 600_000);
         _stopWindow.Checked = c.StopUseWindow;
@@ -600,6 +738,16 @@ public sealed class ServiceEditorForm : Form
         c.WarnMemoryMb = (int)_warnMemory.Value;
         c.CritMemoryMb = (int)_critMemory.Value;
         c.HistoryDays = (int)_historyDays.Value;
+
+        c.HealthType = (HealthCheckType)Math.Max(0, _healthType.SelectedIndex);
+        c.HealthTarget = _healthTarget.Text.Trim();
+        c.HealthIntervalMs = (int)_healthInterval.Value;
+        c.HealthTimeoutMs = (int)_healthTimeout.Value;
+        c.HealthGraceMs = (int)_healthGrace.Value;
+        c.HealthFailures = (int)_healthFailures.Value;
+        c.HealthAction = (HealthAction)Math.Max(0, _healthAction.SelectedIndex);
+        c.HealthExpectStatus = (int)_healthExpect.Value;
+        c.HealthMaxAgeSec = (int)_healthMaxAge.Value;
 
         c.StopUseConsole = _stopConsole.Checked;
         c.StopConsoleMs = (int)_stopConsoleMs.Value;

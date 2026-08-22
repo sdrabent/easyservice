@@ -107,6 +107,32 @@ public sealed class ServiceConfig
     /// <summary>Days of measurement history to keep. 0 turns the history off.</summary>
     public int HistoryDays { get; set; } = 30;
 
+    // --- health check --------------------------------------------------------
+    // A running process is not the same as a working application. The supervisor can ask
+    // the application itself whether it is still doing its job, and report or act on the
+    // answer. Off by default: a check nobody configured must never invent a verdict.
+    public HealthCheckType HealthType { get; set; } = HealthCheckType.None;
+
+    /// <summary>URL, host:port, file path or command line - depending on <see cref="HealthType"/>.</summary>
+    public string HealthTarget { get; set; } = "";
+
+    public int HealthIntervalMs { get; set; } = 30_000;
+    public int HealthTimeoutMs { get; set; } = 5_000;
+
+    /// <summary>How long after a start the application may take before the first check counts.</summary>
+    public int HealthGraceMs { get; set; } = 30_000;
+
+    /// <summary>Consecutive failures before the service counts as unhealthy. One blip is not an outage.</summary>
+    public int HealthFailures { get; set; } = 3;
+
+    public HealthAction HealthAction { get; set; } = HealthAction.Report;
+
+    /// <summary>HTTP check: expected status code. 0 accepts anything from 200 to 299.</summary>
+    public int HealthExpectStatus { get; set; }
+
+    /// <summary>File check: how old the file may be, in seconds.</summary>
+    public int HealthMaxAgeSec { get; set; } = 120;
+
     // --- shutdown sequence --------------------------------------------------
     public bool StopUseConsole { get; set; } = true;
     public int StopConsoleMs { get; set; } = 1500;
@@ -171,6 +197,8 @@ public sealed class ServiceConfig
         if (Logon == LogonType.Account && string.IsNullOrWhiteSpace(AccountName))
             yield return S.Cfg_Err_AccountRequired;
 
+        foreach (var problem in ValidateHealth()) yield return problem;
+
         foreach (var e in Environment)
         {
             if (string.IsNullOrWhiteSpace(e)) continue;
@@ -180,6 +208,32 @@ public sealed class ServiceConfig
 
         if (isNew && ServiceRegistry.Exists(ServiceName))
             yield return S.Svc_Err_Exists(ServiceName);
+    }
+
+    private IEnumerable<string> ValidateHealth()
+    {
+        if (HealthType == HealthCheckType.None) yield break;
+
+        if (string.IsNullOrWhiteSpace(HealthTarget))
+        {
+            yield return S.Cfg_Err_HealthTarget;
+            yield break;
+        }
+
+        switch (HealthType)
+        {
+            case HealthCheckType.Http when !Uri.TryCreate(HealthTarget.Trim(), UriKind.Absolute, out var uri)
+                                           || (uri.Scheme != Uri.UriSchemeHttp && uri.Scheme != Uri.UriSchemeHttps):
+                yield return S.Cfg_Err_HealthUrl(HealthTarget);
+                break;
+
+            case HealthCheckType.Tcp when HealthProbe.ParseEndpoint(HealthTarget) is null:
+                yield return S.Cfg_Err_HealthEndpoint(HealthTarget);
+                break;
+        }
+
+        if (HealthIntervalMs < 1000) yield return S.Cfg_Err_HealthInterval;
+        if (HealthFailures < 1) yield return S.Cfg_Err_HealthFailures;
     }
 
     // ------------------------------------------------------------- persistence
@@ -230,6 +284,16 @@ public sealed class ServiceConfig
         key.SetValue("MonWarnRestartsPerHour", WarnRestartsPerHour, RegistryValueKind.DWord);
         key.SetValue("MonCritRestartsPerHour", CritRestartsPerHour, RegistryValueKind.DWord);
         key.SetValue("HistoryDays", HistoryDays, RegistryValueKind.DWord);
+
+        key.SetValue("HealthType", (int)HealthType, RegistryValueKind.DWord);
+        key.SetValue("HealthTarget", HealthTarget, RegistryValueKind.ExpandString);
+        key.SetValue("HealthInterval", HealthIntervalMs, RegistryValueKind.DWord);
+        key.SetValue("HealthTimeout", HealthTimeoutMs, RegistryValueKind.DWord);
+        key.SetValue("HealthGrace", HealthGraceMs, RegistryValueKind.DWord);
+        key.SetValue("HealthFailures", HealthFailures, RegistryValueKind.DWord);
+        key.SetValue("HealthAction", (int)HealthAction, RegistryValueKind.DWord);
+        key.SetValue("HealthExpectStatus", HealthExpectStatus, RegistryValueKind.DWord);
+        key.SetValue("HealthMaxAge", HealthMaxAgeSec, RegistryValueKind.DWord);
 
         key.SetValue("AppStopUseConsole", StopUseConsole ? 1 : 0, RegistryValueKind.DWord);
         key.SetValue("AppStopConsoleDelay", StopConsoleMs, RegistryValueKind.DWord);
@@ -288,6 +352,16 @@ public sealed class ServiceConfig
         c.WarnRestartsPerHour = Num(key, "MonWarnRestartsPerHour", 3);
         c.CritRestartsPerHour = Num(key, "MonCritRestartsPerHour", 10);
         c.HistoryDays = Num(key, "HistoryDays", 30);
+
+        c.HealthType = (HealthCheckType)Num(key, "HealthType", 0);
+        c.HealthTarget = Str(key, "HealthTarget");
+        c.HealthIntervalMs = Num(key, "HealthInterval", 30_000);
+        c.HealthTimeoutMs = Num(key, "HealthTimeout", 5_000);
+        c.HealthGraceMs = Num(key, "HealthGrace", 30_000);
+        c.HealthFailures = Num(key, "HealthFailures", 3);
+        c.HealthAction = (HealthAction)Num(key, "HealthAction", 0);
+        c.HealthExpectStatus = Num(key, "HealthExpectStatus", 0);
+        c.HealthMaxAgeSec = Num(key, "HealthMaxAge", 120);
 
         c.StopUseConsole = Num(key, "AppStopUseConsole", 1) != 0;
         c.StopConsoleMs = Num(key, "AppStopConsoleDelay", 1500);

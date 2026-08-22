@@ -27,6 +27,21 @@
   <data name="Cfg_Err_Foreign" xml:space="preserve">
     <value>«{0}» esiste già ma non è stato creato con EasyService. L'importazione sovrascriverebbe un servizio estraneo.</value>
   </data>
+  <data name="Cfg_Err_HealthEndpoint" xml:space="preserve">
+    <value>Non è una coppia host:porta: {0}</value>
+  </data>
+  <data name="Cfg_Err_HealthFailures" xml:space="preserve">
+    <value>Serve almeno un controllo fallito prima di considerare un servizio non integro.</value>
+  </data>
+  <data name="Cfg_Err_HealthInterval" xml:space="preserve">
+    <value>L'intervallo tra due controlli di integrità deve essere di almeno un secondo.</value>
+  </data>
+  <data name="Cfg_Err_HealthTarget" xml:space="preserve">
+    <value>Il controllo di integrità richiede una destinazione: un URL, host:porta, un file o una riga di comando.</value>
+  </data>
+  <data name="Cfg_Err_HealthUrl" xml:space="preserve">
+    <value>Non è un indirizzo http o https: {0}</value>
+  </data>
   <data name="Cfg_Err_NameEmpty" xml:space="preserve">
     <value>Il nome del servizio non può essere vuoto.</value>
   </data>
@@ -100,6 +115,15 @@ Sovrascrivere la sua configurazione?</value>
   </data>
   <data name="Cli_FileNotFound" xml:space="preserve">
     <value>File non trovato: {0}</value>
+  </data>
+  <data name="Cli_Health_Failed" xml:space="preserve">
+    <value>NON INTEGRO - {0} ({1} ms)</value>
+  </data>
+  <data name="Cli_Health_None" xml:space="preserve">
+    <value>Nessun controllo di integrità configurato per "{0}".</value>
+  </data>
+  <data name="Cli_Health_Ok" xml:space="preserve">
+    <value>integro - {0} ({1} ms)</value>
   </data>
   <data name="Cli_Hdr_DisplayName" xml:space="preserve">
     <value>NOME VISUALIZZATO</value>
@@ -242,6 +266,10 @@ GESTIRE
       impostare prima EASYSERVICE_PASSWORD.
 
 MONITORAGGIO
+  easyservice health &lt;nome&gt;
+      Esegue una volta il controllo di integrità configurato e ne stampa la risposta.
+      Codice di uscita 0 = integro, 2 = non integro, 3 = nessun controllo configurato.
+
   easyservice checkmk
       Local check di Checkmk: una riga per ogni servizio monitorato, con dati prestazionali.
 
@@ -316,6 +344,9 @@ funzionano con qualsiasi account.</value>
   </data>
   <data name="Editor_Btn_Add" xml:space="preserve">
     <value>Aggiungi</value>
+  </data>
+  <data name="Editor_Btn_HealthTest" xml:space="preserve">
+    <value>Prova adesso</value>
   </data>
   <data name="Editor_Btn_Copy" xml:space="preserve">
     <value>Copia negli appunti</value>
@@ -440,6 +471,27 @@ funzionano con qualsiasi account.</value>
   <data name="Editor_Hint_ExitCodes" xml:space="preserve">
     <value>Esempio: assegnare al codice di uscita 0 l'azione «Arresta il servizio», così un programma terminato correttamente non viene riavviato all'infinito.</value>
   </data>
+  <data name="Editor_Health_Testing" xml:space="preserve">
+    <value>Verifica in corso...</value>
+  </data>
+  <data name="Editor_Hint_Health" xml:space="preserve">
+    <value>Windows sa solo se il processo esiste. Un'applicazione bloccata o che ha perso il database gli appare altrettanto sana. Un controllo interroga l'applicazione stessa.</value>
+  </data>
+  <data name="Editor_Hint_HealthCommand" xml:space="preserve">
+    <value>Una riga di comando. Il codice di uscita 0 significa integro. Viene eseguita con l'account del servizio.</value>
+  </data>
+  <data name="Editor_Hint_HealthExpect" xml:space="preserve">
+    <value>0 accetta qualsiasi valore da 200 a 299.</value>
+  </data>
+  <data name="Editor_Hint_HealthFile" xml:space="preserve">
+    <value>Un file su cui l'applicazione scrive di continuo: un file di battito o il proprio log.</value>
+  </data>
+  <data name="Editor_Hint_HealthHttp" xml:space="preserve">
+    <value>Ad esempio http://localhost:8080/health - il certificato non viene verificato, la domanda è se l'applicazione risponde.</value>
+  </data>
+  <data name="Editor_Hint_HealthTcp" xml:space="preserve">
+    <value>Ad esempio localhost:5432</value>
+  </data>
   <data name="Editor_Hint_HistoryDays" xml:space="preserve">
     <value>0 = non registrare la cronologia. Una riga al minuto, circa 80 KB per servizio al giorno, in formato CSV in %ProgramData%\EasyService\history.</value>
   </data>
@@ -535,6 +587,33 @@ funzionano con qualsiasi account.</value>
   </data>
   <data name="Editor_Lbl_ExitCode" xml:space="preserve">
     <value>Codice di uscita:</value>
+  </data>
+  <data name="Editor_Lbl_HealthAction" xml:space="preserve">
+    <value>Poi:</value>
+  </data>
+  <data name="Editor_Lbl_HealthExpect" xml:space="preserve">
+    <value>Stato atteso:</value>
+  </data>
+  <data name="Editor_Lbl_HealthFailures" xml:space="preserve">
+    <value>Fallimenti consecutivi:</value>
+  </data>
+  <data name="Editor_Lbl_HealthGrace" xml:space="preserve">
+    <value>Tempo di avvio (ms):</value>
+  </data>
+  <data name="Editor_Lbl_HealthInterval" xml:space="preserve">
+    <value>Ogni (ms):</value>
+  </data>
+  <data name="Editor_Lbl_HealthMaxAge" xml:space="preserve">
+    <value>File vecchio al massimo (s):</value>
+  </data>
+  <data name="Editor_Lbl_HealthTarget" xml:space="preserve">
+    <value>Destinazione:</value>
+  </data>
+  <data name="Editor_Lbl_HealthTimeout" xml:space="preserve">
+    <value>Limite di tempo (ms):</value>
+  </data>
+  <data name="Editor_Lbl_HealthType" xml:space="preserve">
+    <value>Controllo:</value>
   </data>
   <data name="Editor_Lbl_HistoryDays" xml:space="preserve">
     <value>Conservare la cronologia (giorni):</value>
@@ -650,6 +729,9 @@ funzionano con qualsiasi account.</value>
   <data name="Editor_Tab_Exit" xml:space="preserve">
     <value>Azioni di uscita</value>
   </data>
+  <data name="Editor_Tab_Health" xml:space="preserve">
+    <value>Controllo di integrità</value>
+  </data>
   <data name="Editor_Tab_LogOn" xml:space="preserve">
     <value>Accesso</value>
   </data>
@@ -685,6 +767,15 @@ funzionano con qualsiasi account.</value>
   </data>
   <data name="Evt_ConfigurationProblem" xml:space="preserve">
     <value>Problema di configurazione</value>
+  </data>
+  <data name="Evt_HealthCheckFailed" xml:space="preserve">
+    <value>Controllo di integrità fallito</value>
+  </data>
+  <data name="Evt_HealthCheckRecovered" xml:space="preserve">
+    <value>Controllo di integrità ripristinato</value>
+  </data>
+  <data name="Evt_HealthCheckRestarted" xml:space="preserve">
+    <value>Riavviato dal controllo di integrità</value>
   </data>
   <data name="Evt_LoggingProblem" xml:space="preserve">
     <value>Problema di registrazione</value>
@@ -802,6 +893,54 @@ funzionano con qualsiasi account.</value>
   </data>
   <data name="Host_Unexpected" xml:space="preserve">
     <value>Errore imprevisto: {0}</value>
+  </data>
+  <data name="Health_CommandExit" xml:space="preserve">
+    <value>Codice di uscita {0}: {1}</value>
+  </data>
+  <data name="Health_FileFresh" xml:space="preserve">
+    <value>Scritto {0} s fa</value>
+  </data>
+  <data name="Health_FileMissing" xml:space="preserve">
+    <value>Il file non esiste: {0}</value>
+  </data>
+  <data name="Health_FileStale" xml:space="preserve">
+    <value>Non toccato da {0} s, ne sono consentiti {1}</value>
+  </data>
+  <data name="Health_Action_Report" xml:space="preserve">
+    <value>solo segnalare</value>
+  </data>
+  <data name="Health_Action_Restart" xml:space="preserve">
+    <value>riavviare l'applicazione</value>
+  </data>
+  <data name="Health_Type_Command" xml:space="preserve">
+    <value>Eseguire un programma, codice di uscita 0</value>
+  </data>
+  <data name="Health_Type_File" xml:space="preserve">
+    <value>File scritto di recente</value>
+  </data>
+  <data name="Health_Type_Http" xml:space="preserve">
+    <value>Richiamare un URL</value>
+  </data>
+  <data name="Health_Type_None" xml:space="preserve">
+    <value>Nessun controllo</value>
+  </data>
+  <data name="Health_Type_Tcp" xml:space="preserve">
+    <value>Aprire una porta TCP</value>
+  </data>
+  <data name="Health_HttpStatus" xml:space="preserve">
+    <value>HTTP {0} {1}</value>
+  </data>
+  <data name="Health_NotConfigured" xml:space="preserve">
+    <value>Nessun controllo di integrità configurato</value>
+  </data>
+  <data name="Health_TcpOpen" xml:space="preserve">
+    <value>{0}:{1} accetta connessioni</value>
+  </data>
+  <data name="Health_TcpRefused" xml:space="preserve">
+    <value>{0}:{1} non raggiungibile ({2})</value>
+  </data>
+  <data name="Health_Timeout" xml:space="preserve">
+    <value>Nessuna risposta entro {0} ms</value>
   </data>
   <data name="Log_Btn_Clear" xml:space="preserve">
     <value>Svuota</value>
@@ -1265,6 +1404,12 @@ La causa si trova di solito nel registro. Aprirlo adesso?</value>
   <data name="Mon_Throttled" xml:space="preserve">
     <value>L'applicazione continua a riavviarsi e viene limitata. {0} riavvii nell'ultima ora, ultimo codice di uscita {1}.</value>
   </data>
+  <data name="Mon_Healthy" xml:space="preserve">
+    <value>controllo di integrità ok</value>
+  </data>
+  <data name="Mon_Unhealthy" xml:space="preserve">
+    <value>controllo di integrità fallito ({0})</value>
+  </data>
   <data name="Mon_UnknownError" xml:space="preserve">
     <value>errore sconosciuto</value>
   </data>
@@ -1399,6 +1544,18 @@ La causa si trova di solito nel registro. Aprirlo adesso?</value>
   </data>
   <data name="Sup_LogOpenFailed" xml:space="preserve">
     <value>Impossibile aprire il file di registro {0} ({1}): {2}</value>
+  </data>
+  <data name="Sup_HealthFailed" xml:space="preserve">
+    <value>Controllo di integrità fallito {0} volte di seguito: {1}</value>
+  </data>
+  <data name="Sup_HealthFailedOnce" xml:space="preserve">
+    <value>Controllo di integrità fallito ({0} di {1}): {2}</value>
+  </data>
+  <data name="Sup_HealthRecovered" xml:space="preserve">
+    <value>Il controllo di integrità è di nuovo a posto: {0}</value>
+  </data>
+  <data name="Sup_HealthRestart" xml:space="preserve">
+    <value>L'applicazione viene riavviata perché il controllo di integrità continua a fallire: {0}</value>
   </data>
   <data name="Sup_NextAttempt" xml:space="preserve">
     <value>Prossimo tentativo di avvio tra {0} ms.</value>

@@ -27,6 +27,21 @@
   <data name="Cfg_Err_Foreign" xml:space="preserve">
     <value>"{0}" existiert bereits, wurde aber nicht mit EasyService angelegt. Ein Import würde einen fremden Dienst überschreiben.</value>
   </data>
+  <data name="Cfg_Err_HealthEndpoint" xml:space="preserve">
+    <value>Kein Paar aus host:port: {0}</value>
+  </data>
+  <data name="Cfg_Err_HealthFailures" xml:space="preserve">
+    <value>Es braucht mindestens einen fehlgeschlagenen Check, bevor ein Dienst als krank gilt.</value>
+  </data>
+  <data name="Cfg_Err_HealthInterval" xml:space="preserve">
+    <value>Der Abstand zwischen zwei Health-Checks muss mindestens eine Sekunde betragen.</value>
+  </data>
+  <data name="Cfg_Err_HealthTarget" xml:space="preserve">
+    <value>Der Health-Check braucht ein Ziel: eine URL, host:port, eine Datei oder eine Kommandozeile.</value>
+  </data>
+  <data name="Cfg_Err_HealthUrl" xml:space="preserve">
+    <value>Keine http- oder https-Adresse: {0}</value>
+  </data>
   <data name="Cfg_Err_NameEmpty" xml:space="preserve">
     <value>Der Dienstname darf nicht leer sein.</value>
   </data>
@@ -100,6 +115,15 @@ Seine Konfiguration überschreiben?</value>
   </data>
   <data name="Cli_FileNotFound" xml:space="preserve">
     <value>Datei nicht gefunden: {0}</value>
+  </data>
+  <data name="Cli_Health_Failed" xml:space="preserve">
+    <value>KRANK - {0} ({1} ms)</value>
+  </data>
+  <data name="Cli_Health_None" xml:space="preserve">
+    <value>Für "{0}" ist kein Health-Check eingerichtet.</value>
+  </data>
+  <data name="Cli_Health_Ok" xml:space="preserve">
+    <value>gesund - {0} ({1} ms)</value>
   </data>
   <data name="Cli_Hdr_DisplayName" xml:space="preserve">
     <value>ANZEIGENAME</value>
@@ -242,6 +266,10 @@ VERWALTEN
       vorher EASYSERVICE_PASSWORD setzen.
 
 ÜBERWACHUNG
+  easyservice health &lt;Name&gt;
+      Führt den eingerichteten Health-Check einmal aus und gibt die Antwort aus.
+      Rückgabewert 0 = gesund, 2 = krank, 3 = kein Check eingerichtet.
+
   easyservice checkmk
       Checkmk-Local-Check: eine Zeile je überwachtem Dienst, mit Perfdata.
 
@@ -315,6 +343,9 @@ enden sie mit Code 5. Die Überwachungsbefehle lesen nur und laufen unter jedem 
   </data>
   <data name="Editor_Btn_Add" xml:space="preserve">
     <value>Hinzufügen</value>
+  </data>
+  <data name="Editor_Btn_HealthTest" xml:space="preserve">
+    <value>Jetzt testen</value>
   </data>
   <data name="Editor_Btn_Copy" xml:space="preserve">
     <value>In die Zwischenablage kopieren</value>
@@ -439,6 +470,27 @@ enden sie mit Code 5. Die Überwachungsbefehle lesen nur und laufen unter jedem 
   <data name="Editor_Hint_ExitCodes" xml:space="preserve">
     <value>Beispiel: Exit-Code 0 auf "Dienst beenden" setzen, damit ein sauber beendetes Programm nicht endlos neu gestartet wird.</value>
   </data>
+  <data name="Editor_Health_Testing" xml:space="preserve">
+    <value>Wird geprüft...</value>
+  </data>
+  <data name="Editor_Hint_Health" xml:space="preserve">
+    <value>Windows weiß nur, ob der Prozess da ist. Eine Anwendung, die sich verklemmt hat oder ihre Datenbank verloren hat, sieht für Windows genauso gesund aus. Ein Check fragt die Anwendung selbst.</value>
+  </data>
+  <data name="Editor_Hint_HealthCommand" xml:space="preserve">
+    <value>Eine Kommandozeile. Exit-Code 0 heißt gesund. Läuft unter dem Dienstkonto.</value>
+  </data>
+  <data name="Editor_Hint_HealthExpect" xml:space="preserve">
+    <value>0 nimmt alles von 200 bis 299 an.</value>
+  </data>
+  <data name="Editor_Hint_HealthFile" xml:space="preserve">
+    <value>Eine Datei, in die die Anwendung fortlaufend schreibt - eine Herzschlagdatei oder ihr eigenes Protokoll.</value>
+  </data>
+  <data name="Editor_Hint_HealthHttp" xml:space="preserve">
+    <value>Zum Beispiel http://localhost:8080/health - das Zertifikat wird nicht geprüft, die Frage ist, ob die Anwendung antwortet.</value>
+  </data>
+  <data name="Editor_Hint_HealthTcp" xml:space="preserve">
+    <value>Zum Beispiel localhost:5432</value>
+  </data>
   <data name="Editor_Hint_HistoryDays" xml:space="preserve">
     <value>0 = keinen Verlauf aufzeichnen. Eine Zeile pro Minute, rund 80 KB je Dienst und Tag, als CSV unter %ProgramData%\EasyService\history.</value>
   </data>
@@ -534,6 +586,33 @@ enden sie mit Code 5. Die Überwachungsbefehle lesen nur und laufen unter jedem 
   </data>
   <data name="Editor_Lbl_ExitCode" xml:space="preserve">
     <value>Exit-Code:</value>
+  </data>
+  <data name="Editor_Lbl_HealthAction" xml:space="preserve">
+    <value>Dann:</value>
+  </data>
+  <data name="Editor_Lbl_HealthExpect" xml:space="preserve">
+    <value>Erwarteter Status:</value>
+  </data>
+  <data name="Editor_Lbl_HealthFailures" xml:space="preserve">
+    <value>Fehlschläge hintereinander:</value>
+  </data>
+  <data name="Editor_Lbl_HealthGrace" xml:space="preserve">
+    <value>Anlaufzeit nach dem Start (ms):</value>
+  </data>
+  <data name="Editor_Lbl_HealthInterval" xml:space="preserve">
+    <value>Alle (ms):</value>
+  </data>
+  <data name="Editor_Lbl_HealthMaxAge" xml:space="preserve">
+    <value>Datei höchstens (s) alt:</value>
+  </data>
+  <data name="Editor_Lbl_HealthTarget" xml:space="preserve">
+    <value>Ziel:</value>
+  </data>
+  <data name="Editor_Lbl_HealthTimeout" xml:space="preserve">
+    <value>Zeitlimit (ms):</value>
+  </data>
+  <data name="Editor_Lbl_HealthType" xml:space="preserve">
+    <value>Prüfung:</value>
   </data>
   <data name="Editor_Lbl_HistoryDays" xml:space="preserve">
     <value>Verlauf aufbewahren (Tage):</value>
@@ -649,6 +728,9 @@ enden sie mit Code 5. Die Überwachungsbefehle lesen nur und laufen unter jedem 
   <data name="Editor_Tab_Exit" xml:space="preserve">
     <value>Beenden-Aktionen</value>
   </data>
+  <data name="Editor_Tab_Health" xml:space="preserve">
+    <value>Health-Check</value>
+  </data>
   <data name="Editor_Tab_LogOn" xml:space="preserve">
     <value>Anmelden</value>
   </data>
@@ -684,6 +766,15 @@ enden sie mit Code 5. Die Überwachungsbefehle lesen nur und laufen unter jedem 
   </data>
   <data name="Evt_ConfigurationProblem" xml:space="preserve">
     <value>Konfigurationsproblem</value>
+  </data>
+  <data name="Evt_HealthCheckFailed" xml:space="preserve">
+    <value>Health-Check fehlgeschlagen</value>
+  </data>
+  <data name="Evt_HealthCheckRecovered" xml:space="preserve">
+    <value>Health-Check wieder in Ordnung</value>
+  </data>
+  <data name="Evt_HealthCheckRestarted" xml:space="preserve">
+    <value>Vom Health-Check neu gestartet</value>
   </data>
   <data name="Evt_LoggingProblem" xml:space="preserve">
     <value>Protokollierungsproblem</value>
@@ -801,6 +892,54 @@ enden sie mit Code 5. Die Überwachungsbefehle lesen nur und laufen unter jedem 
   </data>
   <data name="Host_Unexpected" xml:space="preserve">
     <value>Unerwarteter Fehler: {0}</value>
+  </data>
+  <data name="Health_CommandExit" xml:space="preserve">
+    <value>Exit-Code {0}: {1}</value>
+  </data>
+  <data name="Health_FileFresh" xml:space="preserve">
+    <value>Vor {0} s geschrieben</value>
+  </data>
+  <data name="Health_FileMissing" xml:space="preserve">
+    <value>Datei gibt es nicht: {0}</value>
+  </data>
+  <data name="Health_FileStale" xml:space="preserve">
+    <value>Seit {0} s unberührt, erlaubt sind {1} s</value>
+  </data>
+  <data name="Health_Action_Report" xml:space="preserve">
+    <value>nur melden</value>
+  </data>
+  <data name="Health_Action_Restart" xml:space="preserve">
+    <value>die Anwendung neu starten</value>
+  </data>
+  <data name="Health_Type_Command" xml:space="preserve">
+    <value>Ein Programm ausführen, Exit-Code 0</value>
+  </data>
+  <data name="Health_Type_File" xml:space="preserve">
+    <value>Datei wurde kürzlich geschrieben</value>
+  </data>
+  <data name="Health_Type_Http" xml:space="preserve">
+    <value>Eine URL abrufen</value>
+  </data>
+  <data name="Health_Type_None" xml:space="preserve">
+    <value>Kein Check</value>
+  </data>
+  <data name="Health_Type_Tcp" xml:space="preserve">
+    <value>Einen TCP-Port öffnen</value>
+  </data>
+  <data name="Health_HttpStatus" xml:space="preserve">
+    <value>HTTP {0} {1}</value>
+  </data>
+  <data name="Health_NotConfigured" xml:space="preserve">
+    <value>Kein Health-Check eingerichtet</value>
+  </data>
+  <data name="Health_TcpOpen" xml:space="preserve">
+    <value>{0}:{1} nimmt Verbindungen an</value>
+  </data>
+  <data name="Health_TcpRefused" xml:space="preserve">
+    <value>{0}:{1} nicht erreichbar ({2})</value>
+  </data>
+  <data name="Health_Timeout" xml:space="preserve">
+    <value>Keine Antwort innerhalb von {0} ms</value>
   </data>
   <data name="Log_Btn_Clear" xml:space="preserve">
     <value>Leeren</value>
@@ -1264,6 +1403,12 @@ Die Ursache steht meist im Protokoll. Jetzt öffnen?</value>
   <data name="Mon_Throttled" xml:space="preserve">
     <value>Die Anwendung startet ständig neu und wird gedrosselt. {0} Neustarts in der letzten Stunde, zuletzt Exit-Code {1}.</value>
   </data>
+  <data name="Mon_Healthy" xml:space="preserve">
+    <value>Health-Check in Ordnung</value>
+  </data>
+  <data name="Mon_Unhealthy" xml:space="preserve">
+    <value>Health-Check schlägt fehl ({0})</value>
+  </data>
   <data name="Mon_UnknownError" xml:space="preserve">
     <value>unbekannter Fehler</value>
   </data>
@@ -1398,6 +1543,18 @@ Die Ursache steht meist im Protokoll. Jetzt öffnen?</value>
   </data>
   <data name="Sup_LogOpenFailed" xml:space="preserve">
     <value>Die {0}-Protokolldatei konnte nicht geöffnet werden ({1}): {2}</value>
+  </data>
+  <data name="Sup_HealthFailed" xml:space="preserve">
+    <value>Health-Check {0}-mal hintereinander fehlgeschlagen: {1}</value>
+  </data>
+  <data name="Sup_HealthFailedOnce" xml:space="preserve">
+    <value>Health-Check fehlgeschlagen ({0} von {1}): {2}</value>
+  </data>
+  <data name="Sup_HealthRecovered" xml:space="preserve">
+    <value>Health-Check ist wieder in Ordnung: {0}</value>
+  </data>
+  <data name="Sup_HealthRestart" xml:space="preserve">
+    <value>Anwendung wird neu gestartet, weil der Health-Check anhaltend fehlschlägt: {0}</value>
   </data>
   <data name="Sup_NextAttempt" xml:space="preserve">
     <value>Nächster Startversuch in {0} ms.</value>

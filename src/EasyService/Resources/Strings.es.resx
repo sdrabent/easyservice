@@ -27,6 +27,21 @@
   <data name="Cfg_Err_Foreign" xml:space="preserve">
     <value>«{0}» ya existe, pero no se creó con EasyService. La importación sobrescribiría un servicio ajeno.</value>
   </data>
+  <data name="Cfg_Err_HealthEndpoint" xml:space="preserve">
+    <value>No es un par host:puerto: {0}</value>
+  </data>
+  <data name="Cfg_Err_HealthFailures" xml:space="preserve">
+    <value>Hace falta al menos una comprobación fallida antes de considerar un servicio en mal estado.</value>
+  </data>
+  <data name="Cfg_Err_HealthInterval" xml:space="preserve">
+    <value>El intervalo entre comprobaciones de estado debe ser de al menos un segundo.</value>
+  </data>
+  <data name="Cfg_Err_HealthTarget" xml:space="preserve">
+    <value>La comprobación de estado necesita un destino: una URL, host:puerto, un archivo o una línea de comandos.</value>
+  </data>
+  <data name="Cfg_Err_HealthUrl" xml:space="preserve">
+    <value>No es una dirección http o https: {0}</value>
+  </data>
   <data name="Cfg_Err_NameEmpty" xml:space="preserve">
     <value>El nombre del servicio no puede estar vacío.</value>
   </data>
@@ -100,6 +115,15 @@
   </data>
   <data name="Cli_FileNotFound" xml:space="preserve">
     <value>Archivo no encontrado: {0}</value>
+  </data>
+  <data name="Cli_Health_Failed" xml:space="preserve">
+    <value>EN MAL ESTADO - {0} ({1} ms)</value>
+  </data>
+  <data name="Cli_Health_None" xml:space="preserve">
+    <value>No hay ninguna comprobación de estado configurada para «{0}».</value>
+  </data>
+  <data name="Cli_Health_Ok" xml:space="preserve">
+    <value>correcto - {0} ({1} ms)</value>
   </data>
   <data name="Cli_Hdr_DisplayName" xml:space="preserve">
     <value>NOMBRE PARA MOSTRAR</value>
@@ -242,6 +266,10 @@ ADMINISTRAR
       servicio, defina antes EASYSERVICE_PASSWORD.
 
 SUPERVISIÓN
+  easyservice health &lt;nombre&gt;
+      Ejecuta una vez la comprobación de estado configurada y muestra la respuesta.
+      Código de salida 0 = correcto, 2 = en mal estado, 3 = sin comprobación configurada.
+
   easyservice checkmk
       Local check de Checkmk: una línea por servicio supervisado, con datos de rendimiento.
 
@@ -316,6 +344,9 @@ cualquier cuenta.</value>
   </data>
   <data name="Editor_Btn_Add" xml:space="preserve">
     <value>Añadir</value>
+  </data>
+  <data name="Editor_Btn_HealthTest" xml:space="preserve">
+    <value>Probar ahora</value>
   </data>
   <data name="Editor_Btn_Copy" xml:space="preserve">
     <value>Copiar al portapapeles</value>
@@ -440,6 +471,27 @@ cualquier cuenta.</value>
   <data name="Editor_Hint_ExitCodes" xml:space="preserve">
     <value>Ejemplo: asigne al código de salida 0 la acción «Detener el servicio» para que un programa que terminó correctamente no se reinicie indefinidamente.</value>
   </data>
+  <data name="Editor_Health_Testing" xml:space="preserve">
+    <value>Comprobando...</value>
+  </data>
+  <data name="Editor_Hint_Health" xml:space="preserve">
+    <value>Windows solo sabe si el proceso existe. Una aplicación bloqueada o que ha perdido su base de datos le parece igual de sana. Una comprobación pregunta a la propia aplicación.</value>
+  </data>
+  <data name="Editor_Hint_HealthCommand" xml:space="preserve">
+    <value>Una línea de comandos. El código de salida 0 significa correcto. Se ejecuta con la cuenta del servicio.</value>
+  </data>
+  <data name="Editor_Hint_HealthExpect" xml:space="preserve">
+    <value>0 acepta cualquier valor de 200 a 299.</value>
+  </data>
+  <data name="Editor_Hint_HealthFile" xml:space="preserve">
+    <value>Un archivo en el que la aplicación escribe continuamente: un archivo de latido o su propio registro.</value>
+  </data>
+  <data name="Editor_Hint_HealthHttp" xml:space="preserve">
+    <value>Por ejemplo http://localhost:8080/health: el certificado no se verifica, la pregunta es si la aplicación responde.</value>
+  </data>
+  <data name="Editor_Hint_HealthTcp" xml:space="preserve">
+    <value>Por ejemplo localhost:5432</value>
+  </data>
   <data name="Editor_Hint_HistoryDays" xml:space="preserve">
     <value>0 = no registrar historial. Una fila por minuto, unos 80 KB por servicio y día, en formato CSV en %ProgramData%\EasyService\history.</value>
   </data>
@@ -535,6 +587,33 @@ cualquier cuenta.</value>
   </data>
   <data name="Editor_Lbl_ExitCode" xml:space="preserve">
     <value>Código de salida:</value>
+  </data>
+  <data name="Editor_Lbl_HealthAction" xml:space="preserve">
+    <value>Entonces:</value>
+  </data>
+  <data name="Editor_Lbl_HealthExpect" xml:space="preserve">
+    <value>Estado esperado:</value>
+  </data>
+  <data name="Editor_Lbl_HealthFailures" xml:space="preserve">
+    <value>Fallos seguidos:</value>
+  </data>
+  <data name="Editor_Lbl_HealthGrace" xml:space="preserve">
+    <value>Margen tras el inicio (ms):</value>
+  </data>
+  <data name="Editor_Lbl_HealthInterval" xml:space="preserve">
+    <value>Cada (ms):</value>
+  </data>
+  <data name="Editor_Lbl_HealthMaxAge" xml:space="preserve">
+    <value>Archivo como mucho (s) de antigüedad:</value>
+  </data>
+  <data name="Editor_Lbl_HealthTarget" xml:space="preserve">
+    <value>Destino:</value>
+  </data>
+  <data name="Editor_Lbl_HealthTimeout" xml:space="preserve">
+    <value>Tiempo límite (ms):</value>
+  </data>
+  <data name="Editor_Lbl_HealthType" xml:space="preserve">
+    <value>Comprobación:</value>
   </data>
   <data name="Editor_Lbl_HistoryDays" xml:space="preserve">
     <value>Conservar el historial (días):</value>
@@ -650,6 +729,9 @@ cualquier cuenta.</value>
   <data name="Editor_Tab_Exit" xml:space="preserve">
     <value>Acciones de salida</value>
   </data>
+  <data name="Editor_Tab_Health" xml:space="preserve">
+    <value>Comprobación de estado</value>
+  </data>
   <data name="Editor_Tab_LogOn" xml:space="preserve">
     <value>Inicio de sesión</value>
   </data>
@@ -685,6 +767,15 @@ cualquier cuenta.</value>
   </data>
   <data name="Evt_ConfigurationProblem" xml:space="preserve">
     <value>Problema de configuración</value>
+  </data>
+  <data name="Evt_HealthCheckFailed" xml:space="preserve">
+    <value>Comprobación de estado fallida</value>
+  </data>
+  <data name="Evt_HealthCheckRecovered" xml:space="preserve">
+    <value>Comprobación de estado restablecida</value>
+  </data>
+  <data name="Evt_HealthCheckRestarted" xml:space="preserve">
+    <value>Reiniciado por la comprobación de estado</value>
   </data>
   <data name="Evt_LoggingProblem" xml:space="preserve">
     <value>Problema de registro</value>
@@ -802,6 +893,54 @@ cualquier cuenta.</value>
   </data>
   <data name="Host_Unexpected" xml:space="preserve">
     <value>Error inesperado: {0}</value>
+  </data>
+  <data name="Health_CommandExit" xml:space="preserve">
+    <value>Código de salida {0}: {1}</value>
+  </data>
+  <data name="Health_FileFresh" xml:space="preserve">
+    <value>Escrito hace {0} s</value>
+  </data>
+  <data name="Health_FileMissing" xml:space="preserve">
+    <value>El archivo no existe: {0}</value>
+  </data>
+  <data name="Health_FileStale" xml:space="preserve">
+    <value>Sin cambios desde hace {0} s, se permiten {1} s</value>
+  </data>
+  <data name="Health_Action_Report" xml:space="preserve">
+    <value>solo informar</value>
+  </data>
+  <data name="Health_Action_Restart" xml:space="preserve">
+    <value>reiniciar la aplicación</value>
+  </data>
+  <data name="Health_Type_Command" xml:space="preserve">
+    <value>Ejecutar un programa, código de salida 0</value>
+  </data>
+  <data name="Health_Type_File" xml:space="preserve">
+    <value>Archivo escrito recientemente</value>
+  </data>
+  <data name="Health_Type_Http" xml:space="preserve">
+    <value>Solicitar una URL</value>
+  </data>
+  <data name="Health_Type_None" xml:space="preserve">
+    <value>Sin comprobación</value>
+  </data>
+  <data name="Health_Type_Tcp" xml:space="preserve">
+    <value>Abrir un puerto TCP</value>
+  </data>
+  <data name="Health_HttpStatus" xml:space="preserve">
+    <value>HTTP {0} {1}</value>
+  </data>
+  <data name="Health_NotConfigured" xml:space="preserve">
+    <value>Ninguna comprobación de estado configurada</value>
+  </data>
+  <data name="Health_TcpOpen" xml:space="preserve">
+    <value>{0}:{1} acepta conexiones</value>
+  </data>
+  <data name="Health_TcpRefused" xml:space="preserve">
+    <value>{0}:{1} no accesible ({2})</value>
+  </data>
+  <data name="Health_Timeout" xml:space="preserve">
+    <value>Sin respuesta en {0} ms</value>
   </data>
   <data name="Log_Btn_Clear" xml:space="preserve">
     <value>Vaciar</value>
@@ -1265,6 +1404,12 @@ La causa suele estar en el registro. ¿Abrirlo ahora?</value>
   <data name="Mon_Throttled" xml:space="preserve">
     <value>La aplicación se reinicia continuamente y está siendo limitada. {0} reinicios en la última hora, último código de salida {1}.</value>
   </data>
+  <data name="Mon_Healthy" xml:space="preserve">
+    <value>comprobación de estado correcta</value>
+  </data>
+  <data name="Mon_Unhealthy" xml:space="preserve">
+    <value>la comprobación de estado falla ({0})</value>
+  </data>
   <data name="Mon_UnknownError" xml:space="preserve">
     <value>error desconocido</value>
   </data>
@@ -1399,6 +1544,18 @@ La causa suele estar en el registro. ¿Abrirlo ahora?</value>
   </data>
   <data name="Sup_LogOpenFailed" xml:space="preserve">
     <value>No se pudo abrir el archivo de registro {0} ({1}): {2}</value>
+  </data>
+  <data name="Sup_HealthFailed" xml:space="preserve">
+    <value>Comprobación de estado fallida {0} veces seguidas: {1}</value>
+  </data>
+  <data name="Sup_HealthFailedOnce" xml:space="preserve">
+    <value>Comprobación de estado fallida ({0} de {1}): {2}</value>
+  </data>
+  <data name="Sup_HealthRecovered" xml:space="preserve">
+    <value>La comprobación de estado vuelve a estar bien: {0}</value>
+  </data>
+  <data name="Sup_HealthRestart" xml:space="preserve">
+    <value>Se reinicia la aplicación porque la comprobación de estado sigue fallando: {0}</value>
   </data>
   <data name="Sup_NextAttempt" xml:space="preserve">
     <value>Próximo intento de inicio en {0} ms.</value>

@@ -132,6 +132,11 @@ public static class Monitoring
             problems.Add(text);
         }
 
+        // Der Health-Check steht vor den Schwellwerten: eine Anwendung, die nicht mehr
+        // antwortet, ist kein CPU-Problem, und die Meldung soll das zuerst sagen.
+        if (state.Health == HealthStatus.Unhealthy)
+            Raise(CheckStatus.Critical, S.Mon_Unhealthy(state.HealthDetail ?? S.Common_UnknownShort));
+
         var restarts = state.RestartsLastHour;
         if (config.CritRestartsPerHour > 0 && restarts >= config.CritRestartsPerHour)
             Raise(CheckStatus.Critical, S.Mon_RestartsCrit(restarts, config.CritRestartsPerHour));
@@ -170,6 +175,10 @@ public static class Monitoring
         parts.Add(S.Mon_RestartsPerHour(state.RestartsLastHour));
         if (state.RestartCount > 0) parts.Add(S.Mon_RestartsTotal(state.RestartCount));
 
+        // Ein bestandener Health-Check gehoert in die Zeile: sonst sieht ein Admin nicht,
+        // ob die Pruefung ueberhaupt laeuft.
+        if (state.Health == HealthStatus.Healthy) parts.Add(S.Mon_Healthy);
+
         return string.Join(", ", parts);
     }
 
@@ -185,6 +194,14 @@ public static class Monitoring
         if (state is null) return metrics;
 
         metrics.Add(new Metric("app_running", state.State == SupervisorState.Running ? 1 : 0, Min: 0, Max: 1));
+
+        // Nur bei einem echten Urteil. Waehrend der Anlaufzeit gibt es keinen Messwert, und
+        // eine erfundene 1 waere schlimmer als eine Luecke.
+        if (state.Health is HealthStatus.Healthy or HealthStatus.Unhealthy)
+        {
+            metrics.Add(new Metric("health", state.Health == HealthStatus.Healthy ? 1 : 0, Min: 0, Max: 1));
+            metrics.Add(new Metric("health_restarts", state.HealthRestarts, Min: 0));
+        }
         metrics.Add(new Metric("uptime", state.Uptime?.TotalSeconds ?? 0, "s", Min: 0));
         metrics.Add(new Metric("restarts_1h", state.RestartsLastHour, "",
             config.WarnRestartsPerHour > 0 ? config.WarnRestartsPerHour : null,

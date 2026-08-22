@@ -45,6 +45,7 @@ internal static class Cli
                 "checkmk" => Checkmk(),
                 "prometheus" or "metrics" => Prometheus(args),
                 "check" => Check(args),
+                "health" => Health(args),
                 "json" => Json(),
                 "zabbix-discovery" => ZabbixDiscovery(),
 
@@ -345,6 +346,41 @@ internal static class Cli
     }
 
     // ------------------------------------------------------------ überwachung ---
+
+    /// <summary>
+    /// Runs the configured check once, right now. This is how an administrator finds out
+    /// whether the check they just typed in actually works, without waiting for the interval
+    /// and then reading the event log.
+    /// </summary>
+    private static int Health(string[] args)
+    {
+        if (args.Length < 2) return Usage(2, S.Cli_NeedsName("health"));
+
+        var config = ServiceConfig.Load(args[1]);
+        if (config is null)
+        {
+            Console.Error.WriteLine(S.Cli_NotExists(args[1]));
+            return 2;
+        }
+
+        if (config.HealthType == HealthCheckType.None)
+        {
+            Console.WriteLine(S.Cli_Health_None(config.ServiceName));
+            return 3;
+        }
+
+        var result = HealthProbe.Run(config);
+        var milliseconds = (int)result.Duration.TotalMilliseconds;
+
+        if (result.Healthy)
+        {
+            Console.WriteLine(S.Cli_Health_Ok(result.Detail, milliseconds));
+            return 0;
+        }
+
+        Console.Error.WriteLine(S.Cli_Health_Failed(result.Detail, milliseconds));
+        return 2;
+    }
 
     private static int Checkmk()
     {
