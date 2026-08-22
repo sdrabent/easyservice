@@ -7,8 +7,6 @@ namespace EasyService;
 
 internal static class Program
 {
-    private const uint ATTACH_PARENT_PROCESS = 0xFFFFFFFF;
-
     /// <summary>Guards against an endless relaunch loop if the elevated start still is not elevated.</summary>
     private const string ElevatedMarker = "--elevated";
 
@@ -21,14 +19,23 @@ internal static class Program
 
         // Mode 1: started by the Service Control Manager as "easyservice.exe run <name>".
         if (args.Length >= 2 && args[0].Equals("run", StringComparison.OrdinalIgnoreCase))
+        {
+            // A service has nobody to write to. Give the console back before anything else
+            // happens, so session 0 does not keep one around for the life of the service.
+            LeaveConsole();
             return ServiceHost.Run(args[1]);
+        }
 
         // Mode 2: command line helpers, useful for scripting and CI.
         if (args.Length > 0 && !args[0].Equals("gui", StringComparison.OrdinalIgnoreCase))
             return Cli.Execute(args);
 
-        // Mode 3: the GUI. Everything it offers - create, change, start, remove - needs
-        // elevation, so it asks for it once up front instead of failing per button.
+        // Mode 3: the GUI. First order of business is getting rid of the console that comes
+        // with being a console program - see LeaveConsole.
+        LeaveConsole();
+
+        // Everything the window offers - create, change, start, remove - needs elevation, so
+        // it asks for it once up front instead of failing per button.
         if (!Elevation.IsElevated && !args.Contains(ElevatedMarker, StringComparer.OrdinalIgnoreCase))
         {
             // A dismissed UAC prompt is a decision, not an error, so this ends quietly either way.
@@ -63,31 +70,35 @@ internal static class Program
     }
 
     /// <summary>
-    /// Makes the output of a command line run visible.
+    /// Hands back the console.
     ///
-    /// This is a Windows subsystem program, so it starts without a console and its writes
-    /// would go nowhere. AttachConsole borrows the calling shell's console - but only when
-    /// there is nothing else to write to. If the caller redirected stdout to a file or a
-    /// pipe, that handle is already the right one, and attaching would bend the standard
-    /// handles back to the console and drop the redirection on the floor. That is what used
-    /// to make "easyservice checkmk &gt; out.txt" produce an empty file.
+    /// EasyService is built as a console program on purpose: a Windows subsystem program is
+    /// one that no shell waits for, which means %ERRORLEVEL% and $LASTEXITCODE never see its
+    /// result and a script cannot tell whether the service was really created. The price is
+    /// that Windows gives every start a console, including the ones that only want the
+    /// window - so those give it back here.
+    ///
+    /// Hiding only happens when the console belongs to us alone. Started from an open command
+    /// prompt, the window on screen is the administrator's own, and hiding that would be a
+    /// nasty surprise; detaching from it is enough.
     /// </summary>
-    internal static void AttachConsole()
+    internal static void LeaveConsole()
     {
-        if (IsRedirected()) return;
+        try
+        {
+            var window = Native.GetConsoleWindow();
+            if (window == IntPtr.Zero) return;
 
-        if (!Native.AttachConsole(ATTACH_PARENT_PROCESS)) return;
-        var stdout = new StreamWriter(Console.OpenStandardOutput()) { AutoFlush = true };
-        Console.SetOut(stdout);
-        Console.SetError(stdout);
+            var processes = new uint[4];
+            if (Native.GetConsoleProcessList(processes, (uint)processes.Length) == 1)
+                Native.ShowWindow(window, Native.SW_HIDE_WINDOW);
+
+            Native.FreeConsole();
+        }
+        catch (Exception)
+        {
+            // Ohne Konsole zu leben ist kein Grund, nicht zu starten.
+        }
     }
 
-    private static bool IsRedirected()
-    {
-        var handle = Native.GetStdHandle(Native.STD_OUTPUT_HANDLE);
-        if (handle == IntPtr.Zero || handle == new IntPtr(-1)) return false;
-
-        var type = Native.GetFileType(handle);
-        return type is Native.FILE_TYPE_DISK or Native.FILE_TYPE_PIPE;
-    }
 }

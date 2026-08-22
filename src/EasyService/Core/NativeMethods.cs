@@ -472,6 +472,19 @@ internal static class Native
     [return: MarshalAs(UnmanagedType.Bool)]
     public static extern bool FreeConsole();
 
+    [DllImport("kernel32.dll")]
+    public static extern IntPtr GetConsoleWindow();
+
+    /// <summary>How many processes share this console. One means it belongs to us alone.</summary>
+    [DllImport("kernel32.dll")]
+    public static extern uint GetConsoleProcessList(uint[] processIds, uint count);
+
+    [DllImport("user32.dll")]
+    [return: MarshalAs(UnmanagedType.Bool)]
+    public static extern bool ShowWindow(IntPtr window, int command);
+
+    public const int SW_HIDE_WINDOW = 0;
+
     public const int STD_OUTPUT_HANDLE = -11;
     public const uint FILE_TYPE_DISK = 0x0001;
     public const uint FILE_TYPE_PIPE = 0x0003;

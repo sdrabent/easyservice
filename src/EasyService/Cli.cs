@@ -15,8 +15,6 @@ internal static class Cli
 {
     public static int Execute(string[] args)
     {
-        Program.AttachConsole();
-
         var command = args[0].ToLowerInvariant();
 
         // Reading is allowed for everyone; writing is not. Saying so before the call keeps

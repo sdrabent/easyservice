@@ -269,11 +269,12 @@ Downloads, die AppLocker- und WDAC-Regeln und die maschinenweite Spracheinstellu
   SHA256-Prüfsummen, eine CycloneDX-Stückliste und eine GitHub-Build-Attestation, die
   Herkunft ist also wenigstens nachprüfbar — siehe
   [docs/deployment.de.md](docs/deployment.de.md). Eine echte Signatur braucht ein Zertifikat.
-* **Rückgabewerte erreichen die Shell nicht.** `easyservice.exe` ist ein
-  Windows-Subsystem-Programm, cmd und PowerShell warten nicht darauf, und
-  `%ERRORLEVEL%` beziehungsweise `$LASTEXITCODE` bleiben leer. Umleitung und Pipes
-  funktionieren; für den Rückgabewert hilft `Start-Process -Wait -PassThru`.
-  Monitoring-Agenten, die den Prozess selbst starten, sind nicht betroffen.
+* **Beim Start des Fensters blitzt eine Konsole auf, etwa eine fünftel Sekunde lang.**
+  EasyService ist mit Absicht ein Konsolenprogramm, damit Shells darauf warten und
+  `%ERRORLEVEL%` und `$LASTEXITCODE` etwas bedeuten. Windows gibt jedem Start eine Konsole,
+  auch dem, der nur das Fenster will; die wird als Erstes versteckt und freigegeben, es
+  bleiben rund 0,2 s schwarzer Kasten. Der Tausch ist gewollt: ein Werkzeug, das sich als
+  skriptbar verkauft, muss sein Ergebnis melden.
 * **Kein Installer.** Man kopiert die Exe irgendwohin und startet sie. Kein MSI, noch
   kein winget-Paket.
 * **Nur x64.** Keine ARM64-Fassung.

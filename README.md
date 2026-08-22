@@ -257,11 +257,12 @@ download, the AppLocker and WDAC rules, and the machine-wide language setting.
   block it outright until you allow it by hash. Releases carry SHA256 checksums, a
   CycloneDX SBOM and a GitHub build attestation, so the origin is at least verifiable —
   see [docs/deployment.md](docs/deployment.md). A real signature needs a certificate.
-* **Exit codes are not visible to a shell.** `easyservice.exe` is a Windows subsystem
-  program, so cmd and PowerShell do not wait for it and `%ERRORLEVEL%` / `$LASTEXITCODE`
-  stay empty. Output redirection and pipes work; for the exit code, use
-  `Start-Process -Wait -PassThru`. Monitoring agents that spawn the process themselves are
-  not affected.
+* **The window start flashes a console for about a fifth of a second.** EasyService is a
+  console program on purpose, so that shells wait for it and `%ERRORLEVEL%` and
+  `$LASTEXITCODE` mean something. Windows hands every start a console, including the ones
+  that only want the window; that one is hidden and released as the first thing the program
+  does, which leaves roughly 0.2 s of black box. The trade is deliberate: a tool that claims
+  to be scriptable has to report its result.
 * **No installer.** You copy the exe somewhere and run it. No MSI, no winget package yet.
 * **x64 only.** No ARM64 build.
 * **Interacting with the desktop does not really work.** The option exists because the

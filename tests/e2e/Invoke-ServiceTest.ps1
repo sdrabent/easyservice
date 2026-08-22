@@ -64,9 +64,10 @@ function Wait-Until {
 function Invoke-Es {
     param([string[]] $Arguments, [int] $ExpectedExitCode = 0)
 
-    # Start-Process mit -Wait statt "& $Exe": easyservice.exe ist ein Windows-Subsystem-
-    # Programm, auf das eine Shell nicht wartet. Direkt aufgerufen kaeme weder die Ausgabe
-    # noch der Rueckgabewert hier an.
+    # Start-Process statt "& $Exe": der direkte Aufruf funktioniert seit dem Wechsel auf ein
+    # Konsolenprogramm (siehe den Schritt "Rueckgabewerte in der Shell"), aber hier sollen
+    # stdout und stderr getrennt bleiben, ohne dass PowerShell 5.1 jede stderr-Zeile in einen
+    # Fehlerdatensatz verwandelt.
     $out = [IO.Path]::GetTempFileName()
     $err = [IO.Path]::GetTempFileName()
     try {
@@ -145,6 +146,25 @@ try {
     Step "Version"
     $version = Invoke-Es @("--version")
     Confirm-That ($version -match "easyservice \d+\.\d+\.\d+") "--version meldet eine Versionsnummer: $($version.Trim())"
+
+    Step "Rueckgabewerte in der Shell"
+    # Der eigentliche Test dieser Runde: easyservice ist ein Konsolenprogramm, also wartet
+    # die Shell auf das Ende und $LASTEXITCODE stimmt. Als Windows-Subsystem-Programm kam
+    # hier nie etwas an.
+    $previousPreference = $ErrorActionPreference
+    $ErrorActionPreference = "Continue"   # stderr eines nativen Programms ist kein Abbruch
+    try {
+        $direct = & $Exe --version 2>&1
+        Confirm-That ($LASTEXITCODE -eq 0) "ein direkter Aufruf setzt den Rueckgabewert auf 0"
+        Confirm-That ((($direct -join " ") -match "easyservice")) "die Ausgabe kommt in der Shell an"
+
+        & $Exe status ("gibtesnicht-" + [guid]::NewGuid().ToString("N")) 2>&1 | Out-Null
+        Confirm-That ($LASTEXITCODE -ne 0) "ein fehlgeschlagener Aufruf meldet das ueber den Rueckgabewert ($LASTEXITCODE)"
+
+        $piped = (& $Exe --version 2>&1 | Select-Object -First 1)
+        Confirm-That ("$piped" -match "easyservice") "die Ausgabe laesst sich weiterleiten"
+    }
+    finally { $ErrorActionPreference = $previousPreference }
 
     Step "Anlegen"
     Invoke-Es @("install", $ServiceName, $powershell, "-NoProfile", "-ExecutionPolicy", "Bypass", "-File", $childScript) | Out-Null
