@@ -67,7 +67,8 @@ internal static class HealthTests
                                 // gelesen zu haben, bekommt von Windows ein RST - und damit
                                 // verwirft der Client die Antwort, die schon unterwegs war.
                                 var request = new byte[4096];
-                                await client.GetStream().ReadAsync(request, _cts.Token);
+                                var drained = await client.GetStream().ReadAsync(request, _cts.Token);
+                                if (drained <= 0) return;   // die Gegenseite hat sofort aufgelegt
 
                                 if (delay > TimeSpan.Zero) await Task.Delay(delay, _cts.Token);
 

@@ -191,6 +191,7 @@ public sealed class MainForm : Form
             _list.SmallImageList = _statusIcons;
             _rowFont = _list.Font;
             _rowFontBold = new Font(_list.Font, FontStyle.Bold);
+            Ui.FollowTheme(this);
 
             RestoreWindowState();
             ApplyPreviewLayout();

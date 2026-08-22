@@ -70,6 +70,40 @@ internal static class Ui
         };
     }
 
+    /// <summary>
+    /// Paints the controls that the Windows Forms dark mode does not reach. A TextBox stays
+    /// white and a StatusStrip stays light grey in an otherwise dark window, which reads as a
+    /// hole in the middle of it. Call this once the form has its colours, not in a
+    /// constructor - before the handle exists, every control still reports the default.
+    /// </summary>
+    public static void FollowTheme(Control control)
+    {
+        var form = control.FindForm();
+        if (form is null || !IsDark(form)) return;
+
+        var background = Color.FromArgb(32, 32, 32);
+        var foreground = Color.FromArgb(224, 224, 224);
+
+        foreach (var child in Descend(control))
+        {
+            switch (child)
+            {
+                case TextBox box:
+                    box.BackColor = background;
+                    box.ForeColor = foreground;
+                    break;
+
+                case StatusStrip strip:
+                    strip.BackColor = Color.FromArgb(45, 45, 45);
+                    strip.ForeColor = foreground;
+                    break;
+            }
+        }
+    }
+
+    private static IEnumerable<Control> Descend(Control control) =>
+        new[] { control }.Concat(control.Controls.Cast<Control>().SelectMany(Descend));
+
     // ------------------------------------------------------------ status icons ---
 
     /// <summary>

@@ -114,6 +114,7 @@ public sealed class LogViewerForm : Form
 
         Load += (_, _) =>
         {
+            Ui.FollowTheme(this);
             PopulateFileList();
             OpenSelected(force: true);
             _timer.Start();
