@@ -28,6 +28,11 @@ public sealed class MainForm : Form
     private SplitContainer _split = null!;
     private ServicePreview _preview = null!;
     private ToolStripButton _btnPreview = null!;
+
+    // Zeichen und Ziel werden beim Aufbau gemerkt und erst beim Laden gezeichnet: vorher
+    // steht die Vordergrundfarbe der Werkzeugleiste nicht fest, und ein helles Zeichen auf
+    // hellem Grund waere unsichtbar.
+    private readonly List<(ToolStripItem Item, string Glyph)> _glyphs = new();
     private Label _emptyTitle = null!, _emptyText = null!;
     private Button _emptyButton = null!;
     private Font? _rowFont, _rowFontBold;
@@ -77,23 +82,23 @@ public sealed class MainForm : Form
         _list.KeyDown += OnListKeyDown;
 
         _toolbar = new ToolStrip { GripStyle = ToolStripGripStyle.Hidden, Padding = new Padding(6, 2, 6, 2) };
-        _toolbar.Items.Add(Button(S.Main_Btn_Add, (_, _) => CreateNew(), S.Main_Tip_Add));
-        _btnEdit = Button(S.Main_Btn_Edit, (_, _) => EditSelected(), S.Main_Tip_Edit);
+        _toolbar.Items.Add(Button(S.Main_Btn_Add, (_, _) => CreateNew(), S.Main_Tip_Add, Ui.Glyphs.Add));
+        _btnEdit = Button(S.Main_Btn_Edit, (_, _) => EditSelected(), S.Main_Tip_Edit, Ui.Glyphs.Edit);
         _toolbar.Items.Add(_btnEdit);
         _toolbar.Items.Add(new ToolStripSeparator());
-        _btnStart = Button(S.Main_Btn_Start, (_, _) => Control(ServiceAction.Start), null);
-        _btnStop = Button(S.Main_Btn_Stop, (_, _) => Control(ServiceAction.Stop), null);
-        _btnRestart = Button(S.Main_Btn_Restart, (_, _) => Control(ServiceAction.Restart), null);
+        _btnStart = Button(S.Main_Btn_Start, (_, _) => Control(ServiceAction.Start), null, Ui.Glyphs.Play);
+        _btnStop = Button(S.Main_Btn_Stop, (_, _) => Control(ServiceAction.Stop), null, Ui.Glyphs.Stop);
+        _btnRestart = Button(S.Main_Btn_Restart, (_, _) => Control(ServiceAction.Restart), null, Ui.Glyphs.Restart);
         _toolbar.Items.AddRange(new ToolStripItem[] { _btnStart, _btnStop, _btnRestart });
         _toolbar.Items.Add(new ToolStripSeparator());
-        _btnHistory = Button(S.Main_Btn_History, (_, _) => ShowHistory(), S.Main_Tip_History);
+        _btnHistory = Button(S.Main_Btn_History, (_, _) => ShowHistory(), S.Main_Tip_History, Ui.Glyphs.History);
         _toolbar.Items.Add(_btnHistory);
-        _btnLogs = Button(S.Main_Btn_Logs, (_, _) => ShowLogs(), S.Main_Tip_Logs);
+        _btnLogs = Button(S.Main_Btn_Logs, (_, _) => ShowLogs(), S.Main_Tip_Logs, Ui.Glyphs.Document);
         _toolbar.Items.Add(_btnLogs);
-        _btnRemove = Button(S.Main_Btn_Remove, (_, _) => RemoveSelected(), S.Main_Tip_Remove);
+        _btnRemove = Button(S.Main_Btn_Remove, (_, _) => RemoveSelected(), S.Main_Tip_Remove, Ui.Glyphs.Delete);
         _toolbar.Items.Add(_btnRemove);
         _toolbar.Items.Add(new ToolStripSeparator());
-        _toolbar.Items.Add(Button(S.Main_Btn_Refresh, (_, _) => Reload(), S.Main_Tip_Refresh));
+        _toolbar.Items.Add(Button(S.Main_Btn_Refresh, (_, _) => Reload(), S.Main_Tip_Refresh, Ui.Glyphs.Refresh));
         _btnPreview = new ToolStripButton(S.Main_Btn_Details)
         {
             CheckOnClick = true,
@@ -102,6 +107,7 @@ public sealed class MainForm : Form
             ToolTipText = S.Main_Tip_Details,
         };
         _btnPreview.CheckedChanged += (_, _) => { ApplyPreviewLayout(); UpdatePreview(); };
+        _glyphs.Add((_btnPreview, Ui.Glyphs.Details));
         _toolbar.Items.Add(_btnPreview);
         _toolbar.Items.Add(BuildConfigMenu());
         _toolbar.Items.Add(BuildLanguageMenu());
@@ -115,6 +121,7 @@ public sealed class MainForm : Form
             ToolTipText = S.Main_Tip_OnlyManaged,
         };
         _onlyManaged.CheckedChanged += (_, _) => ApplyFilter();
+        _glyphs.Add((_onlyManaged, Ui.Glyphs.Filter));
         _toolbar.Items.Add(_onlyManaged);
 
         _toolbar.Items.Add(new ToolStripLabel(S.Main_Lbl_Filter));
@@ -187,6 +194,7 @@ public sealed class MainForm : Form
         {
             // Erst hier: vorher stehen weder die tatsaechliche Hintergrundfarbe (hell oder
             // dunkel) noch die DPI des Bildschirms fest, auf dem das Fenster landet.
+            ApplyGlyphs();
             _statusIcons = Ui.BuildStatusIcons(_list);
             _list.SmallImageList = _statusIcons;
             _rowFont = _list.Font;
@@ -250,11 +258,18 @@ public sealed class MainForm : Form
         UserDefaults.OnlyManaged = _onlyManaged.Checked;
     }
 
-    private static ToolStripButton Button(string text, EventHandler onClick, string? tip)
+    private ToolStripButton Button(string text, EventHandler onClick, string? tip, string? glyph = null)
     {
         var b = new ToolStripButton(text) { DisplayStyle = ToolStripItemDisplayStyle.Text, ToolTipText = tip };
         b.Click += onClick;
+        if (glyph is not null) _glyphs.Add((b, glyph));
         return b;
+    }
+
+    /// <summary>Draws the remembered glyphs now that the toolbar knows its colours.</summary>
+    private void ApplyGlyphs()
+    {
+        foreach (var (item, glyph) in _glyphs) item.WithGlyph(glyph, _toolbar);
     }
 
     /// <summary>
@@ -267,6 +282,7 @@ public sealed class MainForm : Form
         {
             DisplayStyle = ToolStripItemDisplayStyle.Text,
         };
+        _glyphs.Add((button, Ui.Glyphs.Language));
 
         foreach (var language in Localization.Supported)
         {
@@ -389,10 +405,10 @@ public sealed class MainForm : Form
     private ContextMenuStrip BuildContextMenu()
     {
         var menu = new ContextMenuStrip();
-        menu.Items.Add(MenuItem(S.Main_Btn_History, Keys.Control | Keys.H, ShowHistory));
-        menu.Items.Add(MenuItem(S.Main_Btn_Edit, Keys.Control | Keys.E, EditSelected));
-        menu.Items.Add(MenuItem(S.Main_Btn_Logs, Keys.Control | Keys.L, ShowLogs));
-        menu.Items.Add(MenuItem(S.Main_Btn_Duplicate, Keys.Control | Keys.D, DuplicateSelected));
+        menu.Items.Add(Remember(MenuItem(S.Main_Btn_History, Keys.Control | Keys.H, ShowHistory), Ui.Glyphs.History));
+        menu.Items.Add(Remember(MenuItem(S.Main_Btn_Edit, Keys.Control | Keys.E, EditSelected), Ui.Glyphs.Edit));
+        menu.Items.Add(Remember(MenuItem(S.Main_Btn_Logs, Keys.Control | Keys.L, ShowLogs), Ui.Glyphs.Document));
+        menu.Items.Add(Remember(MenuItem(S.Main_Btn_Duplicate, Keys.Control | Keys.D, DuplicateSelected), Ui.Glyphs.Copy));
         menu.Items.Add(new ToolStripSeparator());
         menu.Items.Add(S.Main_Btn_Start, null, (_, _) => Control(ServiceAction.Start));
         menu.Items.Add(S.Main_Btn_Stop, null, (_, _) => Control(ServiceAction.Stop));
@@ -420,6 +436,12 @@ public sealed class MainForm : Form
     /// Menu entry with a shortcut. Windows renders the key combination in the menu itself and
     /// handles it while the menu is closed, so the shortcut is documented where it is used.
     /// </summary>
+    private T Remember<T>(T item, string glyph) where T : ToolStripItem
+    {
+        _glyphs.Add((item, glyph));
+        return item;
+    }
+
     private static ToolStripMenuItem MenuItem(string text, Keys shortcut, Action action)
     {
         var item = new ToolStripMenuItem(text, null, (_, _) => action());
@@ -772,6 +794,7 @@ public sealed class MainForm : Form
         {
             DisplayStyle = ToolStripItemDisplayStyle.Text,
         };
+        _glyphs.Add((button, Ui.Glyphs.Settings));
 
         _menuExport = new ToolStripMenuItem(S.Main_Btn_Export, null, (_, _) => ExportSelected());
         button.DropDownItems.Add(_menuExport);

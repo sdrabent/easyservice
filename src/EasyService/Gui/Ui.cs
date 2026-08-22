@@ -104,6 +104,112 @@ internal static class Ui
     private static IEnumerable<Control> Descend(Control control) =>
         new[] { control }.Concat(control.Controls.Cast<Control>().SelectMany(Descend));
 
+    // ---------------------------------------------------------------- glyphs ---
+
+    /// <summary>
+    /// Code points of the icon font. Named rather than sprinkled through the code, because
+    /// "E768" tells nobody anything and picking the wrong one is invisible until it renders.
+    /// </summary>
+    public static class Glyphs
+    {
+        public const string Add = "";
+        public const string Edit = "";
+        public const string Play = "";
+        public const string Stop = "";
+        public const string Restart = "";
+        public const string History = "";
+        public const string Document = "";
+        public const string Delete = "";
+        public const string Refresh = "";
+        public const string Details = "";
+        public const string Settings = "";
+        public const string Language = "";
+        public const string Filter = "";
+        public const string Copy = "";
+        public const string Folder = "";
+    }
+
+    private static string? _iconFontName;
+    private static bool _iconFontResolved;
+
+    /// <summary>
+    /// The Windows icon font, or null where there is none. Windows 11 ships Segoe Fluent
+    /// Icons, Windows 10 Segoe MDL2 Assets, and a Server Core installation has neither -
+    /// there the buttons simply stay text, which is what they were before.
+    ///
+    /// Gemerkt wird nur der Name, nicht die Schrift: jede Groesse braucht ihre eigene, und
+    /// ein zwischengespeichertes Font-Objekt waere nach dem ersten Dispose unbrauchbar.
+    /// </summary>
+    private static Font? IconFont(float size)
+    {
+        if (!_iconFontResolved)
+        {
+            foreach (var name in new[] { "Segoe Fluent Icons", "Segoe MDL2 Assets" })
+            {
+                try
+                {
+                    using var probe = new Font(name, 12f);
+                    if (probe.Name.Equals(name, StringComparison.OrdinalIgnoreCase))
+                    {
+                        _iconFontName = name;
+                        break;
+                    }
+                }
+                catch (ArgumentException) { }
+            }
+            _iconFontResolved = true;
+        }
+
+        if (_iconFontName is null) return null;
+
+        try { return new Font(_iconFontName, size, GraphicsUnit.Pixel); }
+        catch (ArgumentException) { return null; }
+    }
+
+    /// <summary>
+    /// Draws one glyph into a bitmap in the colour of the control it will sit on. Drawing it
+    /// rather than setting the font on the button keeps the label readable: a button whose
+    /// font is the icon font shows its text as icons too.
+    /// </summary>
+    public static Image? Glyph(string codePoint, Control control)
+    {
+        var size = Math.Max(16, 16 * control.DeviceDpi / 96);
+        var font = IconFont(size * 0.75f);
+        if (font is null) return null;
+
+        try
+        {
+            var bitmap = new Bitmap(size, size);
+            using var g = Graphics.FromImage(bitmap);
+            g.TextRenderingHint = System.Drawing.Text.TextRenderingHint.AntiAliasGridFit;
+
+            using var brush = new SolidBrush(control.ForeColor);
+            using var format = new StringFormat
+            {
+                Alignment = StringAlignment.Center,
+                LineAlignment = StringAlignment.Center,
+            };
+            g.DrawString(codePoint, font, brush, new RectangleF(0, 0, size, size), format);
+            return bitmap;
+        }
+        finally
+        {
+            font.Dispose();
+        }
+    }
+
+    /// <summary>Puts a glyph on an item, or leaves it as text where the font is missing.</summary>
+    public static T WithGlyph<T>(this T item, string codePoint, Control owner) where T : ToolStripItem
+    {
+        var image = Glyph(codePoint, owner);
+        if (image is null) return item;
+
+        item.Image = image;
+        item.DisplayStyle = ToolStripItemDisplayStyle.ImageAndText;
+        item.ImageScaling = ToolStripItemImageScaling.None;
+        return item;
+    }
+
     // ------------------------------------------------------------ status icons ---
 
     /// <summary>

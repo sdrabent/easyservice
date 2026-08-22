@@ -16,6 +16,7 @@ internal static class GuiTests
         yield return ("Die Dienstliste erlaubt Mehrfachauswahl", ListAllowsMultiSelect);
         yield return ("Zustand hat ein Symbol, nicht nur eine Farbe", StatusHasIcons);
         yield return ("Eine leere Liste erklärt sich", EmptyListExplainsItself);
+        yield return ("Entweder alle Schaltflächen tragen ein Symbol oder keine", ToolbarGlyphsAreAllOrNothing);
     }
 
     private static void WithMainForm(Action<Gui.MainForm> check)
@@ -94,6 +95,26 @@ internal static class GuiTests
                                        .Select(l => l.Text)
                                        .ToList();
         Assert(visibleText.Count > 0, "der Leerzustand sagt nichts");
+    });
+
+    /// <summary>
+    /// Die Symbole kommen aus der Windows-Symbolschrift. Gibt es sie nicht - Server Core -
+    /// bleiben die Schaltflächen Text, und das ist in Ordnung. Was nicht in Ordnung ist:
+    /// dass eine einzelne ein Symbol bekommt und der Rest nicht. Genau das passierte, als
+    /// der Schriftcheck sich nach dem ersten Aufruf selbst blockierte.
+    /// </summary>
+    private static void ToolbarGlyphsAreAllOrNothing() => WithMainForm(form =>
+    {
+        var buttons = Descend(form).OfType<ToolStrip>()
+                                   .SelectMany(t => t.Items.OfType<ToolStripItem>())
+                                   .Where(i => i is ToolStripButton or ToolStripDropDownButton)
+                                   .ToList();
+
+        Assert(buttons.Count >= 8, $"nur {buttons.Count} Schaltflächen in der Werkzeugleiste gefunden");
+
+        var withGlyph = buttons.Count(b => b.Image is not null);
+        Assert(withGlyph == 0 || withGlyph == buttons.Count,
+            $"{withGlyph} von {buttons.Count} Schaltflächen haben ein Symbol - entweder alle oder keine");
     });
 
     private static IEnumerable<Control> Descend(Control control) =>
