@@ -94,6 +94,21 @@ public sealed class ServiceConfig
     public int RestartDelayMs { get; set; } = 1000;
     public int ThrottleMs { get; set; } = 5000;
 
+    // --- scheduled restart ---------------------------------------------------
+    // Fuer Anwendungen, die mit der Zeit undicht werden. Neu gestartet wird nur die
+    // Anwendung, nicht der Dienst - der SCM sieht kein Stoppen, abhaengige Dienste
+    // bleiben unberuehrt.
+    public RestartScheduleMode RestartScheduleMode { get; set; } = RestartScheduleMode.None;
+
+    /// <summary>Minutes after midnight, local time. 180 is three in the morning.</summary>
+    public int RestartAtMinutes { get; set; } = 180;
+
+    /// <summary>Weekday bitmask, bit 0 is Sunday. All seven by default.</summary>
+    public int RestartDays { get; set; } = RestartSchedule.AllDays;
+
+    /// <summary>Uptime after which the application is restarted, in minutes.</summary>
+    public int RestartEveryMinutes { get; set; } = 24 * 60;
+
     // --- monitoring ---------------------------------------------------------
     // Thresholds an administrator can alert on. 0 means "do not check this".
     public bool MonitoringEnabled { get; set; } = true;
@@ -199,6 +214,12 @@ public sealed class ServiceConfig
 
         foreach (var problem in ValidateHealth()) yield return problem;
 
+        if (RestartScheduleMode == RestartScheduleMode.AtTime && (RestartDays & RestartSchedule.AllDays) == 0)
+            yield return S.Cfg_Err_RestartNoDay;
+
+        if (RestartScheduleMode == RestartScheduleMode.Interval && RestartEveryMinutes < 1)
+            yield return S.Cfg_Err_RestartInterval;
+
         foreach (var e in Environment)
         {
             if (string.IsNullOrWhiteSpace(e)) continue;
@@ -295,6 +316,11 @@ public sealed class ServiceConfig
         key.SetValue("HealthExpectStatus", HealthExpectStatus, RegistryValueKind.DWord);
         key.SetValue("HealthMaxAge", HealthMaxAgeSec, RegistryValueKind.DWord);
 
+        key.SetValue("RestartScheduleMode", (int)RestartScheduleMode, RegistryValueKind.DWord);
+        key.SetValue("RestartAtMinutes", RestartAtMinutes, RegistryValueKind.DWord);
+        key.SetValue("RestartDays", RestartDays, RegistryValueKind.DWord);
+        key.SetValue("RestartEveryMinutes", RestartEveryMinutes, RegistryValueKind.DWord);
+
         key.SetValue("AppStopUseConsole", StopUseConsole ? 1 : 0, RegistryValueKind.DWord);
         key.SetValue("AppStopConsoleDelay", StopConsoleMs, RegistryValueKind.DWord);
         key.SetValue("AppStopUseWindow", StopUseWindow ? 1 : 0, RegistryValueKind.DWord);
@@ -362,6 +388,11 @@ public sealed class ServiceConfig
         c.HealthAction = (HealthAction)Num(key, "HealthAction", 0);
         c.HealthExpectStatus = Num(key, "HealthExpectStatus", 0);
         c.HealthMaxAgeSec = Num(key, "HealthMaxAge", 120);
+
+        c.RestartScheduleMode = (RestartScheduleMode)Num(key, "RestartScheduleMode", 0);
+        c.RestartAtMinutes = Num(key, "RestartAtMinutes", 180);
+        c.RestartDays = Num(key, "RestartDays", RestartSchedule.AllDays);
+        c.RestartEveryMinutes = Num(key, "RestartEveryMinutes", 24 * 60);
 
         c.StopUseConsole = Num(key, "AppStopUseConsole", 1) != 0;
         c.StopConsoleMs = Num(key, "AppStopConsoleDelay", 1500);

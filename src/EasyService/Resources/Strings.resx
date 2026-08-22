@@ -42,6 +42,12 @@
   <data name="Cfg_Err_HealthUrl" xml:space="preserve">
     <value>Not an http or https address: {0}</value>
   </data>
+  <data name="Cfg_Err_RestartInterval" xml:space="preserve">
+    <value>The restart interval has to be at least one minute.</value>
+  </data>
+  <data name="Cfg_Err_RestartNoDay" xml:space="preserve">
+    <value>The scheduled restart needs at least one weekday.</value>
+  </data>
   <data name="Cfg_Err_NameEmpty" xml:space="preserve">
     <value>The service name must not be empty.</value>
   </data>
@@ -446,6 +452,9 @@ they exit with code 5. The monitoring commands only read and run under any accou
   <data name="Editor_Group_Rotation" xml:space="preserve">
     <value>Rotation</value>
   </data>
+  <data name="Editor_Group_Schedule" xml:space="preserve">
+    <value>Scheduled restart</value>
+  </data>
   <data name="Editor_Group_Thresholds" xml:space="preserve">
     <value>Thresholds</value>
   </data>
@@ -490,6 +499,9 @@ they exit with code 5. The monitoring commands only read and run under any accou
   </data>
   <data name="Editor_Hint_HealthTcp" xml:space="preserve">
     <value>For example localhost:5432</value>
+  </data>
+  <data name="Editor_Hint_Schedule" xml:space="preserve">
+    <value>For applications that leak. Only the application is restarted, not the service - the Service Control Manager sees no stop, and dependent services stay untouched.</value>
   </data>
   <data name="Editor_Hint_HistoryDays" xml:space="preserve">
     <value>0 = record no history. One row per minute, about 80 KB per service and day, stored as CSV under %ProgramData%\EasyService\history.</value>
@@ -644,6 +656,18 @@ they exit with code 5. The monitoring commands only read and run under any accou
   <data name="Editor_Lbl_RotateMb" xml:space="preserve">
     <value>Rotate at (MB):</value>
   </data>
+  <data name="Editor_Lbl_ScheduleDays" xml:space="preserve">
+    <value>On:</value>
+  </data>
+  <data name="Editor_Lbl_ScheduleEvery" xml:space="preserve">
+    <value>Every (minutes):</value>
+  </data>
+  <data name="Editor_Lbl_ScheduleMode" xml:space="preserve">
+    <value>Restart:</value>
+  </data>
+  <data name="Editor_Lbl_ScheduleTime" xml:space="preserve">
+    <value>At:</value>
+  </data>
   <data name="Editor_Lbl_ServiceName" xml:space="preserve">
     <value>Service name:</value>
   </data>
@@ -713,6 +737,12 @@ they exit with code 5. The monitoring commands only read and run under any accou
   <data name="Editor_Startup_AutoDelayed" xml:space="preserve">
     <value>Automatic (delayed start)</value>
   </data>
+  <data name="Editor_Schedule_Next" xml:space="preserve">
+    <value>Next: {0}</value>
+  </data>
+  <data name="Editor_Schedule_NextNone" xml:space="preserve">
+    <value>Nothing scheduled.</value>
+  </data>
   <data name="Editor_Tab_Application" xml:space="preserve">
     <value>Application</value>
   </data>
@@ -781,6 +811,9 @@ they exit with code 5. The monitoring commands only read and run under any accou
   </data>
   <data name="Evt_RestartThrottled" xml:space="preserve">
     <value>Restart throttled</value>
+  </data>
+  <data name="Evt_ScheduledRestart" xml:space="preserve">
+    <value>Restarted on schedule</value>
   </data>
   <data name="Evt_ServiceStopping" xml:space="preserve">
     <value>Service is stopping</value>
@@ -1589,6 +1622,15 @@ The cause is usually in the log. Open it now?</value>
   <data name="Sup_SampleFailed" xml:space="preserve">
     <value>Resources could not be measured: {0}</value>
   </data>
+  <data name="Sup_ScheduledMissed" xml:space="preserve">
+    <value>The planned restart at {0} was missed and is skipped, not caught up.</value>
+  </data>
+  <data name="Sup_ScheduledNext" xml:space="preserve">
+    <value>Next planned restart: {0}</value>
+  </data>
+  <data name="Sup_ScheduledRestart" xml:space="preserve">
+    <value>Restarting the application on schedule (it ran for {0}).</value>
+  </data>
   <data name="Sup_SentCtrlC" xml:space="preserve">
     <value>Sent Ctrl+C to the application.</value>
   </data>
@@ -1612,6 +1654,15 @@ The cause is usually in the log. Open it now?</value>
   </data>
   <data name="Sup_Throttled" xml:space="preserve">
     <value>The application ran for less than the throttle window ({0} ms); next attempt in {1} ms. Restarts in the last hour: {2}.</value>
+  </data>
+  <data name="Schedule_Mode_AtTime" xml:space="preserve">
+    <value>At a time of day</value>
+  </data>
+  <data name="Schedule_Mode_Interval" xml:space="preserve">
+    <value>After a span of uptime</value>
+  </data>
+  <data name="Schedule_Mode_None" xml:space="preserve">
+    <value>Never</value>
   </data>
   <data name="Svc_Err_Busy" xml:space="preserve">
     <value>Another EasyService process has been changing services for more than {0} seconds. Try again once it is done.</value>

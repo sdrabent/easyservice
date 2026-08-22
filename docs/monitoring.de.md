@@ -282,6 +282,7 @@ alarmiere auf die ID, nicht auf den Meldungstext.
 | **1011** | **Health-Check fehlgeschlagen** — die Anwendung antwortet nicht mehr | **Warnung** |
 | 1012 | Health-Check wieder in Ordnung | Information |
 | **1013** | **Vom Health-Check neu gestartet** | **Warnung** |
+| 1014 | Planmäßig neu gestartet | Information |
 
 Die fett markierten sind die, auf die sich ein Alarm lohnt.
 
@@ -347,6 +348,36 @@ Anwendung, die nicht mehr antwortet, ist kein CPU-Problem. Dazu zwei Messwerte:
 |---|---|
 | `health` | 1 gesund, 0 krank. Fehlt, solange die Prüfung noch kein Urteil hat |
 | `health_restarts` | wie oft eine fehlgeschlagene Prüfung die Anwendung neu gestartet hat |
+
+---
+
+## Geplante Neustarts
+
+Manche Anwendungen werden mit der Zeit undicht - ein Handle hier, ein paar Megabyte dort -
+und das billigste Mittel dagegen war immer der nächtliche Neustart. Üblich ist eine
+geplante Aufgabe mit `net stop` und `net start`, die den ganzen Dienst herunterfährt, seine
+abhängigen Dienste mitreißt und nichts hinterlässt, worauf man alarmieren könnte.
+
+EasyService startet nur die Anwendung hinter dem Dienst neu. Der Dienst-Manager sieht kein
+Stoppen, abhängige Dienste bleiben unberührt, und Ereignis 1014 hält es fest.
+
+Zwei Arten, im Editor auf der Registerkarte **Beenden**:
+
+| Art | Einstellung | Bedeutung |
+|---|---|---|
+| Zu einer Uhrzeit | 03:00, Wochentage wählbar | in jeder gewählten Nacht um drei, nach der Wanduhr |
+| Nach einer Laufzeit | alle N Minuten | sechs Stunden nach dem Start der Anwendung, wann immer der war |
+
+Uhrzeiten sind bewusst Ortszeit: wer 03:00 einträgt, meint drei Uhr so, wie die Uhr im
+Serverraum sie zeigt - auch in der Nacht der Zeitumstellung.
+
+Ein verpasster Neustart - der Rechner war aus, der Dienst gestoppt - wird nicht nachgeholt.
+Um 09:00 aufzuwachen und sofort neu zu starten, weil 03:00 vorbei ist, wäre eine
+Überraschung und kein Dienst. Es steht im Diagnoseprotokoll, und der nächste Termin wird
+angesetzt. Für die Laufzeit gilt kein solches Fenster: abgelaufen ist abgelaufen.
+
+In der Statusdatei stehen `nextScheduledRestartUtc` und `scheduledRestarts`, damit auch ein
+eigener Check sieht, was ansteht und was war.
 
 ---
 

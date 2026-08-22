@@ -280,6 +280,7 @@ the message text.
 | **1011** | **Health check failed** — the application no longer answers | **Warning** |
 | 1012 | Health check recovered | Information |
 | **1013** | **Restarted by the health check** | **Warning** |
+| 1014 | Restarted on schedule | Information |
 
 The ones in bold are the ones worth an alert.
 
@@ -343,6 +344,36 @@ application that stopped answering is not a CPU problem. Two metrics come with i
 |---|---|
 | `health` | 1 healthy, 0 unhealthy. Absent while the check has no verdict yet |
 | `health_restarts` | how often a failed check restarted the application |
+
+---
+
+## Scheduled restarts
+
+Some applications leak - a handle here, a few megabytes there - and the cheapest cure has
+always been to restart them nightly. The usual way is a scheduled task calling `net stop`
+and `net start`, which takes the whole service down, drags its dependencies with it and
+leaves nothing to alert on.
+
+EasyService restarts only the application behind the service. The Service Control Manager
+sees no stop, dependent services stay untouched, and event 1014 records it.
+
+Two modes, on the **Exit actions** tab of the editor:
+
+| Mode | Setting | Meaning |
+|---|---|---|
+| At a time of day | 03:00, weekdays selectable | every chosen night at three, local wall clock |
+| After a span of uptime | every N minutes | six hours after the application started, whenever that was |
+
+Times are local wall clock on purpose: whoever picks 03:00 means three as the clock in the
+server room shows it, the night the clocks change included.
+
+A restart that was missed - the machine was off, the service was stopped - is not caught up
+afterwards. Waking up at 09:00 and immediately restarting because 03:00 has passed would be
+a surprise, not a service. It is noted in the diagnostic log and the next occurrence is
+scheduled. The uptime mode has no such window: a span that has elapsed has elapsed.
+
+The state file carries `nextScheduledRestartUtc` and `scheduledRestarts`, so a check of your
+own can see what is planned and what has happened.
 
 ---
 

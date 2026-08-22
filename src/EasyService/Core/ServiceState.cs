@@ -104,6 +104,14 @@ public sealed class ServiceState
     /// <summary>How often a failed check restarted the application.</summary>
     public int HealthRestarts { get; set; }
 
+    // --- scheduled restart ---------------------------------------------------
+
+    /// <summary>When the next planned restart is due, so monitoring and window can show it.</summary>
+    public DateTime? NextScheduledRestartUtc { get; set; }
+
+    /// <summary>How often the schedule restarted the application since the service started.</summary>
+    public int ScheduledRestarts { get; set; }
+
     public DateTime UpdatedUtc { get; set; }
 
     // --------------------------------------------------------------- derived ---

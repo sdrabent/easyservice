@@ -27,6 +27,7 @@ public enum EasyServiceEvent
     HealthCheckFailed = 1011,
     HealthCheckRecovered = 1012,
     HealthCheckRestarted = 1013,
+    ScheduledRestart = 1014,
 }
 
 /// <summary>
@@ -122,6 +123,7 @@ public static class EventLogSink
         (int)EasyServiceEvent.HealthCheckFailed => S.Evt_HealthCheckFailed,
         (int)EasyServiceEvent.HealthCheckRecovered => S.Evt_HealthCheckRecovered,
         (int)EasyServiceEvent.HealthCheckRestarted => S.Evt_HealthCheckRestarted,
+        (int)EasyServiceEvent.ScheduledRestart => S.Evt_ScheduledRestart,
         (int)EasyServiceEvent.ConfigurationProblem => S.Evt_ConfigurationProblem,
         (int)EasyServiceEvent.LoggingProblem => S.Evt_LoggingProblem,
         _ => "",

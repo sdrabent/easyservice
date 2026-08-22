@@ -42,6 +42,12 @@
   <data name="Cfg_Err_HealthUrl" xml:space="preserve">
     <value>Ce n'est pas une adresse http ou https : {0}</value>
   </data>
+  <data name="Cfg_Err_RestartInterval" xml:space="preserve">
+    <value>L'intervalle entre deux redémarrages doit être d'au moins une minute.</value>
+  </data>
+  <data name="Cfg_Err_RestartNoDay" xml:space="preserve">
+    <value>Le redémarrage planifié a besoin d'au moins un jour de la semaine.</value>
+  </data>
   <data name="Cfg_Err_NameEmpty" xml:space="preserve">
     <value>Le nom du service ne peut pas être vide.</value>
   </data>
@@ -447,6 +453,9 @@ fonctionnent sous n'importe quel compte.</value>
   <data name="Editor_Group_Rotation" xml:space="preserve">
     <value>Rotation</value>
   </data>
+  <data name="Editor_Group_Schedule" xml:space="preserve">
+    <value>Redémarrage planifié</value>
+  </data>
   <data name="Editor_Group_Thresholds" xml:space="preserve">
     <value>Seuils</value>
   </data>
@@ -491,6 +500,9 @@ fonctionnent sous n'importe quel compte.</value>
   </data>
   <data name="Editor_Hint_HealthTcp" xml:space="preserve">
     <value>Par exemple localhost:5432</value>
+  </data>
+  <data name="Editor_Hint_Schedule" xml:space="preserve">
+    <value>Pour les applications qui fuient. Seule l'application est redémarrée, pas le service : le gestionnaire de services ne voit aucun arrêt et les services dépendants restent intacts.</value>
   </data>
   <data name="Editor_Hint_HistoryDays" xml:space="preserve">
     <value>0 = ne pas enregistrer d'historique. Une ligne par minute, environ 80 Ko par service et par jour, au format CSV dans %ProgramData%\EasyService\history.</value>
@@ -645,6 +657,18 @@ fonctionnent sous n'importe quel compte.</value>
   <data name="Editor_Lbl_RotateMb" xml:space="preserve">
     <value>Rotation à partir de (Mo) :</value>
   </data>
+  <data name="Editor_Lbl_ScheduleDays" xml:space="preserve">
+    <value>Les :</value>
+  </data>
+  <data name="Editor_Lbl_ScheduleEvery" xml:space="preserve">
+    <value>Toutes les (minutes) :</value>
+  </data>
+  <data name="Editor_Lbl_ScheduleMode" xml:space="preserve">
+    <value>Redémarrage :</value>
+  </data>
+  <data name="Editor_Lbl_ScheduleTime" xml:space="preserve">
+    <value>À :</value>
+  </data>
   <data name="Editor_Lbl_ServiceName" xml:space="preserve">
     <value>Nom du service :</value>
   </data>
@@ -714,6 +738,12 @@ fonctionnent sous n'importe quel compte.</value>
   <data name="Editor_Startup_AutoDelayed" xml:space="preserve">
     <value>Automatique (démarrage différé)</value>
   </data>
+  <data name="Editor_Schedule_Next" xml:space="preserve">
+    <value>Prochain : {0}</value>
+  </data>
+  <data name="Editor_Schedule_NextNone" xml:space="preserve">
+    <value>Rien de planifié.</value>
+  </data>
   <data name="Editor_Tab_Application" xml:space="preserve">
     <value>Application</value>
   </data>
@@ -782,6 +812,9 @@ fonctionnent sous n'importe quel compte.</value>
   </data>
   <data name="Evt_RestartThrottled" xml:space="preserve">
     <value>Redémarrage limité</value>
+  </data>
+  <data name="Evt_ScheduledRestart" xml:space="preserve">
+    <value>Redémarré comme prévu</value>
   </data>
   <data name="Evt_ServiceStopping" xml:space="preserve">
     <value>Le service s'arrête</value>
@@ -1590,6 +1623,15 @@ La cause se trouve généralement dans le journal. L'ouvrir maintenant ?</value>
   <data name="Sup_SampleFailed" xml:space="preserve">
     <value>Impossible de mesurer les ressources : {0}</value>
   </data>
+  <data name="Sup_ScheduledMissed" xml:space="preserve">
+    <value>Le redémarrage prévu à {0} a été manqué : il est ignoré, pas rattrapé.</value>
+  </data>
+  <data name="Sup_ScheduledNext" xml:space="preserve">
+    <value>Prochain redémarrage prévu : {0}</value>
+  </data>
+  <data name="Sup_ScheduledRestart" xml:space="preserve">
+    <value>Redémarrage planifié de l'application (elle a tourné {0}).</value>
+  </data>
   <data name="Sup_SentCtrlC" xml:space="preserve">
     <value>Ctrl+C envoyé à l'application.</value>
   </data>
@@ -1613,6 +1655,15 @@ La cause se trouve généralement dans le journal. L'ouvrir maintenant ?</value>
   </data>
   <data name="Sup_Throttled" xml:space="preserve">
     <value>L'application a fonctionné moins longtemps que la fenêtre de limitation ({0} ms) ; prochaine tentative dans {1} ms. Redémarrages dans la dernière heure : {2}.</value>
+  </data>
+  <data name="Schedule_Mode_AtTime" xml:space="preserve">
+    <value>À une heure fixe</value>
+  </data>
+  <data name="Schedule_Mode_Interval" xml:space="preserve">
+    <value>Après une durée de fonctionnement</value>
+  </data>
+  <data name="Schedule_Mode_None" xml:space="preserve">
+    <value>Jamais</value>
   </data>
   <data name="Svc_Err_Busy" xml:space="preserve">
     <value>Un autre processus EasyService modifie des services depuis plus de {0} secondes. À réessayer une fois qu'il a terminé.</value>

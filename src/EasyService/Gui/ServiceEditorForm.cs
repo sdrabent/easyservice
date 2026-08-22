@@ -82,6 +82,18 @@ public sealed class ServiceEditorForm : Form
     private readonly NumericUpDown _critMemory = Ui.Spin(0, 1_048_576, 0, 64);
     private readonly NumericUpDown _historyDays = Ui.Spin(0, 3650, 30);
 
+    // Geplanter Neustart
+    private readonly ComboBox _scheduleMode = new() { DropDownStyle = ComboBoxStyle.DropDownList };
+    private readonly DateTimePicker _scheduleTime = new()
+    {
+        Format = DateTimePickerFormat.Time,
+        ShowUpDown = true,
+        Width = 110,
+    };
+    private readonly CheckBox[] _scheduleDays = new CheckBox[7];
+    private readonly NumericUpDown _scheduleEvery = Ui.Spin(1, 60 * 24 * 30, 24 * 60, 30);
+    private readonly Label _scheduleNext = Ui.Hint("");
+
     // Health-Check
     private readonly ComboBox _healthType = new() { DropDownStyle = ComboBoxStyle.DropDownList };
     private readonly TextBox _healthTarget = new();
@@ -315,6 +327,47 @@ public sealed class ServiceEditorForm : Form
         Ui.AddRow(p, S.Editor_Lbl_Throttle, _throttle);
         Ui.AddFullRow(p, Ui.Hint(S.Editor_Hint_Throttle));
 
+        Ui.AddSpacer(p, S.Editor_Group_Schedule);
+        Ui.AddFullRow(p, Ui.Hint(S.Editor_Hint_Schedule));
+
+        _scheduleMode.Items.AddRange(new object[]
+        {
+            S.Schedule_Mode_None, S.Schedule_Mode_AtTime, S.Schedule_Mode_Interval,
+        });
+        _scheduleMode.SelectedIndex = 0;
+        Ui.AddRow(p, S.Editor_Lbl_ScheduleMode, _scheduleMode);
+        Ui.AddRow(p, S.Editor_Lbl_ScheduleTime, _scheduleTime);
+
+        // Wochentage in der Reihenfolge, die das Gebietsschema vorgibt - Montag zuerst,
+        // wo das ueblich ist.
+        var dayRow = new FlowLayoutPanel { AutoSize = true, WrapContents = false, Margin = new Padding(0) };
+        var culture = System.Globalization.CultureInfo.CurrentUICulture;
+        var first = (int)culture.DateTimeFormat.FirstDayOfWeek;
+        for (var offset = 0; offset < 7; offset++)
+        {
+            var day = (DayOfWeek)((first + offset) % 7);
+            var box = new CheckBox
+            {
+                Text = culture.DateTimeFormat.AbbreviatedDayNames[(int)day],
+                AutoSize = true,
+                Checked = true,
+                Tag = day,
+                Margin = new Padding(0, 4, 10, 0),
+            };
+            box.CheckedChanged += (_, _) => RefreshScheduleHint();
+            _scheduleDays[(int)day] = box;
+            dayRow.Controls.Add(box);
+        }
+        Ui.AddRow(p, S.Editor_Lbl_ScheduleDays, dayRow);
+
+        Ui.AddRow(p, S.Editor_Lbl_ScheduleEvery, _scheduleEvery);
+        Ui.AddFullRow(p, _scheduleNext);
+
+        _scheduleMode.SelectedIndexChanged += (_, _) => RefreshScheduleHint();
+        _scheduleTime.ValueChanged += (_, _) => RefreshScheduleHint();
+        _scheduleEvery.ValueChanged += (_, _) => RefreshScheduleHint();
+        RefreshScheduleHint();
+
         Ui.AddSpacer(p, S.Editor_Group_ExitCodes);
         Ui.AddFullRow(p, _exitCodes);
 
@@ -348,6 +401,35 @@ public sealed class ServiceEditorForm : Form
 
         page.Controls.Add(p);
         return page;
+    }
+
+    /// <summary>
+    /// Only the fields the chosen mode uses, plus the answer to the question everybody has
+    /// when they set this up: when is it going to happen for the first time?
+    /// </summary>
+    private void RefreshScheduleHint()
+    {
+        var mode = (RestartScheduleMode)Math.Max(0, _scheduleMode.SelectedIndex);
+
+        _scheduleTime.Enabled = mode == RestartScheduleMode.AtTime;
+        _scheduleEvery.Enabled = mode == RestartScheduleMode.Interval;
+        foreach (var box in _scheduleDays) box.Enabled = mode == RestartScheduleMode.AtTime;
+
+        var now = DateTime.Now;
+        var next = RestartSchedule.Next(mode, ScheduleMinutes(), ScheduleDayMask(), (int)_scheduleEvery.Value,
+                                        now, mode == RestartScheduleMode.Interval ? now : null);
+
+        _scheduleNext.Text = next is { } due ? S.Editor_Schedule_Next(due.ToString("g")) : S.Editor_Schedule_NextNone;
+    }
+
+    private int ScheduleMinutes() => _scheduleTime.Value.Hour * 60 + _scheduleTime.Value.Minute;
+
+    private int ScheduleDayMask()
+    {
+        var mask = 0;
+        for (var day = 0; day < 7; day++)
+            if (_scheduleDays[day]?.Checked == true) mask |= 1 << day;
+        return mask;
     }
 
     private TabPage BuildHealthTab()
@@ -639,6 +721,15 @@ public sealed class ServiceEditorForm : Form
         _critMemory.Value = Math.Clamp(c.CritMemoryMb, 0, 1_048_576);
         _historyDays.Value = Math.Clamp(c.HistoryDays, 0, 3650);
 
+        _scheduleMode.SelectedIndex = (int)c.RestartScheduleMode;
+        var minutes = Math.Clamp(c.RestartAtMinutes, 0, 24 * 60 - 1);
+        _scheduleTime.Value = DateTime.Today.AddMinutes(minutes);
+        var mask = c.RestartDays == 0 ? RestartSchedule.AllDays : c.RestartDays;
+        for (var day = 0; day < 7; day++)
+            if (_scheduleDays[day] is { } box) box.Checked = RestartSchedule.IsDaySelected(mask, (DayOfWeek)day);
+        _scheduleEvery.Value = Math.Clamp(c.RestartEveryMinutes, 1, 60 * 24 * 30);
+        RefreshScheduleHint();
+
         _healthType.SelectedIndex = (int)c.HealthType;
         _healthTarget.Text = c.HealthTarget;
         _healthInterval.Value = Math.Clamp(c.HealthIntervalMs, 1000, 3_600_000);
@@ -738,6 +829,11 @@ public sealed class ServiceEditorForm : Form
         c.WarnMemoryMb = (int)_warnMemory.Value;
         c.CritMemoryMb = (int)_critMemory.Value;
         c.HistoryDays = (int)_historyDays.Value;
+
+        c.RestartScheduleMode = (RestartScheduleMode)Math.Max(0, _scheduleMode.SelectedIndex);
+        c.RestartAtMinutes = ScheduleMinutes();
+        c.RestartDays = ScheduleDayMask();
+        c.RestartEveryMinutes = (int)_scheduleEvery.Value;
 
         c.HealthType = (HealthCheckType)Math.Max(0, _healthType.SelectedIndex);
         c.HealthTarget = _healthTarget.Text.Trim();

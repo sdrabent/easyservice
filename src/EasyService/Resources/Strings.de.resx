@@ -42,6 +42,12 @@
   <data name="Cfg_Err_HealthUrl" xml:space="preserve">
     <value>Keine http- oder https-Adresse: {0}</value>
   </data>
+  <data name="Cfg_Err_RestartInterval" xml:space="preserve">
+    <value>Der Abstand zwischen zwei Neustarts muss mindestens eine Minute betragen.</value>
+  </data>
+  <data name="Cfg_Err_RestartNoDay" xml:space="preserve">
+    <value>Der geplante Neustart braucht mindestens einen Wochentag.</value>
+  </data>
   <data name="Cfg_Err_NameEmpty" xml:space="preserve">
     <value>Der Dienstname darf nicht leer sein.</value>
   </data>
@@ -446,6 +452,9 @@ enden sie mit Code 5. Die Überwachungsbefehle lesen nur und laufen unter jedem 
   <data name="Editor_Group_Rotation" xml:space="preserve">
     <value>Rotation</value>
   </data>
+  <data name="Editor_Group_Schedule" xml:space="preserve">
+    <value>Geplanter Neustart</value>
+  </data>
   <data name="Editor_Group_Thresholds" xml:space="preserve">
     <value>Schwellwerte</value>
   </data>
@@ -490,6 +499,9 @@ enden sie mit Code 5. Die Überwachungsbefehle lesen nur und laufen unter jedem 
   </data>
   <data name="Editor_Hint_HealthTcp" xml:space="preserve">
     <value>Zum Beispiel localhost:5432</value>
+  </data>
+  <data name="Editor_Hint_Schedule" xml:space="preserve">
+    <value>Für Anwendungen, die undicht sind. Neu gestartet wird nur die Anwendung, nicht der Dienst - der Dienst-Manager sieht kein Stoppen, abhängige Dienste bleiben unberührt.</value>
   </data>
   <data name="Editor_Hint_HistoryDays" xml:space="preserve">
     <value>0 = keinen Verlauf aufzeichnen. Eine Zeile pro Minute, rund 80 KB je Dienst und Tag, als CSV unter %ProgramData%\EasyService\history.</value>
@@ -644,6 +656,18 @@ enden sie mit Code 5. Die Überwachungsbefehle lesen nur und laufen unter jedem 
   <data name="Editor_Lbl_RotateMb" xml:space="preserve">
     <value>Rotieren ab (MB):</value>
   </data>
+  <data name="Editor_Lbl_ScheduleDays" xml:space="preserve">
+    <value>An:</value>
+  </data>
+  <data name="Editor_Lbl_ScheduleEvery" xml:space="preserve">
+    <value>Alle (Minuten):</value>
+  </data>
+  <data name="Editor_Lbl_ScheduleMode" xml:space="preserve">
+    <value>Neustart:</value>
+  </data>
+  <data name="Editor_Lbl_ScheduleTime" xml:space="preserve">
+    <value>Um:</value>
+  </data>
   <data name="Editor_Lbl_ServiceName" xml:space="preserve">
     <value>Dienstname:</value>
   </data>
@@ -713,6 +737,12 @@ enden sie mit Code 5. Die Überwachungsbefehle lesen nur und laufen unter jedem 
   <data name="Editor_Startup_AutoDelayed" xml:space="preserve">
     <value>Automatisch (verzögerter Start)</value>
   </data>
+  <data name="Editor_Schedule_Next" xml:space="preserve">
+    <value>Nächster: {0}</value>
+  </data>
+  <data name="Editor_Schedule_NextNone" xml:space="preserve">
+    <value>Nichts geplant.</value>
+  </data>
   <data name="Editor_Tab_Application" xml:space="preserve">
     <value>Anwendung</value>
   </data>
@@ -781,6 +811,9 @@ enden sie mit Code 5. Die Überwachungsbefehle lesen nur und laufen unter jedem 
   </data>
   <data name="Evt_RestartThrottled" xml:space="preserve">
     <value>Neustart gedrosselt</value>
+  </data>
+  <data name="Evt_ScheduledRestart" xml:space="preserve">
+    <value>Planmäßig neu gestartet</value>
   </data>
   <data name="Evt_ServiceStopping" xml:space="preserve">
     <value>Dienst wird beendet</value>
@@ -1589,6 +1622,15 @@ Die Ursache steht meist im Protokoll. Jetzt öffnen?</value>
   <data name="Sup_SampleFailed" xml:space="preserve">
     <value>Ressourcen konnten nicht gemessen werden: {0}</value>
   </data>
+  <data name="Sup_ScheduledMissed" xml:space="preserve">
+    <value>Der geplante Neustart um {0} wurde verpasst und wird übersprungen, nicht nachgeholt.</value>
+  </data>
+  <data name="Sup_ScheduledNext" xml:space="preserve">
+    <value>Nächster geplanter Neustart: {0}</value>
+  </data>
+  <data name="Sup_ScheduledRestart" xml:space="preserve">
+    <value>Anwendung wird planmäßig neu gestartet (sie lief {0}).</value>
+  </data>
   <data name="Sup_SentCtrlC" xml:space="preserve">
     <value>Strg+C an die Anwendung gesendet.</value>
   </data>
@@ -1612,6 +1654,15 @@ Die Ursache steht meist im Protokoll. Jetzt öffnen?</value>
   </data>
   <data name="Sup_Throttled" xml:space="preserve">
     <value>Die Anwendung lief kürzer als das Throttle-Fenster ({0} ms); nächster Versuch in {1} ms. Neustarts in der letzten Stunde: {2}.</value>
+  </data>
+  <data name="Schedule_Mode_AtTime" xml:space="preserve">
+    <value>Zu einer Uhrzeit</value>
+  </data>
+  <data name="Schedule_Mode_Interval" xml:space="preserve">
+    <value>Nach einer Laufzeit</value>
+  </data>
+  <data name="Schedule_Mode_None" xml:space="preserve">
+    <value>Nie</value>
   </data>
   <data name="Svc_Err_Busy" xml:space="preserve">
     <value>Ein anderer EasyService-Prozess ändert seit mehr als {0} Sekunden Dienste. Nach dessen Ende erneut versuchen.</value>

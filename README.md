@@ -45,6 +45,7 @@ attached is genuinely useful.
 | Output capture | stdout and stderr to files, separate or merged, with size- and time-based rotation and a capped number of archives |
 | Log viewer | Attaches to the live file, follows rotation, filters by text, shows the matching Windows event log entries |
 | Restart policy | Per exit code, with an exponential back-off that stops restart loops |
+| Scheduled restart | Nightly at a set time or after a span of uptime - the application only, the service keeps running |
 | Shutdown | Ctrl+C, then `WM_CLOSE`, then `WM_QUIT`, then terminate; each stage optional with its own timeout |
 | Process tree | Children run inside a job object, so they are terminated with the service and counted in its resource usage |
 | Health checks | Ask the application itself: fetch a URL, open a TCP port, watch a file, or run a program. Report it or restart on failure |
@@ -145,7 +146,7 @@ way to configure anything.
 | Whole definition as one file | JSON | no | XML | partly |
 | Signed binaries | **no** | no | yes | **yes** |
 | Support you can phone | **no** | no | no | **yes** |
-| Scheduled restarts | **not yet** | no | no | **yes** |
+| Scheduled restarts | yes | no | no | yes |
 | Last release | this month | 2014 | maintenance | current |
 
 The bold rows are the ones where paying is the better answer. If your policy needs signed

@@ -42,6 +42,12 @@
   <data name="Cfg_Err_HealthUrl" xml:space="preserve">
     <value>No es una dirección http o https: {0}</value>
   </data>
+  <data name="Cfg_Err_RestartInterval" xml:space="preserve">
+    <value>El intervalo entre reinicios debe ser de al menos un minuto.</value>
+  </data>
+  <data name="Cfg_Err_RestartNoDay" xml:space="preserve">
+    <value>El reinicio programado necesita al menos un día de la semana.</value>
+  </data>
   <data name="Cfg_Err_NameEmpty" xml:space="preserve">
     <value>El nombre del servicio no puede estar vacío.</value>
   </data>
@@ -447,6 +453,9 @@ cualquier cuenta.</value>
   <data name="Editor_Group_Rotation" xml:space="preserve">
     <value>Rotación</value>
   </data>
+  <data name="Editor_Group_Schedule" xml:space="preserve">
+    <value>Reinicio programado</value>
+  </data>
   <data name="Editor_Group_Thresholds" xml:space="preserve">
     <value>Umbrales</value>
   </data>
@@ -491,6 +500,9 @@ cualquier cuenta.</value>
   </data>
   <data name="Editor_Hint_HealthTcp" xml:space="preserve">
     <value>Por ejemplo localhost:5432</value>
+  </data>
+  <data name="Editor_Hint_Schedule" xml:space="preserve">
+    <value>Para aplicaciones con fugas. Solo se reinicia la aplicación, no el servicio: el administrador de servicios no ve ninguna parada y los servicios dependientes quedan intactos.</value>
   </data>
   <data name="Editor_Hint_HistoryDays" xml:space="preserve">
     <value>0 = no registrar historial. Una fila por minuto, unos 80 KB por servicio y día, en formato CSV en %ProgramData%\EasyService\history.</value>
@@ -645,6 +657,18 @@ cualquier cuenta.</value>
   <data name="Editor_Lbl_RotateMb" xml:space="preserve">
     <value>Rotar a partir de (MB):</value>
   </data>
+  <data name="Editor_Lbl_ScheduleDays" xml:space="preserve">
+    <value>Los:</value>
+  </data>
+  <data name="Editor_Lbl_ScheduleEvery" xml:space="preserve">
+    <value>Cada (minutos):</value>
+  </data>
+  <data name="Editor_Lbl_ScheduleMode" xml:space="preserve">
+    <value>Reinicio:</value>
+  </data>
+  <data name="Editor_Lbl_ScheduleTime" xml:space="preserve">
+    <value>A las:</value>
+  </data>
   <data name="Editor_Lbl_ServiceName" xml:space="preserve">
     <value>Nombre del servicio:</value>
   </data>
@@ -714,6 +738,12 @@ cualquier cuenta.</value>
   <data name="Editor_Startup_AutoDelayed" xml:space="preserve">
     <value>Automático (inicio retrasado)</value>
   </data>
+  <data name="Editor_Schedule_Next" xml:space="preserve">
+    <value>Próximo: {0}</value>
+  </data>
+  <data name="Editor_Schedule_NextNone" xml:space="preserve">
+    <value>Nada programado.</value>
+  </data>
   <data name="Editor_Tab_Application" xml:space="preserve">
     <value>Aplicación</value>
   </data>
@@ -782,6 +812,9 @@ cualquier cuenta.</value>
   </data>
   <data name="Evt_RestartThrottled" xml:space="preserve">
     <value>Reinicio limitado</value>
+  </data>
+  <data name="Evt_ScheduledRestart" xml:space="preserve">
+    <value>Reiniciado según lo previsto</value>
   </data>
   <data name="Evt_ServiceStopping" xml:space="preserve">
     <value>El servicio se está deteniendo</value>
@@ -1590,6 +1623,15 @@ La causa suele estar en el registro. ¿Abrirlo ahora?</value>
   <data name="Sup_SampleFailed" xml:space="preserve">
     <value>No se pudieron medir los recursos: {0}</value>
   </data>
+  <data name="Sup_ScheduledMissed" xml:space="preserve">
+    <value>El reinicio previsto a las {0} se perdió y se omite, no se recupera.</value>
+  </data>
+  <data name="Sup_ScheduledNext" xml:space="preserve">
+    <value>Próximo reinicio previsto: {0}</value>
+  </data>
+  <data name="Sup_ScheduledRestart" xml:space="preserve">
+    <value>La aplicación se reinicia según lo previsto (estuvo funcionando {0}).</value>
+  </data>
   <data name="Sup_SentCtrlC" xml:space="preserve">
     <value>Se envió Ctrl+C a la aplicación.</value>
   </data>
@@ -1613,6 +1655,15 @@ La causa suele estar en el registro. ¿Abrirlo ahora?</value>
   </data>
   <data name="Sup_Throttled" xml:space="preserve">
     <value>La aplicación estuvo en ejecución menos que la ventana de limitación ({0} ms); próximo intento en {1} ms. Reinicios en la última hora: {2}.</value>
+  </data>
+  <data name="Schedule_Mode_AtTime" xml:space="preserve">
+    <value>A una hora del día</value>
+  </data>
+  <data name="Schedule_Mode_Interval" xml:space="preserve">
+    <value>Tras un tiempo de funcionamiento</value>
+  </data>
+  <data name="Schedule_Mode_None" xml:space="preserve">
+    <value>Nunca</value>
   </data>
   <data name="Svc_Err_Busy" xml:space="preserve">
     <value>Otro proceso de EasyService lleva más de {0} segundos modificando servicios. Volver a intentarlo cuando termine.</value>

@@ -83,6 +83,12 @@ internal static class S
     /// <summary>The file is not valid JSON: {0}</summary>
     public static string Cfg_Err_NotJson(object? p0) => Fmt("Cfg_Err_NotJson", p0);
 
+    /// <summary>The restart interval has to be at least one minute.</summary>
+    public static string Cfg_Err_RestartInterval => Get("Cfg_Err_RestartInterval");
+
+    /// <summary>The scheduled restart needs at least one weekday.</summary>
+    public static string Cfg_Err_RestartNoDay => Get("Cfg_Err_RestartNoDay");
+
     /// <summary>Export failed</summary>
     public static string Cfg_Export_Failed => Get("Cfg_Export_Failed");
 
@@ -398,6 +404,9 @@ internal static class S
     /// <summary>Rotation</summary>
     public static string Editor_Group_Rotation => Get("Editor_Group_Rotation");
 
+    /// <summary>Scheduled restart</summary>
+    public static string Editor_Group_Schedule => Get("Editor_Group_Schedule");
+
     /// <summary>Thresholds</summary>
     public static string Editor_Group_Thresholds => Get("Editor_Group_Thresholds");
 
@@ -472,6 +481,9 @@ internal static class S
 
     /// <summary>0 = never delete old logs.</summary>
     public static string Editor_Hint_RotateKeep => Get("Editor_Hint_RotateKeep");
+
+    /// <summary>For applications that leak. Only the application is restarted, not the service - the Service Control Manager sees no stop, and dependent services stay untouc...</summary>
+    public static string Editor_Hint_Schedule => Get("Editor_Hint_Schedule");
 
     /// <summary>Internal name Windows uses for the service. Cannot be changed after creation.</summary>
     public static string Editor_Hint_ServiceName => Get("Editor_Hint_ServiceName");
@@ -596,6 +608,18 @@ internal static class S
     /// <summary>Rotate at (MB):</summary>
     public static string Editor_Lbl_RotateMb => Get("Editor_Lbl_RotateMb");
 
+    /// <summary>On:</summary>
+    public static string Editor_Lbl_ScheduleDays => Get("Editor_Lbl_ScheduleDays");
+
+    /// <summary>Every (minutes):</summary>
+    public static string Editor_Lbl_ScheduleEvery => Get("Editor_Lbl_ScheduleEvery");
+
+    /// <summary>Restart:</summary>
+    public static string Editor_Lbl_ScheduleMode => Get("Editor_Lbl_ScheduleMode");
+
+    /// <summary>At:</summary>
+    public static string Editor_Lbl_ScheduleTime => Get("Editor_Lbl_ScheduleTime");
+
     /// <summary>Service name:</summary>
     public static string Editor_Lbl_ServiceName => Get("Editor_Lbl_ServiceName");
 
@@ -661,6 +685,12 @@ internal static class S
 
     /// <summary>Realtime</summary>
     public static string Editor_Prio_Realtime => Get("Editor_Prio_Realtime");
+
+    /// <summary>Next: {0}</summary>
+    public static string Editor_Schedule_Next(object? p0) => Fmt("Editor_Schedule_Next", p0);
+
+    /// <summary>Nothing scheduled.</summary>
+    public static string Editor_Schedule_NextNone => Get("Editor_Schedule_NextNone");
 
     /// <summary>Automatic (delayed start)</summary>
     public static string Editor_Startup_AutoDelayed => Get("Editor_Startup_AutoDelayed");
@@ -733,6 +763,9 @@ internal static class S
 
     /// <summary>Restart throttled</summary>
     public static string Evt_RestartThrottled => Get("Evt_RestartThrottled");
+
+    /// <summary>Restarted on schedule</summary>
+    public static string Evt_ScheduledRestart => Get("Evt_ScheduledRestart");
 
     /// <summary>Service is stopping</summary>
     public static string Evt_ServiceStopping => Get("Evt_ServiceStopping");
@@ -1418,6 +1451,15 @@ internal static class S
     /// <summary>Set up a service quickly</summary>
     public static string Quick_Title => Get("Quick_Title");
 
+    /// <summary>At a time of day</summary>
+    public static string Schedule_Mode_AtTime => Get("Schedule_Mode_AtTime");
+
+    /// <summary>After a span of uptime</summary>
+    public static string Schedule_Mode_Interval => Get("Schedule_Mode_Interval");
+
+    /// <summary>Never</summary>
+    public static string Schedule_Mode_None => Get("Schedule_Mode_None");
+
     /// <summary>Start failed</summary>
     public static string State_Failed => Get("State_Failed");
 
@@ -1516,6 +1558,15 @@ internal static class S
 
     /// <summary>Resources could not be measured: {0}</summary>
     public static string Sup_SampleFailed(object? p0) => Fmt("Sup_SampleFailed", p0);
+
+    /// <summary>The planned restart at {0} was missed and is skipped, not caught up.</summary>
+    public static string Sup_ScheduledMissed(object? p0) => Fmt("Sup_ScheduledMissed", p0);
+
+    /// <summary>Next planned restart: {0}</summary>
+    public static string Sup_ScheduledNext(object? p0) => Fmt("Sup_ScheduledNext", p0);
+
+    /// <summary>Restarting the application on schedule (it ran for {0}).</summary>
+    public static string Sup_ScheduledRestart(object? p0) => Fmt("Sup_ScheduledRestart", p0);
 
     /// <summary>Sent Ctrl+C to the application.</summary>
     public static string Sup_SentCtrlC => Get("Sup_SentCtrlC");

@@ -247,6 +247,26 @@ try {
     Invoke-Es @("import", $definition) | Out-Null
     Invoke-Es @("health", $ServiceName) -ExpectedExitCode 2 | Out-Null
 
+    Step "Geplanter Neustart"
+    # Kuerzestes Intervall, das die Konfiguration zulaesst: nach einer Minute Laufzeit soll
+    # die Anwendung von selbst neu starten - ohne dass der Dienst dabei stoppt.
+    $json = Get-Content $definition -Raw | ConvertFrom-Json
+    $json.healthType = "None"
+    $json.restartScheduleMode = "Interval"
+    $json.restartEveryMinutes = 1
+    $json | ConvertTo-Json -Depth 6 | Set-Content $definition -Encoding UTF8
+
+    Invoke-Es @("import", $definition) | Out-Null
+    Invoke-Es @("restart", $ServiceName) | Out-Null
+    Wait-Until { (Get-State).State -eq "Running" } "der Dienst laeuft wieder"
+
+    $beforePid = (Get-State).ApplicationPid
+    $plannedAt = Get-Date
+    Wait-Until { (Get-State).ScheduledRestarts -ge 1 } "der Plan hat die Anwendung neu gestartet" -TimeoutSeconds 150
+    Wait-Until { (Get-State).ApplicationPid -ne $beforePid -and (Get-State).ApplicationPid -gt 0 } "sie laeuft unter neuer PID"
+    Confirm-That ((Get-Service $ServiceName).Status -eq "Running") "der Dienst selbst hat dabei nicht gestoppt"
+    Wait-Until { Test-EventPresent 1014 $plannedAt } "Ereignis 1014 (planmaessiger Neustart) steht im Anwendungsprotokoll"
+
     Step "Stoppen"
     Invoke-Es @("stop", $ServiceName) | Out-Null
     Confirm-That ((Get-Service $ServiceName).Status -eq "Stopped") "der SCM meldet Stopped"

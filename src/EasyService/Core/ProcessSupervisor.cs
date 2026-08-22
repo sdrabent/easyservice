@@ -39,6 +39,12 @@ public sealed class ProcessSupervisor : IDisposable
     private int _healthRestartRequested;
     private int _healthCheckRunning;
 
+    // Geplanter Neustart: faellige Uhrzeit in Ortszeit, und ein Merker fuer die
+    // Hauptschleife wie beim Health-Check.
+    private readonly System.Threading.Timer? _scheduleTimer;
+    private DateTime? _nextScheduledLocal;
+    private int _scheduledRestartRequested;
+
     private IntPtr _process = IntPtr.Zero;
     private IntPtr _job = IntPtr.Zero;
     private uint _pid;
@@ -100,6 +106,60 @@ public sealed class ProcessSupervisor : IDisposable
             var interval = Math.Max(1000, cfg.HealthIntervalMs);
             _healthTimer = new System.Threading.Timer(_ => RunHealthCheck(), null, interval, interval);
         }
+
+        if (cfg.RestartScheduleMode != RestartScheduleMode.None)
+        {
+            // Halbe Minute reicht: der Plan ist auf Minuten genau, und ein Dienst, der um
+            // 03:00 statt 03:00:00 neu startet, hat niemanden gestoert.
+            var tick = TimeSpan.FromSeconds(30);
+            _scheduleTimer = new System.Threading.Timer(_ => CheckSchedule(), null, tick, tick);
+        }
+    }
+
+    // ------------------------------------------------------- geplanter Neustart ---
+
+    /// <summary>
+    /// Restarts the application when the plan says so. Only the application: the service
+    /// keeps running, so the Service Control Manager sees no stop and nothing that depends
+    /// on this service is dragged down with it.
+    /// </summary>
+    private void CheckSchedule()
+    {
+        if (_stopRequested.IsSet || _cfg.RestartScheduleMode == RestartScheduleMode.None) return;
+        if (_state.State != SupervisorState.Running) return;
+        if (_nextScheduledLocal is not { } due) return;
+
+        var now = DateTime.Now;
+        if (now < due) return;
+
+        if (!RestartSchedule.IsDue(_cfg.RestartScheduleMode, due, now))
+        {
+            // Der Termin liegt zu weit zurueck - der Rechner war aus oder der Dienst
+            // gestoppt. Nicht nachholen, nur neu ansetzen.
+            LogQuiet(S.Sup_ScheduledMissed(due.ToString("g")));
+            PlanNextRestart(now);
+            return;
+        }
+
+        var ranFor = _state.ApplicationStartedUtc is { } started
+            ? ServiceState.FormatDuration(DateTime.UtcNow - started)
+            : S.Common_UnknownShort;
+
+        _state.ScheduledRestarts++;
+        Log(EasyServiceEvent.ScheduledRestart, S.Sup_ScheduledRestart(ranFor));
+
+        Interlocked.Exchange(ref _scheduledRestartRequested, 1);
+        _state.Save();
+
+        StopChild();
+    }
+
+    /// <summary>Works out the next due time and remembers it, for the tick and for the window.</summary>
+    private void PlanNextRestart(DateTime nowLocal)
+    {
+        var startedLocal = _state.ApplicationStartedUtc?.ToLocalTime();
+        _nextScheduledLocal = RestartSchedule.Next(_cfg, nowLocal, startedLocal);
+        _state.NextScheduledRestartUtc = _nextScheduledLocal?.ToUniversalTime();
     }
 
     // ----------------------------------------------------------- health check ---
@@ -326,6 +386,12 @@ public sealed class ProcessSupervisor : IDisposable
                 _state.LastError = null;
                 _sampler.Reset();
 
+                if (_cfg.RestartScheduleMode != RestartScheduleMode.None)
+                {
+                    PlanNextRestart(DateTime.Now);
+                    if (_nextScheduledLocal is { } next) LogQuiet(S.Sup_ScheduledNext(next.ToString("g")));
+                }
+
                 // Nach einem Start faengt die Beurteilung von vorn an, sonst wuerde die
                 // frische Anwendung die Fehlerzaehlung der alten erben.
                 if (_cfg.HealthType != HealthCheckType.None)
@@ -373,6 +439,10 @@ public sealed class ProcessSupervisor : IDisposable
             // fehlschlug. Die Exit-Regel gilt fuer das, was die Anwendung tut - nicht fuer
             // das, was wir mit ihr tun.
             if (Interlocked.Exchange(ref _healthRestartRequested, 0) == 1) action = ExitAction.Restart;
+
+            // Derselbe Gedanke fuer den geplanten Neustart: wir haben die Anwendung beendet,
+            // also gilt unsere Absicht, nicht ihre Exit-Regel.
+            if (Interlocked.Exchange(ref _scheduledRestartRequested, 0) == 1) action = ExitAction.Restart;
 
             Log(EasyServiceEvent.ApplicationExited,
                 S.Sup_AppExited(exitCode, ranFor.TotalSeconds.ToString("F1"), Describe(action)),
@@ -861,6 +931,7 @@ public sealed class ProcessSupervisor : IDisposable
         RequestStop();
         _sampleTimer.Dispose();
         _healthTimer?.Dispose();
+        _scheduleTimer?.Dispose();
         FlushHistoryBucket();
         CleanUpChild();
 

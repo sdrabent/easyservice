@@ -80,6 +80,11 @@ public static class ConfigTransfer
         public int RestartDelayMs { get; set; }
         public int ThrottleMs { get; set; }
 
+        public RestartScheduleMode RestartScheduleMode { get; set; }
+        public int RestartAtMinutes { get; set; } = 180;
+        public int RestartDays { get; set; } = RestartSchedule.AllDays;
+        public int RestartEveryMinutes { get; set; } = 24 * 60;
+
         public bool MonitoringEnabled { get; set; }
         public int WarnCpuPercent { get; set; }
         public int CritCpuPercent { get; set; }
@@ -152,6 +157,10 @@ public static class ConfigTransfer
                                    .ToDictionary(kv => kv.Key.ToString(), kv => kv.Value),
         RestartDelayMs = c.RestartDelayMs,
         ThrottleMs = c.ThrottleMs,
+        RestartScheduleMode = c.RestartScheduleMode,
+        RestartAtMinutes = c.RestartAtMinutes,
+        RestartDays = c.RestartDays,
+        RestartEveryMinutes = c.RestartEveryMinutes,
         MonitoringEnabled = c.MonitoringEnabled,
         WarnCpuPercent = c.WarnCpuPercent,
         CritCpuPercent = c.CritCpuPercent,
@@ -271,6 +280,10 @@ public static class ConfigTransfer
             DefaultExitAction = d.DefaultExitAction,
             RestartDelayMs = d.RestartDelayMs,
             ThrottleMs = d.ThrottleMs,
+            RestartScheduleMode = d.RestartScheduleMode,
+            RestartAtMinutes = d.RestartAtMinutes,
+            RestartDays = d.RestartDays,
+            RestartEveryMinutes = d.RestartEveryMinutes,
             MonitoringEnabled = d.MonitoringEnabled,
             WarnCpuPercent = d.WarnCpuPercent,
             CritCpuPercent = d.CritCpuPercent,

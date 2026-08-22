@@ -49,6 +49,7 @@ im Anhang wirklich weiter.
 | Ausgabe mitschreiben | stdout und stderr in Dateien, getrennt oder zusammen, mit Rotation nach Größe und Zeit und begrenzter Archivanzahl |
 | Protokollansicht | Hängt sich an die laufende Datei, folgt der Rotation, filtert nach Text, zeigt die passenden Windows-Ereignisse |
 | Neustart-Richtlinie | Pro Exit-Code, mit einem Backoff, der Neustartschleifen beendet |
+| Geplanter Neustart | Nachts zu fester Uhrzeit oder nach einer Laufzeit - nur die Anwendung, der Dienst bleibt |
 | Herunterfahren | Strg+C, dann `WM_CLOSE`, dann `WM_QUIT`, dann hart; jede Stufe abschaltbar mit eigenem Zeitlimit |
 | Prozessbaum | Kindprozesse laufen im Job-Objekt, werden also mit beendet und mitgezählt |
 | Health-Checks | Die Anwendung selbst fragen: eine URL abrufen, einen TCP-Port öffnen, eine Datei beobachten oder ein Programm ausführen. Bei Fehlschlag melden oder neu starten |
@@ -151,7 +152,7 @@ falsche war, ist keine Art, etwas einzurichten.
 | Ganze Definition als eine Datei | JSON | nein | XML | teilweise |
 | Signierte Binärdateien | **nein** | nein | ja | **ja** |
 | Support, den man anrufen kann | **nein** | nein | nein | **ja** |
-| Zeitgesteuerte Neustarts | **noch nicht** | nein | nein | **ja** |
+| Zeitgesteuerte Neustarts | ja | nein | nein | ja |
 | Letzte Veröffentlichung | diesen Monat | 2014 | Wartungsmodus | aktuell |
 
 Die fett gesetzten Zeilen sind die, in denen Bezahlen die bessere Antwort ist. Wer signierte
@@ -381,6 +382,10 @@ und schreiben.
 | `HealthAction` | DWORD | 0 nur melden, 1 Anwendung neu starten |
 | `HealthExpectStatus` | DWORD | HTTP: erwarteter Status, 0 nimmt 200-299 |
 | `HealthMaxAge` | DWORD | Datei-Check: erlaubtes Alter der Datei in Sekunden |
+| `RestartScheduleMode` | DWORD | 0 nie, 1 zu einer Uhrzeit, 2 nach einer Laufzeit |
+| `RestartAtMinutes` | DWORD | Minuten nach Mitternacht, Ortszeit. 180 ist 03:00 |
+| `RestartDays` | DWORD | Wochentagsmaske, Bit 0 ist Sonntag, 127 ist jeder Tag |
+| `RestartEveryMinutes` | DWORD | Laufzeit, nach der die Anwendung neu gestartet wird |
 
 Protokolle liegen standardmäßig unter `%ProgramData%\EasyService\logs\`, der Verlauf
 unter `%ProgramData%\EasyService\history\`.
