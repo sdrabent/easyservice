@@ -825,6 +825,7 @@ internal sealed class ServicePickerDialog : Form
 
         Load += (_, _) =>
         {
+            Ui.FollowTheme(this);
             try { _all = ServiceRegistry.EnumerateServices(); }
             catch (Exception e) { Ui.ShowError(this, S.Main_Err_ListFailed, e); }
             Populate();

@@ -129,6 +129,7 @@ public sealed class QuickAddForm : Form
                 _application.Text = files[0];
         };
 
+        Load += (_, _) => Ui.FollowTheme(this);
         Shown += (_, _) => _application.Focus();
     }
 

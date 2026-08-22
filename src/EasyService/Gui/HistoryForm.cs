@@ -127,7 +127,7 @@ public sealed class HistoryForm : Form
         Controls.Add(statusStrip);
 
         _refresh.Tick += (_, _) => Reload();
-        Load += (_, _) => { Reload(); _refresh.Start(); };
+        Load += (_, _) => { Ui.FollowTheme(this); Reload(); _refresh.Start(); };
         FormClosed += (_, _) => _refresh.Stop();
     }
 
